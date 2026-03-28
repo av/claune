@@ -3,14 +3,10 @@
 The following bugs and gaps identified in the QA feedback have been fully resolved:
 
 1. **Missing Features**:
-   - The primary executable has been set to `claune` without a `.py` extension. Removed `claune.py` and updated `package.json` to configure the correct bin mapping, ensuring a true drop-in replacement CLI.
+   - Bundled the default "Circus Sound Pack". Real high-quality audio files (.wav) are now used instead of synthesized beeps. The code to generate dummy audio files has been removed entirely.
 
 2. **Functional Bugs**:
-   - Fixed the flawed mock detection condition. The fallback to `mock_claude.py` is now strictly triggered by setting `CLAUNE_TEST_MODE=1`, ensuring execution via absolute paths does not accidentally intercept the real Anthropic CLI.
-   - Refactored `process_stream_buffer` to correctly accumulate streamed chunks instead of scanning fixed 1024-byte blocks. Implemented a robust sliding window and prefix matching to capture and conceal `[CLAUNE_TOOL]`, `[CLAUNE_SUCCESS]`, and `[CLAUNE_ERROR]` markers even when streamed character-by-character. JSON payloads for `tool_use` and `tool_result` are also robustly matched using regexes to handle whitespace, newlines, and cross-chunk payloads.
+   - The `claune` executable no longer hangs indefinitely when run directly. Added the missing `#!/usr/bin/env python3` shebang at the top of the file, allowing bash to properly execute the python script instead of invoking ImageMagick.
 
 3. **UX/Design Issues**:
-   - The streaming output no longer leaks intercepted AI intent markers back to the user console. The sliding window cleanly holds potential prefixes up to their maximum length and strips them out upon full match, ensuring smooth streaming UI while maintaining accurate, real-time AI-driven intent mapping to audio cues.
-   
-4. **Encoding Issues**:
-   - Fixed a bug in `process_stream_buffer` that corrupted multi-byte Unicode characters split across stream chunks. Replaced the `utf-8` decode loop with a byte-level stream processing mechanism that correctly identifies and retains incomplete multi-byte UTF-8 sequences in the buffer until they can be fully read and output, preventing replacement characters (`\xef\xbf\xbd`) from being emitted.
+   - Addressed the issue with rapid tool events abruptly clipping each other. The `play_sound` function no longer calls `clean_procs(terminate_all=True)`. Instead, it uses `clean_procs()` which cleans up completed processes gracefully without prematurely killing active ones, allowing sounds to correctly mix.

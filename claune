@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import pty
 import os
 import sys
@@ -13,42 +14,9 @@ import tempfile
 import atexit
 import shutil
 import re
-import math
-import wave
 from datetime import datetime
 
 SOUNDS_DIR = os.path.join(os.path.dirname(__file__), "sounds")
-
-def generate_sound(path, freq, duration, vol=0.5):
-    sample_rate = 44100
-    n_samples = int(sample_rate * duration)
-    with wave.open(path, 'w') as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(sample_rate)
-        for i in range(n_samples):
-            t = float(i) / sample_rate
-            val = int(vol * 32767.0 * math.sin(2.0 * math.pi * freq * t))
-            w.writeframes(struct.pack('<h', val))
-
-def init_sounds():
-    if not os.path.exists(SOUNDS_DIR):
-        os.makedirs(SOUNDS_DIR)
-
-    sounds_to_gen = {
-        "fanfare.wav": (600, 0.5), # start
-        "drumroll.wav": (200, 0.2), # tool start
-        "tada.wav": (800, 0.3),     # success
-        "sad-trombone.wav": (150, 0.5), # error
-        "applause.wav": (400, 0.4), # done
-    }
-
-    for file, (freq, duration) in sounds_to_gen.items():
-        path = os.path.join(SOUNDS_DIR, file)
-        if not os.path.exists(path) or os.path.getsize(path) == 0:
-            generate_sound(path, freq, duration)
-
-init_sounds()
 
 active_procs = []
 
@@ -92,7 +60,7 @@ def play_sound(type_):
     if should_mute(config):
         return
         
-    clean_procs(terminate_all=True)
+    clean_procs()
     
     default_map = {
         "cli:start": "fanfare.wav",
