@@ -10,3 +10,6 @@ The following bugs and gaps identified in the QA feedback have been fully resolv
 
 3. **UX/Design Issues**:
    - Addressed the issue with rapid tool events abruptly clipping each other. The `play_sound` function no longer calls `clean_procs(terminate_all=True)`. Instead, it uses `clean_procs()` which cleans up completed processes gracefully without prematurely killing active ones, allowing sounds to correctly mix.\nAll QA feedback has been verified and fully resolved in the latest build.
+
+4. **JSON Output Issue**:
+   - Fixed the regex stripping problem where `{"type":"tool_use"` and `{"type":"tool_result"` were being removed from the `out_bytes` stream, thereby breaking the valid JSON output. The stream is now left intact.

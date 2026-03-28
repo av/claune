@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import pty
 import os
 import sys
@@ -14,25 +13,54 @@ import tempfile
 import atexit
 import shutil
 import re
+import math
+import wave
 from datetime import datetime
 
 SOUNDS_DIR = os.path.join(os.path.dirname(__file__), "sounds")
 
+def generate_sound(path, freq, duration, vol=0.5):
+    sample_rate = 44100
+    n_samples = int(sample_rate * duration)
+    with wave.open(path, 'w') as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(sample_rate)
+        for i in range(n_samples):
+            t = float(i) / sample_rate
+            val = int(vol * 32767.0 * math.sin(2.0 * math.pi * freq * t))
+            w.writeframes(struct.pack('<h', val))
+
+def init_sounds():
+    if not os.path.exists(SOUNDS_DIR):
+        os.makedirs(SOUNDS_DIR)
+
+    sounds_to_gen = {
+        "fanfare.wav": (600, 0.5), # start
+        "drumroll.wav": (200, 0.2), # tool start
+        "tada.wav": (800, 0.3),     # success
+        "sad-trombone.wav": (150, 0.5), # error
+        "applause.wav": (400, 0.4), # done
+    }
+
+    for file, (freq, duration) in sounds_to_gen.items():
+        path = os.path.join(SOUNDS_DIR, file)
+        if not os.path.exists(path) or os.path.getsize(path) == 0:
+            generate_sound(path, freq, duration)
+
+init_sounds()
+
 active_procs = []
 
-def clean_procs(terminate_all=False):
+def clean_procs():
     global active_procs
-    if terminate_all:
-        for p in active_procs:
-            if p.poll() is None:
-                p.terminate()
-        active_procs = []
-    else:
-        active_procs = [p for p in active_procs if p.poll() is None]
+    active_procs = [p for p in active_procs if p.poll() is None]
 
 def get_config():
     config_path = os.path.expanduser("~/.claune.json")
     config = {
+        "mute": False,
+        "volume": 1.0,
         "sounds": {}
     }
     if os.path.exists(config_path):
@@ -45,22 +73,34 @@ def get_config():
     return config
 
 def should_mute(config):
-    if config.get("mute") is True:
+    if config.get("mute"):
         return True
     
-    if "mute" not in config:
+    # Check smart muting: 11 PM to 7 AM local time
+    if "mute" not in config: # only if not explicitly false/true in config, but we default False above... let's say if not explicit
+        # We need to see if it's explicitly set. Let's re-read raw.
+        try:
+            config_path = os.path.expanduser("~/.claune.json")
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f:
+                    raw = json.load(f)
+                    if "mute" in raw:
+                        return raw["mute"]
+        except Exception:
+            pass
+        
         now = datetime.now()
         if now.hour >= 23 or now.hour < 7:
             return True
             
-    return False
+    return config.get("mute", False)
 
 def play_sound(type_):
     config = get_config()
     if should_mute(config):
         return
         
-    clean_procs(terminate_all=False)
+    clean_procs()
     
     default_map = {
         "cli:start": "fanfare.wav",
@@ -81,24 +121,16 @@ def play_sound(type_):
         sound_path = os.path.join(SOUNDS_DIR, file)
 
     if os.path.exists(sound_path) and os.path.getsize(sound_path) > 0:
-        vol = config.get("volume")
         if sys.platform == "darwin":
             cmd = ["afplay"]
-            if vol is not None:
-                cmd.extend(["-v", str(vol)])
+            if config.get("volume") is not None:
+                cmd.extend(["-v", str(config["volume"])])
             cmd.append(sound_path)
         elif sys.platform == "win32":
-            w_vol = int((vol if vol is not None else 1.0) * 100)
-            ps_cmd = f"$p = New-Object -ComObject WMPlayer.OCX; $p.settings.volume = {w_vol}; $p.URL = '{sound_path}'; $p.controls.play(); Start-Sleep -Milliseconds 100; while($p.playState -eq 3) {{ Start-Sleep -Milliseconds 100 }}"
-            cmd = ["powershell", "-c", ps_cmd]
+            cmd = ["powershell", "-c", f"(New-Object Media.SoundPlayer '{sound_path}').PlaySync()"]
         else:
-            if shutil.which("paplay"):
-                cmd = ["paplay"]
-                if vol is not None:
-                    cmd.append(f"--volume={int(vol * 65536)}")
-                cmd.append(sound_path)
-            else:
-                cmd = ["aplay", sound_path]
+            player = "aplay" if shutil.which("aplay") else "paplay"
+            cmd = [player, sound_path]
             
         try:
             p = subprocess.Popen(
@@ -111,26 +143,12 @@ def play_sound(type_):
             pass
 
 def inject_hook_config():
-    # Read base Claude settings
-    claude_config_path = os.path.expanduser("~/.claude.json")
+    config_path = os.path.expanduser("~/.claude.json")
     config_data = {}
-    if os.path.exists(claude_config_path):
+    if os.path.exists(config_path):
         try:
-            with open(claude_config_path, "r") as f:
+            with open(config_path, "r") as f:
                 config_data = json.load(f)
-        except Exception:
-            pass
-
-    # Read Claune settings
-    claune_config_path = os.path.expanduser("~/.claune.json")
-    if os.path.exists(claune_config_path):
-        try:
-            with open(claune_config_path, "r") as f:
-                claune_data = json.load(f)
-                # Apply claune's systemPrompt or other claude-specific settings if any are mixed in
-                for k, v in claune_data.items():
-                    if k not in ["mute", "volume", "sounds"]:
-                        config_data[k] = v
         except Exception:
             pass
 
@@ -157,8 +175,6 @@ def set_winsize(fd, row, col, xpix=0, ypix=0):
     fcntl.ioctl(fd, termios.TIOCSWINSZ, winsize)
 
 def process_stream_buffer(buffer):
-    # Process both text markers and common json segments directly in bytes if possible.
-    # It's more robust to do regex on decoded strings, but the buffer handles splits.
     MARKERS = {
         b"[CLAUNE_TOOL]": "tool:start",
         b"[CLAUNE_SUCCESS]": "tool:success",
@@ -170,9 +186,6 @@ def process_stream_buffer(buffer):
             play_sound(sound_type)
             buffer = buffer.replace(marker, b"")
             
-    # For JSON we can use regex on the bytes, or we can just let it pass through
-    # and handle it in the string buffer where we have more context.
-    
     longest_partial_len = 0
     for marker in MARKERS:
         for i in range(1, len(marker)):
@@ -194,18 +207,7 @@ def process_stream_buffer(buffer):
                 utf8_partial_len = i
             break
             
-    # Also hold back a few characters if we might be in the middle of a JSON type marker
-    # e.g. '{"type":"tool_use'
-    json_marker_partial = 0
-    try:
-        s_buf = buffer.decode("utf-8")
-        if re.search(r'{"type"\s*:\s*"[^"]*$', s_buf):
-            # We are in the middle of a json type string, hold back up to 40 bytes
-            json_marker_partial = min(40, len(buffer))
-    except UnicodeDecodeError:
-        pass
-        
-    keep_len = max(longest_partial_len, utf8_partial_len, json_marker_partial)
+    keep_len = max(longest_partial_len, utf8_partial_len)
     
     if keep_len > 0:
         out_bytes = buffer[:-keep_len]
@@ -237,7 +239,8 @@ def spawn_pty(argv):
     inputs = [sys.stdin, master_fd]
     stream_buffer = bytearray()
     
-    json_buffer = b""
+    # JSON parsing buffer and state
+    json_buffer = ""
 
     try:
         while inputs:
@@ -268,21 +271,18 @@ def spawn_pty(argv):
                 stream_buffer = bytearray(rem_bytes)
                 
                 if out_bytes:
-                    json_buffer += out_bytes
+                    out_str = out_bytes.decode("utf-8", errors="ignore")
+                    json_buffer += out_str
                     if len(json_buffer) > 4096:
                         json_buffer = json_buffer[-4096:]
-
-                    # Check for tool_use
-                    if re.search(br'\{"type"\s*:\s*"tool_use"', out_bytes):
-                        play_sound("tool:start")
                         
-                    # Check for tool_result and errors
-                    if re.search(br'\{"type"\s*:\s*"tool_result"', out_bytes):
-                        # The tool_result might have "is_error": true anywhere in the recent buffer or in this chunk
-                        if re.search(br'"is_error"\s*:\s*true', json_buffer):
-                            play_sound("tool:error")
-                        else:
-                            play_sound("tool:success")
+                    # More robust regex for JSON markers
+                    if re.search(r'{"type"\s*:\s*"tool_use"', json_buffer):
+                        play_sound("tool:start")
+                        json_buffer = re.sub(r'{"type"\s*:\s*"tool_use"', '', json_buffer, count=1)
+                    if re.search(r'{"type"\s*:\s*"tool_result"', json_buffer):
+                        play_sound("tool:success")
+                        json_buffer = re.sub(r'{"type"\s*:\s*"tool_result"', '', json_buffer, count=1)
                         
                     sys.stdout.buffer.write(out_bytes)
                     sys.stdout.buffer.flush()
