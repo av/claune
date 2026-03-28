@@ -32,8 +32,8 @@ func settingsPath() string {
 	return settingsPathFunc()
 }
 
-// resolveClauneBin finds the absolute path to the claune binary
-func resolveClauneBin() string {
+// resolveClauneBinFunc is a variable so tests can override it
+var resolveClauneBinFunc = func() string {
 	if path, err := exec.LookPath("claune"); err == nil {
 		if abs, err := filepath.Abs(path); err == nil {
 			return abs
@@ -44,6 +44,10 @@ func resolveClauneBin() string {
 		return exe
 	}
 	return "claune"
+}
+
+func resolveClauneBin() string {
+	return resolveClauneBinFunc()
 }
 
 func readSettings() (map[string]interface{}, error) {

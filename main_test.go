@@ -130,10 +130,14 @@ func TestInstallUninstallRoundtrip(t *testing.T) {
 	tmpDir := t.TempDir()
 	settingsFile := filepath.Join(tmpDir, "settings.json")
 
-	// Patch settingsPath for this test
+	// Patch settingsPath and resolveClauneBin for this test
 	origFunc := settingsPathFunc
 	settingsPathFunc = func() string { return settingsFile }
 	defer func() { settingsPathFunc = origFunc }()
+
+	origBin := resolveClauneBinFunc
+	resolveClauneBinFunc = func() string { return "/usr/local/bin/claune" }
+	defer func() { resolveClauneBinFunc = origBin }()
 
 	// Install
 	if err := installHooks(); err != nil {
