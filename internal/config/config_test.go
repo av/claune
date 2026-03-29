@@ -42,10 +42,6 @@ func TestParseOldConfigFailsGracefully(t *testing.T) {
 	var c ClauneConfig
 	err := json.Unmarshal(data, &c)
 	if err == nil {
-		if len(c.Sounds) > 0 {
-			if len(c.Sounds["success"].Paths) > 0 {
-				t.Fatalf("Should not have parsed old string format into Paths array, got: %v", c.Sounds["success"].Paths)
-			}
-		}
+		t.Fatalf("Expected clear parsing failure for old config shape, but got no error")
 	}
 }

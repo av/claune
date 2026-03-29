@@ -32,7 +32,11 @@ func Run(args []string) error {
 		return nil
 	}
 
-	c := config.Load()
+	c, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "claune: error loading config: %v\n", err)
+		os.Exit(1)
+	}
 
 	switch args[0] {
 	case "play":
@@ -50,6 +54,9 @@ func Run(args []string) error {
 					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
 				}
 			}
+		} else {
+			fmt.Fprintln(os.Stderr, "Usage: claune play <event> [args...]")
+			os.Exit(1)
 		}
 	case "install":
 		if err := installHooks(); err != nil {

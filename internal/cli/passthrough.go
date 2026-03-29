@@ -267,7 +267,11 @@ func hooksInstalled() bool {
 
 func runPassthrough(args []string) {
 	audio.EnsureSoundCache()
-	c := config.Load()
+	c, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "claune: error loading config: %v\n", err)
+		os.Exit(1)
+	}
 	audio.PlaySound("cli:start", false, c)
 
 	if !hooksInstalled() {

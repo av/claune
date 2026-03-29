@@ -27,7 +27,7 @@ type AIConfig struct {
 	APIURL  string `json:"api_url,omitempty"`
 }
 
-func Load() ClauneConfig {
+func Load() (ClauneConfig, error) {
 	config := ClauneConfig{
 		Sounds: make(map[string]EventSoundConfig),
 	}
@@ -35,12 +35,14 @@ func Load() ClauneConfig {
 	configPath := filepath.Join(home, ".claune.json")
 	data, err := os.ReadFile(configPath)
 	if err == nil {
-		json.Unmarshal(data, &config)
+		if err := json.Unmarshal(data, &config); err != nil {
+			return config, err
+		}
 	}
 	if config.Sounds == nil {
 		config.Sounds = make(map[string]EventSoundConfig)
 	}
-	return config
+	return config, nil
 }
 
 func Save(c ClauneConfig) error {

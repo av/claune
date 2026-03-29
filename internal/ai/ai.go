@@ -164,7 +164,7 @@ func HandleNaturalLanguageConfig(prompt string, c *config.ClauneConfig) error {
 	sysPrompt := fmt.Sprintf(`You are configuring Claune, an audio tool. Current config: %+v.
 User prompt: %s
 Current time: %s
-Reply with ONLY valid JSON representing the updated configuration fields. Do not include markdown blocks. Example: {"mute": true, "mute_until": "2023-10-12T14:00:00Z", "volume": 0.5, "sounds": {"tool:start": ["file.wav"]}}`, c, prompt, time.Now().Format(time.RFC3339))
+Reply with ONLY valid JSON representing the updated configuration fields. Do not include markdown blocks. Example: {"mute": true, "mute_until": "2023-10-12T14:00:00Z", "volume": 0.5, "sounds": {"tool:start": {"paths": ["file.wav"], "strategy": "random"}}}`, c, prompt, time.Now().Format(time.RFC3339))
 
 	reqBody := ClaudeRequest{
 		Model: model,
@@ -214,17 +214,7 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 				c.Sounds = make(map[string]config.EventSoundConfig)
 			}
 			for k, v := range s {
-				if vs, ok := v.(string); ok {
-					c.Sounds[k] = config.EventSoundConfig{Paths: []string{vs}}
-				} else if arr, ok := v.([]interface{}); ok {
-					var paths []string
-					for _, item := range arr {
-						if str, ok := item.(string); ok {
-							paths = append(paths, str)
-						}
-					}
-					c.Sounds[k] = config.EventSoundConfig{Paths: paths}
-				} else if obj, ok := v.(map[string]interface{}); ok {
+				if obj, ok := v.(map[string]interface{}); ok {
 					var esc config.EventSoundConfig
 					if paths, ok := obj["paths"].([]interface{}); ok {
 						for _, item := range paths {
@@ -237,6 +227,8 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 						esc.Strategy = strategy
 					}
 					c.Sounds[k] = esc
+				} else {
+					return fmt.Errorf("invalid sound config shape for key %s, expected object with paths array", k)
 				}
 			}
 		}
