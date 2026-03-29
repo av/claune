@@ -153,9 +153,14 @@ func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
 	}
 	volume := c.GetVolume()
 	
+	strategy := c.SoundStrategies[eventType]
+	if strategy == "" {
+		strategy = c.SoundStrategy
+	}
+	
 	// Check custom configured sounds first
 	if customPaths, ok := c.Sounds[eventType]; ok && len(customPaths) > 0 {
-		customPath := pickSound(eventType, customPaths, c.SoundStrategy)
+		customPath := pickSound(eventType, customPaths, strategy)
 		if customPath != "" {
 			if strings.HasPrefix(customPath, "~/") {
 				home, _ := os.UserHomeDir()
@@ -174,7 +179,7 @@ func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
 		return fmt.Errorf("unknown event type: %s\nValid types: %s", eventType, validEventTypes())
 	}
 	
-	soundFile := pickSound(eventType, soundFiles, c.SoundStrategy)
+	soundFile := pickSound(eventType, soundFiles, strategy)
 	err := playEmbeddedSound(soundFile, volume, blocking)
 	return err
 }

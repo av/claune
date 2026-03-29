@@ -8,12 +8,13 @@ import (
 )
 
 type ClauneConfig struct {
-	Mute          *bool               `json:"mute,omitempty"`
-	MuteUntil     *time.Time          `json:"mute_until,omitempty"`
-	Volume        *float64            `json:"volume,omitempty"`
-	Sounds        map[string][]string `json:"sounds,omitempty"`
-	SoundStrategy string              `json:"sound_strategy,omitempty"` // "random" or "round_robin"
-	AI            AIConfig            `json:"ai,omitempty"`
+	Mute            *bool               `json:"mute,omitempty"`
+	MuteUntil       *time.Time          `json:"mute_until,omitempty"`
+	Volume          *float64            `json:"volume,omitempty"`
+	Sounds          map[string][]string `json:"sounds,omitempty"`
+	SoundStrategies map[string]string   `json:"sound_strategies,omitempty"` // "random" or "round_robin" per event
+	SoundStrategy   string              `json:"sound_strategy,omitempty"`   // global fallback
+	AI              AIConfig            `json:"ai,omitempty"`
 }
 
 type AIConfig struct {
@@ -25,7 +26,8 @@ type AIConfig struct {
 
 func Load() ClauneConfig {
 	config := ClauneConfig{
-		Sounds: make(map[string][]string),
+		Sounds:          make(map[string][]string),
+		SoundStrategies: make(map[string]string),
 	}
 	home, _ := os.UserHomeDir()
 	configPath := filepath.Join(home, ".claune.json")
@@ -55,6 +57,9 @@ func Load() ClauneConfig {
 	}
 	if config.Sounds == nil {
 		config.Sounds = make(map[string][]string)
+	}
+	if config.SoundStrategies == nil {
+		config.SoundStrategies = make(map[string]string)
 	}
 	if config.SoundStrategy == "" {
 		config.SoundStrategy = "random"
