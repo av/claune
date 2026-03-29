@@ -2,21 +2,25 @@ package cli
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/everlier/claune/internal/ai"
 	"github.com/everlier/claune/internal/audio"
+	"github.com/everlier/claune/internal/circus"
 	"github.com/everlier/claune/internal/config"
 )
 
 var clauneSubcommands = map[string]bool{
-	"play":        true,
-	"install":     true,
-	"uninstall":   true,
-	"status":      true,
-	"test-sounds": true,
-	"help":        true,
-	"config":      true,
+	"play":          true,
+	"install":       true,
+	"uninstall":     true,
+	"status":        true,
+	"test-sounds":   true,
+	"help":          true,
+	"config":        true,
+	"import-circus": true,
+	"analyze-log":   true,
 }
 
 func Run(args []string) error {
@@ -68,6 +72,19 @@ func Run(args []string) error {
 		}
 	case "help":
 		printUsage()
+	case "import-circus":
+		if len(args) > 2 {
+			if err := circus.ImportMemeSound(args[1], args[2]); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			}
+		} else {
+			fmt.Println("Usage: claune import-circus <url> <filename>")
+		}
+	case "analyze-log":
+		logText, err := io.ReadAll(os.Stdin)
+		if err == nil {
+			circus.AnalyzeLogSentiment(string(logText), c)
+		}
 	}
 	return nil
 }
@@ -88,7 +105,7 @@ func showStatus(c config.ClauneConfig) {
 
 func testSounds(c config.ClauneConfig) {
 	fmt.Println("Testing all sounds...")
-	for _, event := range []string{"cli:start", "tool:start", "tool:success", "tool:error", "cli:done"} {
+	for _, event := range []string{"cli:start", "tool:start", "tool:success", "tool:error", "cli:done", "build:success", "test:fail", "panic", "warn"} {
 		fmt.Printf("  %s ", event)
 		if err := audio.PlaySound(event, true, c); err != nil {
 			fmt.Printf("FAILED: %v\n", err)
@@ -112,5 +129,7 @@ Management commands:
   play <event>  Play a sound
   test-sounds   Play all sounds to verify audio works
   config <msg>  Natural language configuration (e.g., "mute sound")
+  import-circus <url> <file>  Import a meme sound
+  analyze-log   Analyze log from stdin and play a sound
   help          Show this help message`)
 }

@@ -17,12 +17,16 @@ var SoundFS embed.FS
 
 var DefaultSoundMap = map[string]string{
 	"cli:start":        "fanfare.wav",
-	"tool:start":       "drumroll.wav",
+	"tool:start":       "clown-horn.wav", // Circus meme
 	"tool:success":     "tada.wav",
-	"tool:error":       "sad-trombone.wav",
+	"tool:error":       "sad-trombone.wav", // Circus meme
 	"cli:done":         "applause.wav",
-	"tool:destructive": "drumroll.wav",
-	"tool:readonly":    "drumroll.wav",
+	"tool:destructive": "maniacal-laugh.wav", // Circus meme
+	"tool:readonly":    "boing.wav",          // Circus meme
+	"build:success":    "slide-whistle-up.wav", // Circus meme
+	"test:fail":        "sad-trombone.wav",
+	"panic":            "maniacal-laugh.wav",
+	"warn":             "boing.wav",
 }
 
 func findAudioPlayer() (string, []string) {
