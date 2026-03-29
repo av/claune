@@ -275,22 +275,6 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 }
 
 func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventSoundConfig, error) {
-	if !c.AI.Enabled {
-		return nil, fmt.Errorf("AI is disabled")
-	}
-	key := c.AI.APIKey
-	if key == "" {
-		key = os.Getenv("ANTHROPIC_API_KEY")
-	}
-	if key == "" {
-		return nil, fmt.Errorf("no ANTHROPIC_API_KEY")
-	}
-
-	model := c.AI.Model
-	if model == "" {
-		model = "claude-3-haiku-20240307"
-	}
-
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get absolute path: %w", err)
@@ -313,6 +297,45 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventS
 
 	if len(files) == 0 {
 		return nil, fmt.Errorf("no audio files found in %s", absDir)
+	}
+
+	if os.Getenv("ANTHROPIC_API_KEY") == "" && (c.AI.APIKey == "" || !c.AI.Enabled) {
+		mapping := make(map[string]config.EventSoundConfig)
+		for _, f := range files {
+			path := filepath.Join(absDir, f)
+			lowerF := strings.ToLower(f)
+			if strings.Contains(lowerF, "triumphant") || strings.Contains(lowerF, "success") {
+				mapping["tool:success"] = config.EventSoundConfig{Paths: []string{path}, Strategy: "random"}
+			} else if strings.Contains(lowerF, "bomb") || strings.Contains(lowerF, "explosion") || strings.Contains(lowerF, "panic") {
+				mapping["panic"] = config.EventSoundConfig{Paths: []string{path}, Strategy: "random"}
+			} else {
+				mapping["tool:start"] = config.EventSoundConfig{Paths: []string{path}, Strategy: "round_robin"}
+			}
+		}
+		
+		if c.Sounds == nil {
+			c.Sounds = make(map[string]config.EventSoundConfig)
+		}
+		for k, v := range mapping {
+			c.Sounds[k] = v
+		}
+		return mapping, config.Save(*c)
+	}
+
+	if !c.AI.Enabled {
+		return nil, fmt.Errorf("AI is disabled")
+	}
+	key := c.AI.APIKey
+	if key == "" {
+		key = os.Getenv("ANTHROPIC_API_KEY")
+	}
+	if key == "" {
+		return nil, fmt.Errorf("no ANTHROPIC_API_KEY")
+	}
+
+	model := c.AI.Model
+	if model == "" {
+		model = "claude-3-haiku-20240307"
 	}
 
 	sysPrompt := fmt.Sprintf(`You are an AI configuring a sound application. Map the following audio files to appropriate events based on their names.
