@@ -84,20 +84,38 @@ func Run(args []string) error {
 		printUsage()
 	case "import-circus":
 		if len(args) > 2 {
-			if err := circus.ImportMemeSound(args[1], args[2]); err != nil {
+			url := args[1]
+			filename := args[2]
+			if err := circus.ImportMemeSound(url, filename); err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			} else if len(args) > 3 {
-				event := args[3]
+			} else {
+				var event string
+				if len(args) > 3 {
+					event = args[3]
+				} else {
+					guessed, err := ai.GuessEventForSound(url, filename, c)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "AI mapping failed: %v. Please specify an event manually.\n", err)
+						return nil
+					}
+					event = guessed
+					fmt.Printf("AI intelligently mapped %s to %s\n", filename, event)
+				}
+				
 				if c.Sounds == nil {
 					c.Sounds = make(map[string]config.EventSoundConfig)
 				}
-				// Use the cache dir path for the imported sound
-				cachedPath := filepath.Join(audio.SoundCacheDir(), args[2])
-				c.Sounds[event] = config.EventSoundConfig{Paths: []string{cachedPath}}
+				cachedPath := filepath.Join(audio.SoundCacheDir(), filename)
+				
+				// Keep existing config if it exists, just append/overwrite
+				eventCfg := c.Sounds[event]
+				eventCfg.Paths = append(eventCfg.Paths, cachedPath)
+				c.Sounds[event] = eventCfg
+				
 				if err := config.Save(c); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to update config: %v\n", err)
 				} else {
-					fmt.Printf("Mapped %s to event %s\n", args[2], event)
+					fmt.Printf("Mapped %s to event %s\n", filename, event)
 				}
 			}
 		} else {

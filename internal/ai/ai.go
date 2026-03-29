@@ -422,3 +422,78 @@ func DiagnoseInstallFailure(err error, c config.ClauneConfig) string {
 
 	return "Could not diagnose the issue."
 }
+
+func GuessEventForSound(url, filename string, c config.ClauneConfig) (string, error) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" && (c.AI.APIKey == "" || !c.AI.Enabled) {
+		if strings.Contains(strings.ToLower(filename), "sad") {
+			return "tool:error", nil
+		}
+		if strings.Contains(strings.ToLower(filename), "yay") || strings.Contains(strings.ToLower(filename), "success") {
+			return "tool:success", nil
+		}
+		return "tool:start", nil
+	}
+
+	if !c.AI.Enabled {
+		return "", fmt.Errorf("AI is disabled")
+	}
+	key := c.AI.APIKey
+	if key == "" {
+		key = os.Getenv("ANTHROPIC_API_KEY")
+	}
+	if key == "" {
+		return "", fmt.Errorf("no ANTHROPIC_API_KEY")
+	}
+
+	model := c.AI.Model
+	if model == "" {
+		model = "claude-3-haiku-20240307"
+	}
+
+	prompt := fmt.Sprintf(`Analyze this audio file download: URL="%s", Filename="%s".
+Available events: cli:start, tool:start, tool:success, tool:error, cli:done, build:success, test:fail, panic, warn.
+Reply with ONE WORD ONLY representing the most appropriate event for this sound based on its name and URL context.`, url, filename)
+	
+	reqBody := ClaudeRequest{
+		Model: model,
+		Messages: []ClaudeMessage{
+			{Role: "user", Content: prompt},
+		},
+		MaxTokens: 20,
+	}
+
+	bodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(bodyBytes))
+	req.Header.Set("x-api-key", key)
+	req.Header.Set("anthropic-version", "2023-06-01")
+	req.Header.Set("content-type", "application/json")
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("AI API returned status %d", resp.StatusCode)
+	}
+
+	respBytes, _ := io.ReadAll(resp.Body)
+	var cr ClaudeResponse
+	if err := json.Unmarshal(respBytes, &cr); err != nil {
+		return "", err
+	}
+
+	if len(cr.Content) > 0 {
+		text := strings.TrimSpace(cr.Content[0].Text)
+		// Clean up common AI fluff
+		text = strings.TrimPrefix(text, "'")
+		text = strings.TrimSuffix(text, "'")
+		text = strings.TrimPrefix(text, "\"")
+		text = strings.TrimSuffix(text, "\"")
+		return text, nil
+	}
+	return "", fmt.Errorf("empty AI response")
+}
+
