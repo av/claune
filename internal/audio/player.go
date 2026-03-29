@@ -2,6 +2,7 @@ package audio
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
@@ -36,6 +37,47 @@ var (
 	rrMutex sync.Mutex
 	rrIndex = make(map[string]int)
 )
+
+func stateFilePath() string {
+	if home, err := os.UserHomeDir(); err == nil {
+		return filepath.Join(home, ".claune.state.json")
+	}
+	return ".claune.state.json"
+}
+
+func loadState() {
+	rrMutex.Lock()
+	defer rrMutex.Unlock()
+	
+	path := stateFilePath()
+	data, err := os.ReadFile(path)
+	if err == nil {
+		// ignore errors, just use empty if unparseable
+		importJSON(data)
+	}
+}
+
+func saveState() {
+	rrMutex.Lock()
+	defer rrMutex.Unlock()
+	
+	path := stateFilePath()
+	data := exportJSON()
+	os.WriteFile(path, data, 0644)
+}
+
+func importJSON(data []byte) {
+	var state map[string]int
+	if err := json.Unmarshal(data, &state); err == nil && state != nil {
+		rrIndex = state
+	}
+}
+
+func exportJSON() []byte {
+	data, _ := json.Marshal(rrIndex)
+	return data
+}
+
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -135,11 +177,13 @@ func pickSound(eventType string, sounds []string, strategy string) string {
 	}
 
 	if strategy == "round_robin" {
+		loadState()
 		rrMutex.Lock()
-		defer rrMutex.Unlock()
 		idx := rrIndex[eventType]
 		selected := sounds[idx%len(sounds)]
 		rrIndex[eventType] = (idx + 1) % len(sounds)
+		rrMutex.Unlock()
+		saveState()
 		return selected
 	}
 
@@ -159,7 +203,10 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 		if strategy == "" {
 			strategy = customConfig.Strategy
 			if strategy == "" {
-				strategy = "random" // default
+				strategy = c.Strategy // global fallback
+				if strategy == "" {
+					strategy = "random" // default
+				}
 			}
 		}
 		
@@ -173,6 +220,9 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 				err = playMP3File(customPath, volume, blocking)
 				return err
 			} else {
+				if err == nil {
+					err = fmt.Errorf("file is empty")
+				}
 				fmt.Fprintf(os.Stderr, "Warning: invalid custom sound path %q for event %q: %v\n", customPath, eventType, err)
 			}
 		}
@@ -186,7 +236,13 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 	
 	strategy := overrideStrategy
 	if strategy == "" {
-		strategy = "random"
+		if customConfig, ok := c.Sounds[eventType]; ok && customConfig.Strategy != "" {
+			strategy = customConfig.Strategy
+		} else if c.Strategy != "" {
+			strategy = c.Strategy
+		} else {
+			strategy = "random"
+		}
 	}
 	
 	soundFile := pickSound(eventType, soundFiles, strategy)

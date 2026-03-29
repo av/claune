@@ -4,9 +4,11 @@ package audio
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/gopxl/beep"
+	"github.com/gopxl/beep/effects"
 	"github.com/gopxl/beep/speaker"
 )
 
@@ -38,9 +40,16 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 	// Apply volume if needed
 	var ctrl beep.Streamer = streamer
 	if volume != 1.0 {
-		// Not implementing complex volume mapping for now to keep dependencies low,
-		// but you can add beep/effects.Volume if desired.
-		// For simplicity, we just play it as is.
+		volLog := 0.0
+		if volume > 0.001 {
+			volLog = math.Log2(volume)
+		}
+		ctrl = &effects.Volume{
+			Streamer: streamer,
+			Base:     2,
+			Volume:   volLog,
+			Silent:   volume <= 0.001,
+		}
 	}
 
 	seq := beep.Seq(ctrl, beep.Callback(func() {

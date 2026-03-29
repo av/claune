@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -273,16 +274,16 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 	return config.Save(*c)
 }
 
-func AutoMapSounds(dir string, c *config.ClauneConfig) error {
+func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventSoundConfig, error) {
 	if !c.AI.Enabled {
-		return fmt.Errorf("AI is disabled")
+		return nil, fmt.Errorf("AI is disabled")
 	}
 	key := c.AI.APIKey
 	if key == "" {
 		key = os.Getenv("ANTHROPIC_API_KEY")
 	}
 	if key == "" {
-		return fmt.Errorf("no ANTHROPIC_API_KEY")
+		return nil, fmt.Errorf("no ANTHROPIC_API_KEY")
 	}
 
 	model := c.AI.Model
@@ -290,23 +291,28 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) error {
 		model = "claude-3-haiku-20240307"
 	}
 
-	entries, err := os.ReadDir(dir)
+	absDir, err := filepath.Abs(dir)
 	if err != nil {
-		return fmt.Errorf("failed to read directory: %w", err)
+		return nil, fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	entries, err := os.ReadDir(absDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
 
 	var files []string
 	for _, e := range entries {
 		if !e.IsDir() {
 			name := e.Name()
-			if strings.HasSuffix(name, ".mp3") {
+			if strings.HasSuffix(strings.ToLower(name), ".mp3") || strings.HasSuffix(strings.ToLower(name), ".wav") {
 				files = append(files, name)
 			}
 		}
 	}
 
 	if len(files) == 0 {
-		return fmt.Errorf("no audio files found in %s", dir)
+		return nil, fmt.Errorf("no audio files found in %s", absDir)
 	}
 
 	sysPrompt := fmt.Sprintf(`You are an AI configuring a sound application. Map the following audio files to appropriate events based on their names.
@@ -314,7 +320,7 @@ Available events: cli:start, tool:start, tool:success, tool:error, cli:done, bui
 Available files: %s.
 Directory path: %s.
 Return ONLY a valid JSON object mapping event strings to an object with "paths" (array of full absolute paths) and "strategy" ("random" or "round_robin").
-Do not include markdown blocks. Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, strings.Join(files, ", "), dir)
+Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, strings.Join(files, ", "), absDir)
 
 	reqBody := ClaudeRequest{
 		Model: model,
@@ -333,28 +339,34 @@ Do not include markdown blocks. Example: {"tool:success": {"paths": ["/dir/yay.m
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(respBody))
 	}
 
 	respBytes, _ := io.ReadAll(resp.Body)
 	var cr ClaudeResponse
 	if err := json.Unmarshal(respBytes, &cr); err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(cr.Content) > 0 {
 		text := strings.TrimSpace(cr.Content[0].Text)
-		text = strings.TrimPrefix(text, "```json")
-		text = strings.TrimSuffix(text, "```")
+		
+		// Robust JSON extraction
+		start := strings.Index(text, "{")
+		end := strings.LastIndex(text, "}")
+		if start != -1 && end != -1 && end >= start {
+			text = text[start : end+1]
+		}
+
 		var mapping map[string]config.EventSoundConfig
 		if err := json.Unmarshal([]byte(text), &mapping); err != nil {
-			return fmt.Errorf("failed to parse AI response: %w\nResponse: %s", err, text)
+			return nil, fmt.Errorf("failed to parse AI response: %w\nResponse: %s", err, text)
 		}
 
 		if c.Sounds == nil {
@@ -364,10 +376,10 @@ Do not include markdown blocks. Example: {"tool:success": {"paths": ["/dir/yay.m
 			c.Sounds[k] = v
 		}
 
-		return config.Save(*c)
+		return mapping, config.Save(*c)
 	}
 
-	return fmt.Errorf("no response from AI")
+	return nil, fmt.Errorf("no response from AI")
 }
 
 func DiagnoseInstallFailure(err error, c config.ClauneConfig) string {

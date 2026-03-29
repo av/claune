@@ -4,10 +4,12 @@ package audio
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 
 	"github.com/gopxl/beep"
+	"github.com/gopxl/beep/effects"
 	"github.com/gopxl/beep/wav"
 )
 
@@ -19,6 +21,20 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 	cacheDir := SoundCacheDir()
 	os.MkdirAll(cacheDir, 0755)
 
+	var ctrl beep.Streamer = streamer
+	if volume != 1.0 {
+		volLog := 0.0
+		if volume > 0.001 {
+			volLog = math.Log2(volume)
+		}
+		ctrl = &effects.Volume{
+			Streamer: streamer,
+			Base:     2,
+			Volume:   volLog,
+			Silent:   volume <= 0.001,
+		}
+	}
+
 	doPlay := func() error {
 		tmpFile, err := os.CreateTemp(cacheDir, "play-*.wav")
 		if err != nil {
@@ -28,7 +44,7 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 			return fmt.Errorf("failed to create temp file: %w", err)
 		}
 
-		err = wav.Encode(tmpFile, streamer, format)
+		err = wav.Encode(tmpFile, ctrl, format)
 		tmpFile.Close()
 
 		if cleanup != nil {

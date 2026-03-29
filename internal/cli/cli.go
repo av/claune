@@ -129,10 +129,16 @@ func Run(args []string) error {
 	case "automap":
 		if len(args) > 1 {
 			dir := args[1]
-			if err := ai.AutoMapSounds(dir, &c); err != nil {
+			mapping, err := ai.AutoMapSounds(dir, &c)
+			if err != nil {
 				fmt.Fprintf(os.Stderr, "Automap failed: %v\n", err)
 			} else {
-				fmt.Println("Sounds mapped successfully")
+				fmt.Println("Sounds mapped successfully:")
+				for event, cfg := range mapping {
+					if len(cfg.Paths) > 0 {
+						fmt.Printf("  - %s mapped to: %s\n", event, cfg.Paths[0])
+					}
+				}
 			}
 		} else {
 			fmt.Println("Usage: claune automap <directory>")
