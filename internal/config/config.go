@@ -16,10 +16,10 @@ type ClauneConfig struct {
 }
 
 type AIConfig struct {
-	Enabled   bool   `json:"enabled,omitempty"`
-	Model     string `json:"model,omitempty"`
-	APIKey    string `json:"api_key,omitempty"`
-	APIURL    string `json:"api_url,omitempty"`
+	Enabled bool   `json:"enabled,omitempty"`
+	Model   string `json:"model,omitempty"`
+	APIKey  string `json:"api_key,omitempty"`
+	APIURL  string `json:"api_url,omitempty"`
 }
 
 func Load() ClauneConfig {

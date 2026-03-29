@@ -147,7 +147,7 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 		if err := json.Unmarshal([]byte(text), &updates); err != nil {
 			return err
 		}
-		
+
 		// apply updates
 		if m, ok := updates["mute"].(bool); ok {
 			c.Mute = &m
