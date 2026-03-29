@@ -12,27 +12,16 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
-import tempfile
-import re
+import numpy as np
+from worker import process_audio_task, get_openai_client, UPLOAD_DIR, DB_PATH
 
 app = FastAPI(title="Meme Sounds API")
-
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/tmp/meme_sounds")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-DB_PATH = os.path.join(UPLOAD_DIR, "sounds.db")
-
-def get_openai_client():
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return None
-    return OpenAI(api_key=api_key)
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS sounds
-                 (id TEXT PRIMARY KEY, filename TEXT, tags TEXT, duration REAL, is_safe BOOLEAN)''')
+                 (id TEXT PRIMARY KEY, filename TEXT, tags TEXT, duration REAL, is_safe BOOLEAN, embedding TEXT, url TEXT)''')
     conn.commit()
     conn.close()
 
@@ -43,141 +32,76 @@ class SoundMetadata(BaseModel):
     tags: List[str]
     duration: float
     is_safe: bool
+    url: str = ""
 
-def get_audio_duration(filepath: str) -> float:
-    cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", filepath]
-    try:
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        return float(result.stdout.strip())
-    except Exception:
-        return 0.0
+def cosine_similarity(v1, v2):
+    return float(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
 
-def validate_audio_file(filepath: str) -> bool:
-    cmd = ["ffprobe", "-v", "error", "-show_entries", "format=format_name", "-of", "default=noprint_wrappers=1:nokey=1", filepath]
-    try:
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        return bool(result.stdout.strip())
-    except Exception:
-        return False
-
-def analyze_with_ai(filepath: str):
-    tags = []
-    is_safe = True
-    transcription = ""
-
-    client = get_openai_client()
-    if not client:
-        return ["no-ai", "stub"], True
-
-    try:
-        # Whisper Transcription
-        with open(filepath, "rb") as audio_file:
-            transcript_response = client.audio.transcriptions.create(
-                model="whisper-1", 
-                file=audio_file
-            )
-        transcription = transcript_response.text
-
-        # LLM Moderation & Tagging
-        system_prompt = "You are an AI that tags meme sounds based on transcription and context. Return JSON with 'tags' (array of strings) and 'is_safe' (boolean)."
-        user_prompt = f"Transcription: '{transcription}'. Analyze this short audio clip. If it contains offensive, NSFW, or highly inappropriate content, set is_safe to false. Generate 3-5 descriptive, punchy tags."
-
-        completion = client.chat.completions.create(
-            model="gpt-4o",
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ]
-        )
-        
-        result = json.loads(completion.choices[0].message.content)
-        tags = result.get("tags", ["meme"])
-        is_safe = result.get("is_safe", True)
-    except Exception as e:
-        print(f"AI Analysis failed: {e}")
-        tags = ["error", "unprocessed"]
-        is_safe = False
-
-    return tags, is_safe
-
-def process_and_save_sound(raw_path: str, file_id: str):
-    if not validate_audio_file(raw_path):
-        os.remove(raw_path)
-        raise ValueError("Invalid audio file format")
-
-    processed_filename = f"{file_id}_processed.ogg"
-    processed_path = os.path.join(UPLOAD_DIR, processed_filename)
-    cmd = ["ffmpeg", "-y", "-i", raw_path, "-t", "1.5", "-c:a", "libvorbis", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", processed_path]
-    subprocess.run(cmd, check=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    
-    os.remove(raw_path)
-    
-    duration = get_audio_duration(processed_path)
-    
-    # AI Integration
-    tags, is_safe = analyze_with_ai(processed_path)
-    
-    if not is_safe and "error" in tags:
-        if os.path.exists(processed_path):
-            os.remove(processed_path)
-        raise RuntimeError("AI processing failed, sound rejected.")
-
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("INSERT INTO sounds VALUES (?, ?, ?, ?, ?)", 
-              (file_id, processed_filename, json.dumps(tags), duration, is_safe))
-    conn.commit()
-    conn.close()
-    
-    return SoundMetadata(id=file_id, tags=tags, duration=duration, is_safe=is_safe)
-
-@app.post("/ingest", response_model=SoundMetadata)
+@app.post("/ingest")
 async def ingest_sound(file: UploadFile = File(...)):
     file_id = str(uuid.uuid4())
     raw_path = os.path.join(UPLOAD_DIR, f"{file_id}_raw.mp3")
     with open(raw_path, "wb") as f:
         f.write(await file.read())
-    try:
-        return process_and_save_sound(raw_path, file_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        if os.path.exists(raw_path):
-            os.remove(raw_path)
-        raise HTTPException(status_code=500, detail=str(e))
+    # Send to scalable worker queue
+    process_audio_task.delay(raw_path, file_id)
+    return {"status": "processing", "id": file_id}
 
 @app.get("/search", response_model=List[SoundMetadata])
 async def search_sounds(query: str = ""):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+    
     if query:
-        # Use json_each to exactly match tags
-        c.execute("""
-            SELECT DISTINCT s.id, s.filename, s.tags, s.duration, s.is_safe 
-            FROM sounds s, json_each(s.tags) 
-            WHERE json_each.value = ? AND s.is_safe = 1
-        """, (query,))
+        client = get_openai_client()
+        query_emb = None
+        if client:
+            try:
+                emb_res = client.embeddings.create(input=query, model="text-embedding-ada-002")
+                query_emb = emb_res.data[0].embedding
+            except:
+                pass
+                
+        c.execute("SELECT id, filename, tags, duration, is_safe, embedding, url FROM sounds WHERE is_safe = 1")
+        rows = c.fetchall()
+        
+        results = []
+        for r in rows:
+            tags = json.loads(r[2])
+            emb = json.loads(r[5]) if r[5] else []
+            url = r[6] if len(r) > 6 and r[6] else ""
+            
+            score = 0.0
+            if query_emb and emb and len(emb) == len(query_emb):
+                score = cosine_similarity(query_emb, emb)
+            elif query.lower() in [t.lower() for t in tags] or any(query.lower() in t.lower() for t in tags):
+                score = 1.0
+            
+            if score > 0.7:  # Semantic similarity threshold
+                results.append((score, SoundMetadata(id=r[0], tags=tags, duration=r[3], is_safe=bool(r[4]), url=url)))
+        
+        results.sort(key=lambda x: x[0], reverse=True)
+        conn.close()
+        return [r[1] for r in results[:50]]
     else:
-        c.execute("SELECT id, filename, tags, duration, is_safe FROM sounds WHERE is_safe = 1 LIMIT 50")
-    rows = c.fetchall()
-    conn.close()
-    results = []
-    for r in rows:
-        results.append(SoundMetadata(id=r[0], tags=json.loads(r[2]), duration=r[3], is_safe=bool(r[4])))
-    return results
+        c.execute("SELECT id, filename, tags, duration, is_safe, url FROM sounds WHERE is_safe = 1 LIMIT 50")
+        rows = c.fetchall()
+        conn.close()
+        results = []
+        for r in rows:
+            url = r[5] if len(r) > 5 and r[5] else ""
+            results.append(SoundMetadata(id=r[0], tags=json.loads(r[2]), duration=r[3], is_safe=bool(r[4]), url=url))
+        return results
 
 @app.get("/play/{sound_id}")
 async def play_sound(sound_id: str):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT filename FROM sounds WHERE id=?", (sound_id,))
+    c.execute("SELECT filename, url FROM sounds WHERE id=?", (sound_id,))
     row = c.fetchone()
     conn.close()
     if row:
-        filepath = os.path.join(UPLOAD_DIR, row[0])
-        if os.path.exists(filepath):
-            return FileResponse(filepath, media_type="audio/ogg")
+        return {"url": row[1]} if row[1] else {"error": "Not uploaded yet"}
     raise HTTPException(status_code=404, detail="Sound not found")
 
 @app.get("/", response_class=HTMLResponse)
@@ -199,19 +123,19 @@ async def read_root():
         </style>
     </head>
     <body>
-        <h1>Meme Sounds Library</h1>
+        <h1>Meme Sounds Library (AI Powered)</h1>
         
         <div class="upload-form">
             <h3>Upload New Sound</h3>
             <form id="uploadForm">
                 <input type="file" id="audioFile" accept="audio/*" required>
-                <button type="submit">Upload & Process (Max 1.5s)</button>
+                <button type="submit">Upload & Process in Background</button>
             </form>
             <div id="uploadStatus" style="margin-top: 10px; color: green;"></div>
         </div>
 
         <div>
-            <input type="text" id="searchInput" placeholder="Search sounds (e.g., 'funny', 'fail')...">
+            <input type="text" id="searchInput" placeholder="Semantic search (e.g., 'doge hit', 'fail')...">
             <button onclick="searchSounds()">Search</button>
         </div>
 
@@ -226,24 +150,17 @@ async def read_root():
                 formData.append('file', file);
                 
                 const statusDiv = document.getElementById('uploadStatus');
-                statusDiv.innerText = 'Uploading and processing...';
+                statusDiv.innerText = 'Uploading to worker queue...';
                 statusDiv.style.color = 'blue';
                 
                 try {
                     const res = await fetch('/ingest', { method: 'POST', body: formData });
                     if (res.ok) {
-                        statusDiv.innerText = 'Uploaded successfully!';
+                        statusDiv.innerText = 'Queued successfully! Please wait a moment and refresh search.';
                         statusDiv.style.color = 'green';
                         fileInput.value = '';
-                        searchSounds();
-                                        } else {
-                        const errText = await res.text();
-                        let errDetail = errText;
-                        try {
-                            const errJson = JSON.parse(errText);
-                            if (errJson.detail) errDetail = errJson.detail;
-                        } catch(e) {}
-                        statusDiv.innerText = 'Upload failed: ' + errDetail;
+                    } else {
+                        statusDiv.innerText = 'Upload failed.';
                         statusDiv.style.color = 'red';
                     }
                 } catch (err) {
@@ -259,7 +176,7 @@ async def read_root():
                 
                 const resultsDiv = document.getElementById('results');
                 if (sounds.length === 0) {
-                    resultsDiv.innerHTML = '<p>No sounds found.</p>';
+                    resultsDiv.innerHTML = '<p>No sounds found. Try a different query.</p>';
                     return;
                 }
                 
@@ -269,70 +186,16 @@ async def read_root():
                             ${s.tags.map(t => `<span class="tag">${t}</span>`).join('')}
                         </div>
                         <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #555;">Duration: ${s.duration.toFixed(2)}s</p>
-                        <audio controls src="/play/${s.id}" preload="metadata"></audio>
+                        <audio controls src="${s.url}" preload="metadata"></audio>
                     </div>
                 `).join('');
             }
             
-            // Initial load
             searchSounds();
         </script>
     </body>
     </html>
     """
-
-# Automated Sourcing Pipeline
-def scraper_task():
-    # A real automated scraper fetching audio files from myinstants
-    url = "https://www.myinstants.com/en/index/us/"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    
-    time.sleep(5) # wait for server to start
-    
-    try:
-        print(f"Scraping {url}...")
-        res = requests.get(url, headers=headers, timeout=15)
-        soup = BeautifulSoup(res.text, "html.parser")
-        buttons = soup.find_all("div", class_="instant")
-        
-        count = 0
-        for b in buttons:
-            if count >= 5: # Limit for demo
-                break
-                
-            btn = b.find("button", class_="small-button")
-            if btn and btn.has_attr("onclick"):
-                onclick = btn["onclick"]
-                match = re.search(r"play\('([^']+)'", onclick)
-                if match:
-                    audio_path = match.group(1)
-                    audio_url = "https://www.myinstants.com" + audio_path
-                    
-                    file_id = str(uuid.uuid4())
-                    raw_path = os.path.join(UPLOAD_DIR, f"{file_id}_scraped.mp3")
-                    try:
-                        print(f"Downloading {audio_url}...")
-                        audio_res = requests.get(audio_url, headers=headers, stream=True, timeout=10)
-                        if audio_res.status_code == 200:
-                            with open(raw_path, 'wb') as f:
-                                for chunk in audio_res.iter_content(chunk_size=8192):
-                                    f.write(chunk)
-                            try:
-                                process_and_save_sound(raw_path, file_id)
-                                print(f"Successfully processed {audio_url}")
-                                count += 1
-                            except Exception as e:
-                                print(f"Failed to process {audio_url}: {e}")
-                    except Exception as e:
-                        print(f"Failed to download {audio_url}: {e}")
-    except Exception as e:
-        print(f"Scraping failed: {e}")
-            
-    # Then loop periodically
-    while True:
-        time.sleep(86400) # Daily scrape
-
-threading.Thread(target=scraper_task, daemon=True).start()
 
 if __name__ == "__main__":
     import uvicorn

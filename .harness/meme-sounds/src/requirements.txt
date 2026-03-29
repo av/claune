@@ -5,3 +5,7 @@ pydantic
 openai
 requests
 beautifulsoup4
+celery
+boto3
+sqlalchemy
+numpy
