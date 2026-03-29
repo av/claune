@@ -150,6 +150,9 @@ func showStatus(c config.ClauneConfig) {
 }
 
 func testSounds(c config.ClauneConfig) {
+	if c.ShouldMute() {
+		return
+	}
 	fmt.Println("Testing all sounds...")
 	for _, event := range []string{"cli:start", "tool:start", "tool:success", "tool:error", "cli:done", "build:success", "test:fail", "panic", "warn"} {
 		fmt.Printf("  %s ", event)
