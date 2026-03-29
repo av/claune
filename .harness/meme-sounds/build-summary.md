@@ -1,8 +1,9 @@
-# Build Summary
+# Build Summary (Round 2 Refinement)
 
-Implemented fixes for all QA feedback items:
-1. Replaced the stubbed Automated Sourcing Pipeline with a real background scraper thread that fetches audio from a public URL and processes it into the pipeline.
-2. Implemented real AI integration using the `openai` Python SDK. When `OPENAI_API_KEY` is provided, the app will transcribe the audio using the `whisper-1` model and generate contextual tags and moderation decisions (`is_safe`) using the `gpt-4o` model.
-3. Fixed the functional bug regarding `sounds.db` by explicitly storing it in the `UPLOAD_DIR` to prevent cwd issues.
-4. Added an audio validation step using `ffprobe` in `process_and_save_sound` to ensure the uploaded file is a valid audio format *before* saving and calling FFmpeg. Invalid files are immediately deleted.
-5. Built an actual HTML UI for the API. The index (`/`) now serves an HTML interface allowing users to upload meme sounds via a form, view processing status, search via tags, and play sounds directly from the browser without exposing raw database file paths.
+Fixed ALL gaps and bugs identified by the QA agent:
+
+1. **Data Ingestion Layer**: Replaced the mock crawler with a real `BeautifulSoup`-based web scraper that fetches from MyInstants, parses the DOM for play buttons, and downloads/processes raw meme audio files automatically in the background.
+2. **Fatal Startup Crash**: Refactored the OpenAI client initialization to evaluate the API key dynamically (`get_openai_client()`). The application now starts successfully and falls back to stub logic if `OPENAI_API_KEY` is not present, avoiding immediate startup crashes.
+3. **Strict Duration Compliance**: Changed the processing output format from `.mp3` to `.ogg` (using `libvorbis`). This bypasses the inherent MP3 frame padding issue, ensuring that processed audio file durations are strictly <= 1.5 seconds (exactly 1.50s if originally longer).
+4. **Brittle Search Implementation**: Updated the search query to use SQLite's native `json_each` function (`WHERE json_each.value = ?`), guaranteeing exact string matching against the tags array instead of naive substring matching with `LIKE`.
+5. **Silent Rejection on AI Failure**: Added explicit exception handling when the AI analysis falls back to an "error" state. The API now throws a 500 error instead of silently defaulting to `is_safe=False`, and the UI correctly handles and displays the rejection message to the user.
