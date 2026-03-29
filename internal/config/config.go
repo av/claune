@@ -2,8 +2,10 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -16,6 +18,7 @@ type ClauneConfig struct {
 	Mute      *bool                       `json:"mute,omitempty"`
 	MuteUntil *time.Time                  `json:"mute_until,omitempty"`
 	Volume    *float64                    `json:"volume,omitempty"`
+	Strategy  string                      `json:"strategy,omitempty"`
 	Sounds    map[string]EventSoundConfig `json:"sounds,omitempty"`
 	AI        AIConfig                    `json:"ai,omitempty"`
 }
@@ -36,7 +39,10 @@ func Load() (ClauneConfig, error) {
 	data, err := os.ReadFile(configPath)
 	if err == nil {
 		if err := json.Unmarshal(data, &config); err != nil {
-			return config, err
+			if strings.Contains(err.Error(), "cannot unmarshal string into Go struct field") {
+				return config, fmt.Errorf("invalid config format detected in ~/.claune.json. Sounds must now be configured as objects with 'paths' array, not strings. Please update your configuration schema: %w", err)
+			}
+			return config, fmt.Errorf("invalid configuration format in ~/.claune.json: %w", err)
 		}
 	}
 	if config.Sounds == nil {
