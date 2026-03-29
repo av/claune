@@ -22,6 +22,8 @@ var clauneSubcommands = map[string]bool{
 	"config":        true,
 	"import-circus": true,
 	"analyze-log":   true,
+	"automap":       true,
+	"analyze-resp":  true,
 }
 
 func Run(args []string) error {
@@ -99,6 +101,27 @@ func Run(args []string) error {
 		if err == nil {
 			circus.AnalyzeLogSentiment(string(logText), c, true)
 		}
+	case "automap":
+		if len(args) > 1 {
+			dir := args[1]
+			if err := ai.AutoMapSounds(dir, &c); err != nil {
+				fmt.Fprintf(os.Stderr, "Automap failed: %v\n", err)
+			} else {
+				fmt.Println("Sounds mapped successfully")
+			}
+		} else {
+			fmt.Println("Usage: claune automap <directory>")
+		}
+	case "analyze-resp":
+		respText, err := io.ReadAll(os.Stdin)
+		if err == nil {
+			event, strategy := ai.AnalyzeResponseSentiment(string(respText), c)
+			if event != "" {
+				if err := audio.PlaySoundWithStrategy(event, strategy, true, c); err != nil {
+					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -143,7 +166,9 @@ Management commands:
   play <event>  Play a sound
   test-sounds   Play all sounds to verify audio works
   config <msg>  Natural language configuration (e.g., "mute sound")
+  automap <dir> Automatically map sound files in a directory to events using AI
   import-circus <url> <file> [event]  Import a meme sound and optionally map to event
   analyze-log   Analyze log from stdin and play a sound
+  analyze-resp  Analyze AI response from stdin and optionally override sound strategy
   help          Show this help message`)
 }

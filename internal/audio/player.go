@@ -147,7 +147,7 @@ func pickSound(eventType string, sounds []string, strategy string) string {
 	return sounds[rand.Intn(len(sounds))]
 }
 
-func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
+func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking bool, c config.ClauneConfig) error {
 	if c.ShouldMute() {
 		return nil
 	}
@@ -155,10 +155,14 @@ func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
 	
 	// Check custom configured sounds first
 	if customConfig, ok := c.Sounds[eventType]; ok && len(customConfig.Paths) > 0 {
-		strategy := customConfig.Strategy
+		strategy := overrideStrategy
 		if strategy == "" {
-			strategy = "random" // default
+			strategy = customConfig.Strategy
+			if strategy == "" {
+				strategy = "random" // default
+			}
 		}
+		
 		customPath := pickSound(eventType, customConfig.Paths, strategy)
 		if customPath != "" {
 			if strings.HasPrefix(customPath, "~/") {
@@ -178,9 +182,18 @@ func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
 		return fmt.Errorf("unknown event type: %s\nValid types: %s", eventType, validEventTypes())
 	}
 	
-	soundFile := pickSound(eventType, soundFiles, "random")
+	strategy := overrideStrategy
+	if strategy == "" {
+		strategy = "random"
+	}
+	
+	soundFile := pickSound(eventType, soundFiles, strategy)
 	err := playEmbeddedSound(soundFile, volume, blocking)
 	return err
+}
+
+func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
+	return PlaySoundWithStrategy(eventType, "", blocking, c)
 }
 
 func validEventTypes() string {
