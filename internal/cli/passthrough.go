@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/everlier/claune/internal/ai"
 	"github.com/everlier/claune/internal/audio"
@@ -316,9 +315,17 @@ func runPassthrough(args []string) {
 		os.Exit(1)
 	}
 
-	os.Setenv("CLAUNE_ACTIVE", "1")
-	syscall.Exec(claudeBin, append([]string{claudeBin}, args...), os.Environ())
-
-	fmt.Fprintf(os.Stderr, "claune: failed to exec %s\n", claudeBin)
-	os.Exit(1)
+	cmd := exec.Command(claudeBin, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), "CLAUNE_ACTIVE=1")
+	
+	if err := cmd.Run(); err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			os.Exit(exitError.ExitCode())
+		}
+		fmt.Fprintf(os.Stderr, "claune: %v\n", err)
+		os.Exit(1)
+	}
 }
