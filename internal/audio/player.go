@@ -16,11 +16,13 @@ import (
 var SoundFS embed.FS
 
 var DefaultSoundMap = map[string]string{
-	"cli:start":    "fanfare.wav",
-	"tool:start":   "drumroll.wav",
-	"tool:success": "tada.wav",
-	"tool:error":   "sad-trombone.wav",
-	"cli:done":     "applause.wav",
+	"cli:start":        "fanfare.wav",
+	"tool:start":       "drumroll.wav",
+	"tool:success":     "tada.wav",
+	"tool:error":       "sad-trombone.wav",
+	"cli:done":         "applause.wav",
+	"tool:destructive": "drumroll.wav",
+	"tool:readonly":    "drumroll.wav",
 }
 
 func findAudioPlayer() (string, []string) {
@@ -134,9 +136,9 @@ func playEmbeddedSound(soundFile string, volume float64, blocking bool) error {
 	return playWAVFile(tmpPath, volume, blocking)
 }
 
-func PlaySound(eventType string, blocking bool, c config.ClauneConfig) {
+func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
 	if c.ShouldMute() {
-		return
+		return nil
 	}
 	volume := c.GetVolume()
 	if customPath, ok := c.Sounds[eventType]; ok && customPath != "" {
@@ -145,15 +147,22 @@ func PlaySound(eventType string, blocking bool, c config.ClauneConfig) {
 			customPath = filepath.Join(home, customPath[2:])
 		}
 		if info, err := os.Stat(customPath); err == nil && info.Size() > 0 {
-			playWAVFile(customPath, volume, blocking)
-			return
+			err = playWAVFile(customPath, volume, blocking)
+			if err != nil && err.Error() == "no audio player found" {
+				fmt.Fprintln(os.Stderr, "🔇 Audio unavailable: no supported audio player found (paplay, pw-play, aplay, afplay)")
+			}
+			return err
 		}
 	}
 	soundFile, ok := DefaultSoundMap[eventType]
 	if !ok {
-		return
+		return fmt.Errorf("unknown event type: %s", eventType)
 	}
-	playEmbeddedSound(soundFile, volume, blocking)
+	err := playEmbeddedSound(soundFile, volume, blocking)
+	if err != nil && err.Error() == "no audio player found" {
+		fmt.Fprintln(os.Stderr, "🔇 Audio unavailable: no supported audio player found (paplay, pw-play, aplay, afplay)")
+	}
+	return err
 }
 
 func ShellPlayCmd(wavPath string, volume float64) string {

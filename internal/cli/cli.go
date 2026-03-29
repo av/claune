@@ -31,10 +31,17 @@ func Run(args []string) error {
 	case "play":
 		if len(args) > 1 {
 			if len(args) > 3 {
-				event := ai.AnalyzeToolIntent(args[2], args[3], c)
-				audio.PlaySound(event, false, c)
+				event, err := ai.AnalyzeToolIntent(args[2], args[3], c)
+				if err != nil && c.AI.Enabled {
+					fmt.Fprintf(os.Stderr, "⚠️ AI Semantic Audio Error: %v\n", err)
+				}
+				if err := audio.PlaySound(event, false, c); err != nil {
+					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+				}
 			} else {
-				audio.PlaySound(args[1], false, c)
+				if err := audio.PlaySound(args[1], false, c); err != nil {
+					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+				}
 			}
 		}
 	case "install":
@@ -83,8 +90,11 @@ func testSounds(c config.ClauneConfig) {
 	fmt.Println("Testing all sounds...")
 	for _, event := range []string{"cli:start", "tool:start", "tool:success", "tool:error", "cli:done"} {
 		fmt.Printf("  %s ", event)
-		audio.PlaySound(event, true, c)
-		fmt.Println("OK")
+		if err := audio.PlaySound(event, true, c); err != nil {
+			fmt.Printf("FAILED: %v\n", err)
+		} else {
+			fmt.Println("OK")
+		}
 	}
 }
 

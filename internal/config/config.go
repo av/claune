@@ -8,10 +8,11 @@ import (
 )
 
 type ClauneConfig struct {
-	Mute   *bool             `json:"mute,omitempty"`
-	Volume *float64          `json:"volume,omitempty"`
-	Sounds map[string]string `json:"sounds,omitempty"`
-	AI     AIConfig          `json:"ai,omitempty"`
+	Mute      *bool             `json:"mute,omitempty"`
+	MuteUntil *time.Time        `json:"mute_until,omitempty"`
+	Volume    *float64          `json:"volume,omitempty"`
+	Sounds    map[string]string `json:"sounds,omitempty"`
+	AI        AIConfig          `json:"ai,omitempty"`
 }
 
 type AIConfig struct {
@@ -48,6 +49,9 @@ func Save(c ClauneConfig) error {
 }
 
 func (c ClauneConfig) ShouldMute() bool {
+	if c.MuteUntil != nil && time.Now().Before(*c.MuteUntil) {
+		return true
+	}
 	if c.Mute != nil {
 		return *c.Mute
 	}

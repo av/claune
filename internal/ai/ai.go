@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/everlier/claune/internal/config"
 )
@@ -29,16 +30,16 @@ type ClaudeResponse struct {
 	} `json:"content"`
 }
 
-func AnalyzeToolIntent(toolName, input string, c config.ClauneConfig) string {
+func AnalyzeToolIntent(toolName, input string, c config.ClauneConfig) (string, error) {
 	if !c.AI.Enabled {
-		return "tool:start"
+		return "tool:start", nil
 	}
 	key := c.AI.APIKey
 	if key == "" {
 		key = os.Getenv("ANTHROPIC_API_KEY")
 	}
 	if key == "" {
-		return "tool:start"
+		return "tool:start", fmt.Errorf("AI enabled but no ANTHROPIC_API_KEY found")
 	}
 
 	model := c.AI.Model
@@ -61,24 +62,32 @@ func AnalyzeToolIntent(toolName, input string, c config.ClauneConfig) string {
 	req.Header.Set("anthropic-version", "2023-06-01")
 	req.Header.Set("content-type", "application/json")
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode != 200 {
-		return "tool:start"
+	if err != nil {
+		return "tool:start", fmt.Errorf("AI request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		return "tool:start", fmt.Errorf("AI API returned status %d", resp.StatusCode)
+	}
+
 	respBytes, _ := io.ReadAll(resp.Body)
 	var cr ClaudeResponse
-	json.Unmarshal(respBytes, &cr)
+	if err := json.Unmarshal(respBytes, &cr); err != nil {
+		return "tool:start", fmt.Errorf("AI response parse failed: %w", err)
+	}
 
 	if len(cr.Content) > 0 {
 		text := strings.ToLower(strings.TrimSpace(cr.Content[0].Text))
 		if strings.Contains(text, "destructive") {
-			return "tool:start" // could return a different sound if we want
+			return "tool:destructive", nil
+		} else if strings.Contains(text, "readonly") {
+			return "tool:readonly", nil
 		}
 	}
-	return "tool:start"
+	return "tool:start", nil
 }
 
 func HandleNaturalLanguageConfig(prompt string, c *config.ClauneConfig) error {
@@ -100,7 +109,8 @@ func HandleNaturalLanguageConfig(prompt string, c *config.ClauneConfig) error {
 
 	sysPrompt := fmt.Sprintf(`You are configuring Claune, an audio tool. Current config: %+v.
 User prompt: %s
-Reply with ONLY valid JSON representing the updated configuration fields. Do not include markdown blocks. Example: {"mute": true, "volume": 0.5}`, c, prompt)
+Current time: %s
+Reply with ONLY valid JSON representing the updated configuration fields. Do not include markdown blocks. Example: {"mute": true, "mute_until": "2023-10-12T14:00:00Z", "volume": 0.5, "sounds": {"tool:start": "file.wav"}}`, c, prompt, time.Now().Format(time.RFC3339))
 
 	reqBody := ClaudeRequest{
 		Model: model,
@@ -144,6 +154,23 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 		}
 		if v, ok := updates["volume"].(float64); ok {
 			c.Volume = &v
+		}
+		if s, ok := updates["sounds"].(map[string]interface{}); ok {
+			if c.Sounds == nil {
+				c.Sounds = make(map[string]string)
+			}
+			for k, v := range s {
+				if vs, ok := v.(string); ok {
+					c.Sounds[k] = vs
+				}
+			}
+		}
+		if mu, ok := updates["mute_until"].(string); ok {
+			if t, err := time.Parse(time.RFC3339, mu); err == nil {
+				c.MuteUntil = &t
+				f := false
+				c.Mute = &f // Ensure Mute is false so MuteUntil takes precedence
+			}
 		}
 		return config.Save(*c)
 	}
