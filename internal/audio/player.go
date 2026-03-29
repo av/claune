@@ -15,18 +15,18 @@ import (
 var SoundFS embed.FS
 
 var DefaultSoundMap = map[string]string{
-	"cli:start":        "fanfare.mp3",
-	"tool:start":       "clown-horn.mp3",
-	"tool:success":     "applause.mp3",
-	"tool:error":       "sad-trombone.mp3",
-	"cli:done":         "applause.mp3",
-	"tool:destructive": "maniacal-laugh.mp3",
-	"tool:readonly":    "boing.mp3",
-	"build:success":    "slide-whistle-up.mp3",
-	"build:fail":       "slide-whistle-down.mp3",
-	"test:fail":        "sad-trombone.mp3",
-	"panic":            "maniacal-laugh.mp3",
-	"warn":             "boing.mp3",
+	"cli:start":        "cli-start.mp3",
+	"tool:start":       "tool-start.mp3",
+	"tool:success":     "success.mp3",
+	"tool:error":       "error.mp3",
+	"cli:done":         "success.mp3",
+	"tool:destructive": "boom.mp3",
+	"tool:readonly":    "bonk.mp3",
+	"build:success":    "coin.mp3",
+	"build:fail":       "oof.mp3",
+	"test:fail":        "fart.mp3",
+	"panic":            "boom.mp3",
+	"warn":             "oof.mp3",
 }
 
 func playMP3File(mp3Path string, volume float64, blocking bool) error {
@@ -143,6 +143,3 @@ func validEventTypes() string {
 	return strings.Join(keys, ", ")
 }
 
-func ShellPlayCmd(wavPath string, volume float64) string {
-	return ""
-}
