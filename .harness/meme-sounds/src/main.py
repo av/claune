@@ -13,6 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
 import tempfile
+import re
 
 app = FastAPI(title="Meme Sounds API")
 
@@ -21,7 +22,11 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 DB_PATH = os.path.join(UPLOAD_DIR, "sounds.db")
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+def get_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return None
+    return OpenAI(api_key=api_key)
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -60,7 +65,8 @@ def analyze_with_ai(filepath: str):
     is_safe = True
     transcription = ""
 
-    if not os.getenv("OPENAI_API_KEY"):
+    client = get_openai_client()
+    if not client:
         return ["no-ai", "stub"], True
 
     try:
@@ -100,9 +106,9 @@ def process_and_save_sound(raw_path: str, file_id: str):
         os.remove(raw_path)
         raise ValueError("Invalid audio file format")
 
-    processed_filename = f"{file_id}_processed.mp3"
+    processed_filename = f"{file_id}_processed.ogg"
     processed_path = os.path.join(UPLOAD_DIR, processed_filename)
-    cmd = ["ffmpeg", "-y", "-i", raw_path, "-t", "1.5", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", processed_path]
+    cmd = ["ffmpeg", "-y", "-i", raw_path, "-t", "1.5", "-c:a", "libvorbis", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", processed_path]
     subprocess.run(cmd, check=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     
     os.remove(raw_path)
@@ -112,6 +118,11 @@ def process_and_save_sound(raw_path: str, file_id: str):
     # AI Integration
     tags, is_safe = analyze_with_ai(processed_path)
     
+    if not is_safe and "error" in tags:
+        if os.path.exists(processed_path):
+            os.remove(processed_path)
+        raise RuntimeError("AI processing failed, sound rejected.")
+
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("INSERT INTO sounds VALUES (?, ?, ?, ?, ?)", 
@@ -141,9 +152,14 @@ async def search_sounds(query: str = ""):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     if query:
-        c.execute("SELECT * FROM sounds WHERE tags LIKE ? AND is_safe = 1", (f"%{query}%",))
+        # Use json_each to exactly match tags
+        c.execute("""
+            SELECT DISTINCT s.id, s.filename, s.tags, s.duration, s.is_safe 
+            FROM sounds s, json_each(s.tags) 
+            WHERE json_each.value = ? AND s.is_safe = 1
+        """, (query,))
     else:
-        c.execute("SELECT * FROM sounds WHERE is_safe = 1 LIMIT 50")
+        c.execute("SELECT id, filename, tags, duration, is_safe FROM sounds WHERE is_safe = 1 LIMIT 50")
     rows = c.fetchall()
     conn.close()
     results = []
@@ -161,7 +177,7 @@ async def play_sound(sound_id: str):
     if row:
         filepath = os.path.join(UPLOAD_DIR, row[0])
         if os.path.exists(filepath):
-            return FileResponse(filepath, media_type="audio/mpeg")
+            return FileResponse(filepath, media_type="audio/ogg")
     raise HTTPException(status_code=404, detail="Sound not found")
 
 @app.get("/", response_class=HTMLResponse)
@@ -220,9 +236,14 @@ async def read_root():
                         statusDiv.style.color = 'green';
                         fileInput.value = '';
                         searchSounds();
-                    } else {
+                                        } else {
                         const errText = await res.text();
-                        statusDiv.innerText = 'Upload failed: ' + errText;
+                        let errDetail = errText;
+                        try {
+                            const errJson = JSON.parse(errText);
+                            if (errJson.detail) errDetail = errJson.detail;
+                        } catch(e) {}
+                        statusDiv.innerText = 'Upload failed: ' + errDetail;
                         statusDiv.style.color = 'red';
                     }
                 } catch (err) {
@@ -262,32 +283,50 @@ async def read_root():
 
 # Automated Sourcing Pipeline
 def scraper_task():
-    # A real automated scraper fetching audio files from public domain/creative commons sites
-    # For demonstration, we simulate scraping a public API or website
-    sources = [
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-    ]
+    # A real automated scraper fetching audio files from myinstants
+    url = "https://www.myinstants.com/en/index/us/"
+    headers = {"User-Agent": "Mozilla/5.0"}
     
-    time.sleep(10) # wait for server to start
+    time.sleep(5) # wait for server to start
     
-    for url in sources:
-        try:
-            print(f"Scraping {url}...")
-            response = requests.get(url, stream=True, timeout=10)
-            if response.status_code == 200:
-                file_id = str(uuid.uuid4())
-                raw_path = os.path.join(UPLOAD_DIR, f"{file_id}_scraped.mp3")
-                with open(raw_path, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
+    try:
+        print(f"Scraping {url}...")
+        res = requests.get(url, headers=headers, timeout=15)
+        soup = BeautifulSoup(res.text, "html.parser")
+        buttons = soup.find_all("div", class_="instant")
+        
+        count = 0
+        for b in buttons:
+            if count >= 5: # Limit for demo
+                break
                 
-                try:
-                    process_and_save_sound(raw_path, file_id)
-                    print(f"Successfully scraped and processed {url}")
-                except Exception as e:
-                    print(f"Failed to process scraped file: {e}")
-        except Exception as e:
-            print(f"Scraping failed for {url}: {e}")
+            btn = b.find("button", class_="small-button")
+            if btn and btn.has_attr("onclick"):
+                onclick = btn["onclick"]
+                match = re.search(r"play\('([^']+)'", onclick)
+                if match:
+                    audio_path = match.group(1)
+                    audio_url = "https://www.myinstants.com" + audio_path
+                    
+                    file_id = str(uuid.uuid4())
+                    raw_path = os.path.join(UPLOAD_DIR, f"{file_id}_scraped.mp3")
+                    try:
+                        print(f"Downloading {audio_url}...")
+                        audio_res = requests.get(audio_url, headers=headers, stream=True, timeout=10)
+                        if audio_res.status_code == 200:
+                            with open(raw_path, 'wb') as f:
+                                for chunk in audio_res.iter_content(chunk_size=8192):
+                                    f.write(chunk)
+                            try:
+                                process_and_save_sound(raw_path, file_id)
+                                print(f"Successfully processed {audio_url}")
+                                count += 1
+                            except Exception as e:
+                                print(f"Failed to process {audio_url}: {e}")
+                    except Exception as e:
+                        print(f"Failed to download {audio_url}: {e}")
+    except Exception as e:
+        print(f"Scraping failed: {e}")
             
     # Then loop periodically
     while True:
