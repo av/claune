@@ -83,7 +83,7 @@ func Run(args []string) error {
 	case "analyze-log":
 		logText, err := io.ReadAll(os.Stdin)
 		if err == nil {
-			circus.AnalyzeLogSentiment(string(logText), c)
+			circus.AnalyzeLogSentiment(string(logText), c, true)
 		}
 	}
 	return nil

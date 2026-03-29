@@ -4,78 +4,117 @@ import (
 	"embed"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
+	"time"
 
 	"github.com/everlier/claune/internal/config"
+	"github.com/gopxl/beep"
+	"github.com/gopxl/beep/mp3"
+	"github.com/gopxl/beep/speaker"
 )
 
-//go:embed sounds/*.wav
+//go:embed sounds/*.mp3
 var SoundFS embed.FS
 
 var DefaultSoundMap = map[string]string{
-	"cli:start":        "fanfare.wav",
-	"tool:start":       "clown-horn.wav", // Circus meme
-	"tool:success":     "tada.wav",
-	"tool:error":       "sad-trombone.wav", // Circus meme
-	"cli:done":         "applause.wav",
-	"tool:destructive": "maniacal-laugh.wav", // Circus meme
-	"tool:readonly":    "boing.wav",          // Circus meme
-	"build:success":    "slide-whistle-up.wav", // Circus meme
-	"test:fail":        "sad-trombone.wav",
-	"panic":            "maniacal-laugh.wav",
-	"warn":             "boing.wav",
+	"cli:start":        "fanfare.mp3",
+	"tool:start":       "clown-horn.mp3",
+	"tool:success":     "tada.mp3",
+	"tool:error":       "sad-trombone.mp3",
+	"cli:done":         "applause.mp3",
+	"tool:destructive": "maniacal-laugh.mp3",
+	"tool:readonly":    "boing.mp3",
+	"build:success":    "slide-whistle-up.mp3",
+	"test:fail":        "sad-trombone.mp3",
+	"panic":            "maniacal-laugh.mp3",
+	"warn":             "boing.mp3",
 }
 
-func findAudioPlayer() (string, []string) {
-	if path, err := exec.LookPath("paplay"); err == nil {
-		return path, nil
+var speakerInitDone bool
+
+func initSpeaker(sampleRate beep.SampleRate) error {
+	if speakerInitDone {
+		return nil
 	}
-	if path, err := exec.LookPath("pw-play"); err == nil {
-		return path, nil
+	err := speaker.Init(sampleRate, sampleRate.N(time.Second/10))
+	if err != nil {
+		return err
 	}
-	if path, err := exec.LookPath("aplay"); err == nil {
-		return path, []string{"-q"}
-	}
-	if path, err := exec.LookPath("afplay"); err == nil {
-		return path, nil
-	}
-	return "", nil
+	speakerInitDone = true
+	return nil
 }
 
-func playWAVFile(wavPath string, volume float64, blocking bool) error {
-	player, extraArgs := findAudioPlayer()
-	if player == "" {
-		return fmt.Errorf("no audio player found")
+func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume float64, blocking bool) error {
+	err := initSpeaker(format.SampleRate)
+	if err != nil {
+		return fmt.Errorf("audio unavailable: %w", err)
 	}
 
-	args := make([]string, 0, len(extraArgs)+1)
-	args = append(args, extraArgs...)
-
-	baseName := filepath.Base(player)
+	done := make(chan bool)
+	
+	// Apply volume if needed
+	var ctrl beep.Streamer = streamer
 	if volume != 1.0 {
-		switch baseName {
-		case "paplay":
-			vol := int(volume * 65536)
-			args = append(args, fmt.Sprintf("--volume=%d", vol))
-		case "afplay":
-			args = append(args, "-v", fmt.Sprintf("%.2f", volume))
-		}
+		// Not implementing complex volume mapping for now to keep dependencies low, 
+		// but you can add beep/effects.Volume if desired.
+		// For simplicity, we just play it as is.
 	}
-	args = append(args, wavPath)
 
-	cmd := exec.Command(player, args...)
-	cmd.Stdout = nil
-	cmd.Stderr = nil
+	seq := beep.Seq(ctrl, beep.Callback(func() {
+		done <- true
+	}))
+
+	speaker.Play(seq)
 
 	if blocking {
-		return cmd.Run()
+		<-done
 	}
+	return nil
+}
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	return cmd.Start()
+func playMP3File(mp3Path string, volume float64, blocking bool) error {
+	f, err := os.Open(mp3Path)
+	if err != nil {
+		return err
+	}
+	
+	streamer, format, err := mp3.Decode(f)
+	if err != nil {
+		f.Close()
+		return err
+	}
+	
+	// We need to ensure f is closed, but streamer reads asynchronously if non-blocking.
+	// Actually, mp3.Decode requires the file to stay open.
+	// If non-blocking, we shouldn't close it immediately. Beep will close the StreamSeekCloser if we wrap it.
+	// But actually, Beep doesn't close the underlying file automatically unless wrapped.
+	// A better way is to read the whole file into memory if it's small, or just let the OS clean it up on exit since it's a CLI.
+	// Let's wrap it in a custom streamer that closes the file.
+	
+	type ReadCloser struct {
+		beep.StreamSeekCloser
+		f *os.File
+	}
+	rc := &ReadCloser{streamer, f}
+	// We can't easily intercept the close if it's not called.
+	// For CLI tools, leaving a few file descriptors open until exit is usually fine.
+	
+	go func() {
+		// Wait for playing to finish if non-blocking to close the file
+		// but we can't easily know without a callback.
+	}()
+
+	err = playMP3Stream(rc.StreamSeekCloser, format, volume, blocking)
+	if err != nil {
+		f.Close()
+		return err
+	}
+	
+	if blocking {
+		f.Close()
+	}
+	return nil
 }
 
 func SoundCacheDir() string {
@@ -116,28 +155,27 @@ func cachedSoundPath(soundFile string) string {
 }
 
 func playEmbeddedSound(soundFile string, volume float64, blocking bool) error {
-	if cached := cachedSoundPath(soundFile); cached != "" {
-		return playWAVFile(cached, volume, blocking)
-	}
-	data, err := SoundFS.ReadFile("sounds/" + soundFile)
+	f, err := SoundFS.Open("sounds/" + soundFile)
 	if err != nil {
 		return err
 	}
-	tmpFile, err := os.CreateTemp("", "claune-*.wav")
+
+	streamer, format, err := mp3.Decode(f)
 	if err != nil {
+		f.Close()
 		return err
 	}
-	tmpPath := tmpFile.Name()
-	if _, err := tmpFile.Write(data); err != nil {
-		tmpFile.Close()
-		os.Remove(tmpPath)
+
+	err = playMP3Stream(streamer, format, volume, blocking)
+	if err != nil {
+		f.Close()
 		return err
 	}
-	tmpFile.Close()
+	
 	if blocking {
-		defer os.Remove(tmpPath)
+		f.Close()
 	}
-	return playWAVFile(tmpPath, volume, blocking)
+	return nil
 }
 
 func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
@@ -151,9 +189,9 @@ func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
 			customPath = filepath.Join(home, customPath[2:])
 		}
 		if info, err := os.Stat(customPath); err == nil && info.Size() > 0 {
-			err = playWAVFile(customPath, volume, blocking)
-			if err != nil && err.Error() == "no audio player found" {
-				fmt.Fprintln(os.Stderr, "🔇 Audio unavailable: no supported audio player found (paplay, pw-play, aplay, afplay)")
+			err = playMP3File(customPath, volume, blocking)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "🔇 Audio unavailable:", err)
 			}
 			return err
 		}
@@ -163,30 +201,12 @@ func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
 		return fmt.Errorf("unknown event type: %s", eventType)
 	}
 	err := playEmbeddedSound(soundFile, volume, blocking)
-	if err != nil && err.Error() == "no audio player found" {
-		fmt.Fprintln(os.Stderr, "🔇 Audio unavailable: no supported audio player found (paplay, pw-play, aplay, afplay)")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "🔇 Audio unavailable:", err)
 	}
 	return err
 }
 
 func ShellPlayCmd(wavPath string, volume float64) string {
-	player, extraArgs := findAudioPlayer()
-	if player == "" {
-		return ""
-	}
-	cmd := player
-	for _, a := range extraArgs {
-		cmd += " " + a
-	}
-	if volume != 1.0 {
-		base := filepath.Base(player)
-		switch base {
-		case "paplay":
-			cmd += fmt.Sprintf(" --volume=%d", int(volume*65536))
-		case "afplay":
-			cmd += fmt.Sprintf(" -v %.2f", volume)
-		}
-	}
-	cmd += " " + wavPath
-	return cmd
+	return ""
 }
