@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/everlier/claune/internal/ai"
 	"github.com/everlier/claune/internal/audio"
@@ -76,9 +77,22 @@ func Run(args []string) error {
 		if len(args) > 2 {
 			if err := circus.ImportMemeSound(args[1], args[2]); err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			} else if len(args) > 3 {
+				event := args[3]
+				if c.Sounds == nil {
+					c.Sounds = make(map[string]string)
+				}
+				// Use the cache dir path for the imported sound
+				cachedPath := filepath.Join(audio.SoundCacheDir(), args[2])
+				c.Sounds[event] = cachedPath
+				if err := config.Save(c); err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to update config: %v\n", err)
+				} else {
+					fmt.Printf("Mapped %s to event %s\n", args[2], event)
+				}
 			}
 		} else {
-			fmt.Println("Usage: claune import-circus <url> <filename>")
+			fmt.Println("Usage: claune import-circus <url> <filename> [event]")
 		}
 	case "analyze-log":
 		logText, err := io.ReadAll(os.Stdin)
@@ -129,7 +143,7 @@ Management commands:
   play <event>  Play a sound
   test-sounds   Play all sounds to verify audio works
   config <msg>  Natural language configuration (e.g., "mute sound")
-  import-circus <url> <file>  Import a meme sound
+  import-circus <url> <file> [event]  Import a meme sound and optionally map to event
   analyze-log   Analyze log from stdin and play a sound
   help          Show this help message`)
 }

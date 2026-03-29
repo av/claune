@@ -20,7 +20,7 @@ var SoundFS embed.FS
 var DefaultSoundMap = map[string]string{
 	"cli:start":        "fanfare.mp3",
 	"tool:start":       "clown-horn.mp3",
-	"tool:success":     "tada.mp3",
+	"tool:success":     "applause.mp3",
 	"tool:error":       "sad-trombone.mp3",
 	"cli:done":         "applause.mp3",
 	"tool:destructive": "maniacal-laugh.mp3",
@@ -45,9 +45,12 @@ func initSpeaker(sampleRate beep.SampleRate) error {
 	return nil
 }
 
-func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume float64, blocking bool) error {
+func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume float64, blocking bool, cleanup func()) error {
 	err := initSpeaker(format.SampleRate)
 	if err != nil {
+		if cleanup != nil {
+			cleanup()
+		}
 		return fmt.Errorf("audio unavailable: %w", err)
 	}
 
@@ -62,6 +65,9 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 	}
 
 	seq := beep.Seq(ctrl, beep.Callback(func() {
+		if cleanup != nil {
+			cleanup()
+		}
 		done <- true
 	}))
 
@@ -85,35 +91,14 @@ func playMP3File(mp3Path string, volume float64, blocking bool) error {
 		return err
 	}
 	
-	// We need to ensure f is closed, but streamer reads asynchronously if non-blocking.
-	// Actually, mp3.Decode requires the file to stay open.
-	// If non-blocking, we shouldn't close it immediately. Beep will close the StreamSeekCloser if we wrap it.
-	// But actually, Beep doesn't close the underlying file automatically unless wrapped.
-	// A better way is to read the whole file into memory if it's small, or just let the OS clean it up on exit since it's a CLI.
-	// Let's wrap it in a custom streamer that closes the file.
-	
-	type ReadCloser struct {
-		beep.StreamSeekCloser
-		f *os.File
-	}
-	rc := &ReadCloser{streamer, f}
-	// We can't easily intercept the close if it's not called.
-	// For CLI tools, leaving a few file descriptors open until exit is usually fine.
-	
-	go func() {
-		// Wait for playing to finish if non-blocking to close the file
-		// but we can't easily know without a callback.
-	}()
-
-	err = playMP3Stream(rc.StreamSeekCloser, format, volume, blocking)
-	if err != nil {
+	err = playMP3Stream(streamer, format, volume, blocking, func() {
+		streamer.Close()
 		f.Close()
+	})
+	if err != nil {
 		return err
 	}
 	
-	if blocking {
-		f.Close()
-	}
 	return nil
 }
 
@@ -166,15 +151,14 @@ func playEmbeddedSound(soundFile string, volume float64, blocking bool) error {
 		return err
 	}
 
-	err = playMP3Stream(streamer, format, volume, blocking)
-	if err != nil {
+	err = playMP3Stream(streamer, format, volume, blocking, func() {
+		streamer.Close()
 		f.Close()
+	})
+	if err != nil {
 		return err
 	}
 	
-	if blocking {
-		f.Close()
-	}
 	return nil
 }
 
