@@ -1,3 +1,3 @@
-module claune
+module github.com/everlier/claune
 
-go 1.24.1
+go 1.21

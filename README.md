@@ -25,31 +25,36 @@ Installs to `~/.local/bin/claune` by default. Override with `PREFIX=/usr/local m
 
 ## Usage
 
-### Activate
+### Passthrough mode (recommended)
+
+Use `claune` as a drop-in replacement for `claude`:
 
 ```
-claune install
+claune                     # Start Claude Code interactively with sounds
+claune -p "explain this"   # Pass any arguments through to Claude Code
+claune --model sonnet      # All claude flags work transparently
 ```
 
-Adds hook entries to `~/.claude/settings.json`.
+Hooks are auto-installed on first run. Sound effects only play in sessions started via `claune` — running `claude` directly is unaffected.
 
-### Deactivate
+### Manual hook management
 
 ```
-claune uninstall
+claune install    # Add hooks to ~/.claude/settings.json
+claune uninstall  # Remove hooks from ~/.claude/settings.json
 ```
-
-Removes claune hook entries from `~/.claude/settings.json`.
 
 ## Commands
 
 | Command | Description |
 |---|---|
+| `claune [args...]` | Run Claude Code with sound effects (passthrough) |
 | `install` | Add sound hooks to Claude Code settings |
 | `uninstall` | Remove sound hooks from Claude Code settings |
 | `status` | Show hook and audio status |
 | `test-sounds` | Play all sounds to verify audio |
 | `play <event>` | Play a sound for the given event type |
+| `help` | Show help message |
 
 Event types: `cli:start`, `tool:start`, `tool:success`, `tool:error`, `cli:done`.
 

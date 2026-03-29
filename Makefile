@@ -3,7 +3,7 @@ PREFIX ?= $(HOME)/.local
 .PHONY: build test install uninstall clean
 
 build:
-	go build -o claune .
+	go build -o claune ./cmd/claune
 
 test:
 	go test ./...

@@ -1,0 +1,12 @@
+{"version": 2, "width": 80, "height": 24, "timestamp": 1774743675, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.002129, "o", "\r\n"]
+[0.002443, "o", "=== CLAUNE SOUND PROOF ===\r\nWatch: sound fires BEFORE claude splash screen appears\r\n\r\n"]
+[0.002583, "o", "[01:21:15.383] Launching claune...\r\n\r\n"]
+[0.00485, "o", "\r\n"]
+[0.004858, "o", "╭─────────────────────────────────────────╮\r\n"]
+[0.004919, "o", "│        Claude Code (mock splash)        │\r\n│                                         │\r\n│  ████████████  Loading...               │\r\n╰─────────────────────────────────────────╯\r\n\r\nCLAUNE_ACTIVE=1\r\n"]
+[0.506125, "o", "\r\n"]
+[0.506964, "o", "[01:21:15.887] Claude exited\r\n\r\n"]
+[0.527326, "o", "PROOF: paplay is STILL RUNNING - sound plays independently of claude!\r\n"]
+[0.545427, "o", "3292918 /usr/bin/paplay /home/everlier/.cache/claune/fanfare.wav\r\n"]
+[0.545626, "o", "\r\n=== TEST COMPLETE ===\r\n"]
