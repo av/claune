@@ -90,16 +90,16 @@ func AnalyzeToolIntent(toolName, input string, c config.ClauneConfig) (string, e
 	return "tool:start", nil
 }
 
-func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (string, string) {
+func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (string, string, error) {
 	if !c.AI.Enabled {
-		return "", ""
+		return "", "", nil
 	}
 	key := c.AI.APIKey
 	if key == "" {
 		key = os.Getenv("ANTHROPIC_API_KEY")
 	}
 	if key == "" {
-		return "", ""
+		return "", "", nil
 	}
 
 	model := c.AI.Model
@@ -125,23 +125,26 @@ func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (strin
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", ""
+		return "", "", err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 200 {
-		respBytes, _ := io.ReadAll(resp.Body)
-		var cr ClaudeResponse
-		if json.Unmarshal(respBytes, &cr) == nil && len(cr.Content) > 0 {
-			text := strings.ToUpper(strings.TrimSpace(cr.Content[0].Text))
-			if strings.Contains(text, "URGENT") {
-				return "panic", "random" // override to panic with random strategy
-			} else if strings.Contains(text, "SUCCESS") {
-				return "tool:success", "random"
-			}
+	if resp.StatusCode != 200 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return "", "", fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	respBytes, _ := io.ReadAll(resp.Body)
+	var cr ClaudeResponse
+	if json.Unmarshal(respBytes, &cr) == nil && len(cr.Content) > 0 {
+		text := strings.ToUpper(strings.TrimSpace(cr.Content[0].Text))
+		if strings.Contains(text, "URGENT") {
+			return "panic", "random", nil // override to panic with random strategy
+		} else if strings.Contains(text, "SUCCESS") {
+			return "tool:success", "random", nil
 		}
 	}
-	return "", ""
+	return "", "", nil
 }
 
 func HandleNaturalLanguageConfig(prompt string, c *config.ClauneConfig) error {
@@ -186,6 +189,11 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(respBody))
+	}
 
 	respBytes, _ := io.ReadAll(resp.Body)
 	var cr ClaudeResponse
@@ -270,7 +278,7 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) error {
 	for _, e := range entries {
 		if !e.IsDir() {
 			name := e.Name()
-			if strings.HasSuffix(name, ".mp3") || strings.HasSuffix(name, ".wav") || strings.HasSuffix(name, ".ogg") {
+			if strings.HasSuffix(name, ".mp3") {
 				files = append(files, name)
 			}
 		}
@@ -307,6 +315,11 @@ Do not include markdown blocks. Example: {"tool:success": {"paths": ["/dir/yay.m
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(respBody))
+	}
 
 	respBytes, _ := io.ReadAll(resp.Body)
 	var cr ClaudeResponse

@@ -172,6 +172,8 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 			if info, err := os.Stat(customPath); err == nil && info.Size() > 0 {
 				err = playMP3File(customPath, volume, blocking)
 				return err
+			} else {
+				fmt.Fprintf(os.Stderr, "Warning: invalid custom sound path %q for event %q: %v\n", customPath, eventType, err)
 			}
 		}
 	}

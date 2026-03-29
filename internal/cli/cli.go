@@ -122,8 +122,10 @@ func Run(args []string) error {
 	case "analyze-resp":
 		respText, err := io.ReadAll(os.Stdin)
 		if err == nil {
-			event, strategy := ai.AnalyzeResponseSentiment(string(respText), c)
-			if event != "" {
+			event, strategy, err := ai.AnalyzeResponseSentiment(string(respText), c)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Analyze response sentiment failed: %v\n", err)
+			} else if event != "" {
 				if err := audio.PlaySoundWithStrategy(event, strategy, true, c); err != nil {
 					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
 				}
