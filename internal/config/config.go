@@ -8,11 +8,12 @@ import (
 )
 
 type ClauneConfig struct {
-	Mute      *bool             `json:"mute,omitempty"`
-	MuteUntil *time.Time        `json:"mute_until,omitempty"`
-	Volume    *float64          `json:"volume,omitempty"`
-	Sounds    map[string]string `json:"sounds,omitempty"`
-	AI        AIConfig          `json:"ai,omitempty"`
+	Mute          *bool               `json:"mute,omitempty"`
+	MuteUntil     *time.Time          `json:"mute_until,omitempty"`
+	Volume        *float64            `json:"volume,omitempty"`
+	Sounds        map[string][]string `json:"sounds,omitempty"`
+	SoundStrategy string              `json:"sound_strategy,omitempty"` // "random" or "round_robin"
+	AI            AIConfig            `json:"ai,omitempty"`
 }
 
 type AIConfig struct {
@@ -24,16 +25,39 @@ type AIConfig struct {
 
 func Load() ClauneConfig {
 	config := ClauneConfig{
-		Sounds: make(map[string]string),
+		Sounds: make(map[string][]string),
 	}
 	home, _ := os.UserHomeDir()
 	configPath := filepath.Join(home, ".claune.json")
 	data, err := os.ReadFile(configPath)
 	if err == nil {
-		json.Unmarshal(data, &config)
+		// Read raw map first to handle backward compat of string vs []string
+		var raw map[string]interface{}
+		if err := json.Unmarshal(data, &raw); err == nil {
+			// Basic parsing
+			json.Unmarshal(data, &config) // this gets everything except properly handling old 'sounds'
+			
+			if soundsRaw, ok := raw["sounds"].(map[string]interface{}); ok {
+				config.Sounds = make(map[string][]string)
+				for k, v := range soundsRaw {
+					if str, ok := v.(string); ok {
+						config.Sounds[k] = []string{str}
+					} else if arr, ok := v.([]interface{}); ok {
+						for _, item := range arr {
+							if str, ok := item.(string); ok {
+								config.Sounds[k] = append(config.Sounds[k], str)
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 	if config.Sounds == nil {
-		config.Sounds = make(map[string]string)
+		config.Sounds = make(map[string][]string)
+	}
+	if config.SoundStrategy == "" {
+		config.SoundStrategy = "random"
 	}
 	return config
 }

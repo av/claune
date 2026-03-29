@@ -134,7 +134,7 @@ func clauneHookEntries() map[string][]HookEntry {
 			Matcher: "",
 			Hooks: []Hook{{
 				Type:    "command",
-				Command: directHookCmd(filepath.Join(cacheDir, audio.DefaultSoundMap["cli:start"]), "cli:start"),
+				Command: directHookCmd(filepath.Join(cacheDir, audio.DefaultSoundMap["cli:start"][0]), "cli:start"),
 				Timeout: 5,
 			}},
 		}},
@@ -142,7 +142,7 @@ func clauneHookEntries() map[string][]HookEntry {
 			Matcher: ".*",
 			Hooks: []Hook{{
 				Type:    "command",
-				Command: directHookCmd(filepath.Join(cacheDir, audio.DefaultSoundMap["tool:start"]), "tool:start"),
+				Command: directHookCmd(filepath.Join(cacheDir, audio.DefaultSoundMap["tool:start"][0]), "tool:start"),
 				Timeout: 5,
 			}},
 		}},
@@ -150,7 +150,7 @@ func clauneHookEntries() map[string][]HookEntry {
 			Matcher: ".*",
 			Hooks: []Hook{{
 				Type:    "command",
-				Command: directHookCmd(filepath.Join(cacheDir, audio.DefaultSoundMap["tool:success"]), "tool:success"),
+				Command: directHookCmd(filepath.Join(cacheDir, audio.DefaultSoundMap["tool:success"][0]), "tool:success"),
 				Timeout: 5,
 			}},
 		}},
@@ -158,7 +158,7 @@ func clauneHookEntries() map[string][]HookEntry {
 			Matcher: ".*",
 			Hooks: []Hook{{
 				Type:    "command",
-				Command: directHookCmd(filepath.Join(cacheDir, audio.DefaultSoundMap["tool:error"]), "tool:error"),
+				Command: directHookCmd(filepath.Join(cacheDir, audio.DefaultSoundMap["tool:error"][0]), "tool:error"),
 				Timeout: 5,
 			}},
 		}},
@@ -166,7 +166,7 @@ func clauneHookEntries() map[string][]HookEntry {
 			Matcher: "",
 			Hooks: []Hook{{
 				Type:    "command",
-				Command: directHookCmd(filepath.Join(cacheDir, audio.DefaultSoundMap["cli:done"]), "cli:done"),
+				Command: directHookCmd(filepath.Join(cacheDir, audio.DefaultSoundMap["cli:done"][0]), "cli:done"),
 				Timeout: 5,
 			}},
 		}},
@@ -264,29 +264,11 @@ func hooksInstalled() bool {
 	return false
 }
 
-func playViaShell(event string, c config.ClauneConfig) {
-	if c.ShouldMute() {
-		return
-	}
-	soundFile, ok := audio.DefaultSoundMap[event]
-	if !ok {
-		return
-	}
-	cached := filepath.Join(audio.SoundCacheDir(), soundFile)
-	if _, err := os.Stat(cached); err != nil {
-		return
-	}
-	cmd := audio.ShellPlayCmd(cached, c.GetVolume())
-	if cmd == "" {
-		return
-	}
-	exec.Command("bash", "-c", cmd+" &").Run()
-}
 
 func runPassthrough(args []string) {
 	audio.EnsureSoundCache()
 	c := config.Load()
-	playViaShell("cli:start", c)
+	audio.PlaySound("cli:start", false, c)
 
 	if !hooksInstalled() {
 		if err := installHooks(); err != nil {

@@ -40,11 +40,11 @@ func Run(args []string) error {
 				if err != nil && c.AI.Enabled {
 					fmt.Fprintf(os.Stderr, "⚠️ AI Semantic Audio Error: %v\n", err)
 				}
-				if err := audio.PlaySound(event, false, c); err != nil {
+				if err := audio.PlaySound(event, true, c); err != nil {
 					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
 				}
 			} else {
-				if err := audio.PlaySound(args[1], false, c); err != nil {
+				if err := audio.PlaySound(args[1], true, c); err != nil {
 					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
 				}
 			}
@@ -80,11 +80,11 @@ func Run(args []string) error {
 			} else if len(args) > 3 {
 				event := args[3]
 				if c.Sounds == nil {
-					c.Sounds = make(map[string]string)
+					c.Sounds = make(map[string][]string)
 				}
 				// Use the cache dir path for the imported sound
 				cachedPath := filepath.Join(audio.SoundCacheDir(), args[2])
-				c.Sounds[event] = cachedPath
+				c.Sounds[event] = []string{cachedPath}
 				if err := config.Save(c); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to update config: %v\n", err)
 				} else {

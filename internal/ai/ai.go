@@ -110,7 +110,7 @@ func HandleNaturalLanguageConfig(prompt string, c *config.ClauneConfig) error {
 	sysPrompt := fmt.Sprintf(`You are configuring Claune, an audio tool. Current config: %+v.
 User prompt: %s
 Current time: %s
-Reply with ONLY valid JSON representing the updated configuration fields. Do not include markdown blocks. Example: {"mute": true, "mute_until": "2023-10-12T14:00:00Z", "volume": 0.5, "sounds": {"tool:start": "file.wav"}}`, c, prompt, time.Now().Format(time.RFC3339))
+Reply with ONLY valid JSON representing the updated configuration fields. Do not include markdown blocks. Example: {"mute": true, "mute_until": "2023-10-12T14:00:00Z", "volume": 0.5, "sounds": {"tool:start": ["file.wav"]}}`, c, prompt, time.Now().Format(time.RFC3339))
 
 	reqBody := ClaudeRequest{
 		Model: model,
@@ -157,11 +157,11 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 		}
 		if s, ok := updates["sounds"].(map[string]interface{}); ok {
 			if c.Sounds == nil {
-				c.Sounds = make(map[string]string)
+				c.Sounds = make(map[string][]string)
 			}
 			for k, v := range s {
 				if vs, ok := v.(string); ok {
-					c.Sounds[k] = vs
+					c.Sounds[k] = []string{vs}
 				}
 			}
 		}

@@ -3,9 +3,12 @@ package audio
 import (
 	"embed"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/everlier/claune/internal/config"
 	"github.com/gopxl/beep/mp3"
@@ -14,19 +17,28 @@ import (
 //go:embed sounds/*.mp3
 var SoundFS embed.FS
 
-var DefaultSoundMap = map[string]string{
-	"cli:start":        "cli-start.mp3",
-	"tool:start":       "tool-start.mp3",
-	"tool:success":     "success.mp3",
-	"tool:error":       "error.mp3",
-	"cli:done":         "success.mp3",
-	"tool:destructive": "boom.mp3",
-	"tool:readonly":    "bonk.mp3",
-	"build:success":    "coin.mp3",
-	"build:fail":       "oof.mp3",
-	"test:fail":        "fart.mp3",
-	"panic":            "boom.mp3",
-	"warn":             "oof.mp3",
+var DefaultSoundMap = map[string][]string{
+	"cli:start":        {"cli-start.mp3"},
+	"tool:start":       {"tool-start.mp3"},
+	"tool:success":     {"minecraft-click.mp3", "anime-wow.mp3", "yippee.mp3"},
+	"tool:error":       {"error.mp3"},
+	"cli:done":         {"success.mp3"},
+	"tool:destructive": {"boom.mp3"},
+	"tool:readonly":    {"bonk.mp3"},
+	"build:success":    {"coin.mp3"},
+	"build:fail":       {"oof.mp3"},
+	"test:fail":        {"fart.mp3"},
+	"panic":            {"boom.mp3"},
+	"warn":             {"oof.mp3"},
+}
+
+var (
+	rrMutex sync.Mutex
+	rrIndex = make(map[string]int)
+)
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
 
 func playMP3File(mp3Path string, volume float64, blocking bool) error {
@@ -65,17 +77,19 @@ func EnsureSoundCache() error {
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return err
 	}
-	for _, file := range DefaultSoundMap {
-		dest := filepath.Join(cacheDir, file)
-		data, err := SoundFS.ReadFile("sounds/" + file)
-		if err != nil {
-			return err
-		}
-		if info, err := os.Stat(dest); err == nil && info.Size() == int64(len(data)) {
-			continue
-		}
-		if err := os.WriteFile(dest, data, 0644); err != nil {
-			return err
+	for _, files := range DefaultSoundMap {
+		for _, file := range files {
+			dest := filepath.Join(cacheDir, file)
+			data, err := SoundFS.ReadFile("sounds/" + file)
+			if err != nil {
+				return err
+			}
+			if info, err := os.Stat(dest); err == nil && info.Size() == int64(len(data)) {
+				continue
+			}
+			if err := os.WriteFile(dest, data, 0644); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -112,25 +126,55 @@ func playEmbeddedSound(soundFile string, volume float64, blocking bool) error {
 	return nil
 }
 
+func pickSound(eventType string, sounds []string, strategy string) string {
+	if len(sounds) == 0 {
+		return ""
+	}
+	if len(sounds) == 1 {
+		return sounds[0]
+	}
+
+	if strategy == "round_robin" {
+		rrMutex.Lock()
+		defer rrMutex.Unlock()
+		idx := rrIndex[eventType]
+		selected := sounds[idx%len(sounds)]
+		rrIndex[eventType] = (idx + 1) % len(sounds)
+		return selected
+	}
+
+	// Default to random
+	return sounds[rand.Intn(len(sounds))]
+}
+
 func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
 	if c.ShouldMute() {
 		return nil
 	}
 	volume := c.GetVolume()
-	if customPath, ok := c.Sounds[eventType]; ok && customPath != "" {
-		if strings.HasPrefix(customPath, "~/") {
-			home, _ := os.UserHomeDir()
-			customPath = filepath.Join(home, customPath[2:])
-		}
-		if info, err := os.Stat(customPath); err == nil && info.Size() > 0 {
-			err = playMP3File(customPath, volume, blocking)
-			return err
+	
+	// Check custom configured sounds first
+	if customPaths, ok := c.Sounds[eventType]; ok && len(customPaths) > 0 {
+		customPath := pickSound(eventType, customPaths, c.SoundStrategy)
+		if customPath != "" {
+			if strings.HasPrefix(customPath, "~/") {
+				home, _ := os.UserHomeDir()
+				customPath = filepath.Join(home, customPath[2:])
+			}
+			if info, err := os.Stat(customPath); err == nil && info.Size() > 0 {
+				err = playMP3File(customPath, volume, blocking)
+				return err
+			}
 		}
 	}
-	soundFile, ok := DefaultSoundMap[eventType]
-	if !ok {
+	
+	// Fallback to default sounds
+	soundFiles, ok := DefaultSoundMap[eventType]
+	if !ok || len(soundFiles) == 0 {
 		return fmt.Errorf("unknown event type: %s\nValid types: %s", eventType, validEventTypes())
 	}
+	
+	soundFile := pickSound(eventType, soundFiles, c.SoundStrategy)
 	err := playEmbeddedSound(soundFile, volume, blocking)
 	return err
 }
@@ -142,4 +186,3 @@ func validEventTypes() string {
 	}
 	return strings.Join(keys, ", ")
 }
-
