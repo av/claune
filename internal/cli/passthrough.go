@@ -278,7 +278,6 @@ func playViaShell(event string, c config.ClauneConfig) {
 	}
 	cmd := audio.ShellPlayCmd(cached, c.GetVolume())
 	if cmd == "" {
-		fmt.Fprintln(os.Stderr, "🔇 Audio unavailable: no supported audio player found (paplay, pw-play, aplay, afplay)")
 		return
 	}
 	exec.Command("bash", "-c", cmd+" &").Run()

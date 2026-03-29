@@ -23,6 +23,7 @@ var DefaultSoundMap = map[string]string{
 	"tool:destructive": "maniacal-laugh.mp3",
 	"tool:readonly":    "boing.mp3",
 	"build:success":    "slide-whistle-up.mp3",
+	"build:fail":       "slide-whistle-down.mp3",
 	"test:fail":        "sad-trombone.mp3",
 	"panic":            "maniacal-laugh.mp3",
 	"warn":             "boing.mp3",
@@ -123,21 +124,23 @@ func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
 		}
 		if info, err := os.Stat(customPath); err == nil && info.Size() > 0 {
 			err = playMP3File(customPath, volume, blocking)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "🔇 Audio unavailable:", err)
-			}
 			return err
 		}
 	}
 	soundFile, ok := DefaultSoundMap[eventType]
 	if !ok {
-		return fmt.Errorf("unknown event type: %s", eventType)
+		return fmt.Errorf("unknown event type: %s\nValid types: %s", eventType, validEventTypes())
 	}
 	err := playEmbeddedSound(soundFile, volume, blocking)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "🔇 Audio unavailable:", err)
-	}
 	return err
+}
+
+func validEventTypes() string {
+	keys := make([]string, 0, len(DefaultSoundMap))
+	for k := range DefaultSoundMap {
+		keys = append(keys, k)
+	}
+	return strings.Join(keys, ", ")
 }
 
 func ShellPlayCmd(wavPath string, volume float64) string {
