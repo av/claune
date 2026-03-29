@@ -157,11 +157,32 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 		}
 		if s, ok := updates["sounds"].(map[string]interface{}); ok {
 			if c.Sounds == nil {
-				c.Sounds = make(map[string][]string)
+				c.Sounds = make(map[string]config.EventSoundConfig)
 			}
 			for k, v := range s {
 				if vs, ok := v.(string); ok {
-					c.Sounds[k] = []string{vs}
+					c.Sounds[k] = config.EventSoundConfig{Paths: []string{vs}}
+				} else if arr, ok := v.([]interface{}); ok {
+					var paths []string
+					for _, item := range arr {
+						if str, ok := item.(string); ok {
+							paths = append(paths, str)
+						}
+					}
+					c.Sounds[k] = config.EventSoundConfig{Paths: paths}
+				} else if obj, ok := v.(map[string]interface{}); ok {
+					var esc config.EventSoundConfig
+					if paths, ok := obj["paths"].([]interface{}); ok {
+						for _, item := range paths {
+							if str, ok := item.(string); ok {
+								esc.Paths = append(esc.Paths, str)
+							}
+						}
+					}
+					if strategy, ok := obj["strategy"].(string); ok {
+						esc.Strategy = strategy
+					}
+					c.Sounds[k] = esc
 				}
 			}
 		}

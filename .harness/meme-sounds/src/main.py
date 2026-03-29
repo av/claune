@@ -1,4 +1,12 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Request, BackgroundTasks
+from fastapi import (
+    FastAPI,
+    UploadFile,
+    File,
+    HTTPException,
+    Form,
+    Request,
+    BackgroundTasks,
+)
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 import subprocess
@@ -17,15 +25,44 @@ from worker import process_audio_task, get_openai_client, UPLOAD_DIR, DB_PATH
 
 app = FastAPI(title="Meme Sounds API")
 
+
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS sounds
-                 (id TEXT PRIMARY KEY, filename TEXT, tags TEXT, duration REAL, is_safe BOOLEAN, embedding TEXT, url TEXT)''')
+    c.execute("""CREATE TABLE IF NOT EXISTS sounds
+                 (id TEXT PRIMARY KEY, filename TEXT, tags TEXT, duration REAL, is_safe BOOLEAN)""")
+    try:
+        c.execute("ALTER TABLE sounds ADD COLUMN embedding TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE sounds ADD COLUMN url TEXT")
+    except sqlite3.OperationalError:
+        pass
     conn.commit()
     conn.close()
 
+
 init_db()
+
+
+celery_process = None
+
+
+@app.on_event("startup")
+def startup_event():
+    global celery_process
+    celery_process = subprocess.Popen(
+        ["celery", "-A", "worker.app", "worker", "--loglevel=info"],
+        cwd=os.path.dirname(os.path.abspath(__file__)),
+    )
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    if celery_process:
+        celery_process.terminate()
+
 
 class SoundMetadata(BaseModel):
     id: str
@@ -34,8 +71,10 @@ class SoundMetadata(BaseModel):
     is_safe: bool
     url: str = ""
 
+
 def cosine_similarity(v1, v2):
     return float(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+
 
 @app.post("/ingest")
 async def ingest_sound(file: UploadFile = File(...)):
@@ -47,51 +86,80 @@ async def ingest_sound(file: UploadFile = File(...)):
     process_audio_task.delay(raw_path, file_id)
     return {"status": "processing", "id": file_id}
 
+
 @app.get("/search", response_model=List[SoundMetadata])
 async def search_sounds(query: str = ""):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    
+
     if query:
         client = get_openai_client()
         query_emb = None
         if client:
             try:
-                emb_res = client.embeddings.create(input=query, model="text-embedding-ada-002")
+                emb_res = client.embeddings.create(
+                    input=query, model="text-embedding-ada-002"
+                )
                 query_emb = emb_res.data[0].embedding
             except:
                 pass
-                
-        c.execute("SELECT id, filename, tags, duration, is_safe, embedding, url FROM sounds WHERE is_safe = 1")
+
+        c.execute(
+            "SELECT id, filename, tags, duration, is_safe, embedding, url FROM sounds WHERE is_safe = 1"
+        )
         rows = c.fetchall()
-        
+
         results = []
         for r in rows:
             tags = json.loads(r[2])
             emb = json.loads(r[5]) if r[5] else []
             url = r[6] if len(r) > 6 and r[6] else ""
-            
+
             score = 0.0
             if query_emb and emb and len(emb) == len(query_emb):
                 score = cosine_similarity(query_emb, emb)
-            elif query.lower() in [t.lower() for t in tags] or any(query.lower() in t.lower() for t in tags):
+            elif query.lower() in [t.lower() for t in tags] or any(
+                query.lower() in t.lower() for t in tags
+            ):
                 score = 1.0
-            
+
             if score > 0.7:  # Semantic similarity threshold
-                results.append((score, SoundMetadata(id=r[0], tags=tags, duration=r[3], is_safe=bool(r[4]), url=url)))
-        
+                results.append(
+                    (
+                        score,
+                        SoundMetadata(
+                            id=r[0],
+                            tags=tags,
+                            duration=r[3],
+                            is_safe=bool(r[4]),
+                            url=url,
+                        ),
+                    )
+                )
+
         results.sort(key=lambda x: x[0], reverse=True)
         conn.close()
         return [r[1] for r in results[:50]]
     else:
-        c.execute("SELECT id, filename, tags, duration, is_safe, url FROM sounds WHERE is_safe = 1 LIMIT 50")
+        c.execute(
+            "SELECT id, filename, tags, duration, is_safe, url FROM sounds WHERE is_safe = 1 LIMIT 50"
+        )
         rows = c.fetchall()
         conn.close()
         results = []
         for r in rows:
             url = r[5] if len(r) > 5 and r[5] else ""
-            results.append(SoundMetadata(id=r[0], tags=json.loads(r[2]), duration=r[3], is_safe=bool(r[4]), url=url))
+            results.append(
+                SoundMetadata(
+                    id=r[0],
+                    tags=json.loads(r[2]),
+                    duration=r[3],
+                    is_safe=bool(r[4]),
+                    url=url,
+                )
+            )
         return results
+
 
 @app.get("/play/{sound_id}")
 async def play_sound(sound_id: str):
@@ -103,6 +171,7 @@ async def play_sound(sound_id: str):
     if row:
         return {"url": row[1]} if row[1] else {"error": "Not uploaded yet"}
     raise HTTPException(status_code=404, detail="Sound not found")
+
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
@@ -197,6 +266,8 @@ async def read_root():
     </html>
     """
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

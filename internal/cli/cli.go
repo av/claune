@@ -80,11 +80,11 @@ func Run(args []string) error {
 			} else if len(args) > 3 {
 				event := args[3]
 				if c.Sounds == nil {
-					c.Sounds = make(map[string][]string)
+					c.Sounds = make(map[string]config.EventSoundConfig)
 				}
 				// Use the cache dir path for the imported sound
 				cachedPath := filepath.Join(audio.SoundCacheDir(), args[2])
-				c.Sounds[event] = []string{cachedPath}
+				c.Sounds[event] = config.EventSoundConfig{Paths: []string{cachedPath}}
 				if err := config.Save(c); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to update config: %v\n", err)
 				} else {
