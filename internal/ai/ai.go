@@ -348,3 +348,56 @@ Do not include markdown blocks. Example: {"tool:success": {"paths": ["/dir/yay.m
 
 	return fmt.Errorf("no response from AI")
 }
+
+func DiagnoseInstallFailure(err error, c config.ClauneConfig) string {
+	if !c.AI.Enabled {
+		return "AI diagnostics disabled. Please check your Claude config and permissions manually."
+	}
+	key := c.AI.APIKey
+	if key == "" {
+		key = os.Getenv("ANTHROPIC_API_KEY")
+	}
+	if key == "" {
+		return "AI diagnostics unavailable: No ANTHROPIC_API_KEY found. Please check permissions."
+	}
+	
+	model := c.AI.Model
+	if model == "" {
+		model = "claude-3-haiku-20240307"
+	}
+
+	prompt := fmt.Sprintf("The user tried to run 'claune install' to inject audio hooks into Claude Code's settings.json but it failed with this error:\n%v\nProvide a concise 1-2 sentence targeted fix or explanation for the user. Do not include markdown.", err)
+
+	reqBody := ClaudeRequest{
+		Model: model,
+		Messages: []ClaudeMessage{
+			{Role: "user", Content: prompt},
+		},
+		MaxTokens: 100,
+	}
+
+	bodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(bodyBytes))
+	req.Header.Set("x-api-key", key)
+	req.Header.Set("anthropic-version", "2023-06-01")
+	req.Header.Set("content-type", "application/json")
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, reqErr := client.Do(req)
+	if reqErr != nil {
+		return "AI diagnostics failed to connect."
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "AI diagnostics returned an API error."
+	}
+
+	respBytes, _ := io.ReadAll(resp.Body)
+	var cr ClaudeResponse
+	if parseErr := json.Unmarshal(respBytes, &cr); parseErr == nil && len(cr.Content) > 0 {
+		return strings.TrimSpace(cr.Content[0].Text)
+	}
+
+	return "Could not diagnose the issue."
+}

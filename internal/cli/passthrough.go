@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/everlier/claune/internal/ai"
 	"github.com/everlier/claune/internal/audio"
 	"github.com/everlier/claune/internal/config"
 )
@@ -25,7 +26,22 @@ type Hook struct {
 }
 
 var settingsPathFunc = func() string {
+	cwd, err := os.Getwd()
+	if err == nil {
+		localPath := filepath.Join(cwd, ".claude.json")
+		if _, err := os.Stat(localPath); err == nil {
+			return localPath
+		}
+	}
 	home, _ := os.UserHomeDir()
+	path1 := filepath.Join(home, ".claude.json")
+	if _, err := os.Stat(path1); err == nil {
+		return path1
+	}
+	path2 := filepath.Join(home, ".claude", "settings.json")
+	if _, err := os.Stat(path2); err == nil {
+		return path2
+	}
 	return filepath.Join(home, ".claude", "settings.json")
 }
 
@@ -52,6 +68,10 @@ func writeSettings(settings map[string]interface{}) error {
 	data, err := json.MarshalIndent(settings, "", "  ")
 	if err != nil {
 		return err
+	}
+	dir := filepath.Dir(settingsPath())
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 	return os.WriteFile(settingsPath(), append(data, '\n'), 0644)
 }
@@ -176,6 +196,9 @@ func clauneHookEntries() map[string][]HookEntry {
 func installHooks() error {
 	settings, err := readSettings()
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading settings: %v\n", err)
+		c, _ := config.Load()
+		fmt.Fprintf(os.Stderr, "AI Diagnostics: %s\n", ai.DiagnoseInstallFailure(err, c))
 		return err
 	}
 	var hooksMap map[string]interface{}
@@ -196,6 +219,9 @@ func installHooks() error {
 
 	settings["hooks"] = hooksMap
 	if err := writeSettings(settings); err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing settings: %v\n", err)
+		c, _ := config.Load()
+		fmt.Fprintf(os.Stderr, "AI Diagnostics: %s\n", ai.DiagnoseInstallFailure(err, c))
 		return err
 	}
 
@@ -234,7 +260,11 @@ func uninstallHooks() error {
 		fmt.Println("No claune hooks found — nothing to remove.")
 		return nil
 	}
-	settings["hooks"] = hooksMap
+	if len(hooksMap) == 0 {
+		delete(settings, "hooks")
+	} else {
+		settings["hooks"] = hooksMap
+	}
 	if err := writeSettings(settings); err != nil {
 		return err
 	}
