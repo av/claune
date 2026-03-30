@@ -103,17 +103,17 @@ func Run(args []string) error {
 					event = guessed
 					fmt.Printf("AI intelligently mapped %s to %s\n", filename, event)
 				}
-
+				
 				if c.Sounds == nil {
 					c.Sounds = make(map[string]config.EventSoundConfig)
 				}
 				cachedPath := filepath.Join(audio.SoundCacheDir(), filename)
-
+				
 				// Keep existing config if it exists, just append/overwrite
 				eventCfg := c.Sounds[event]
 				eventCfg.Paths = append(eventCfg.Paths, cachedPath)
 				c.Sounds[event] = eventCfg
-
+				
 				if err := config.Save(c); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to update config: %v\n", err)
 				} else {
