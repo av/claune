@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/everlier/claune/internal/ai"
 	"github.com/everlier/claune/internal/audio"
@@ -32,6 +33,16 @@ func Run(args []string) error {
 		return nil
 	}
 
+	switch args[0] {
+	case "status":
+		c, err := config.Load()
+		showStatus(c, err)
+		return nil
+	case "help":
+		printUsage()
+		return nil
+	}
+
 	c, err := config.Load()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "claune: error loading config: %v\n", err)
@@ -39,25 +50,38 @@ func Run(args []string) error {
 	}
 
 	switch args[0] {
+	case "help":
+		printUsage()
 	case "play":
-		if len(args) > 1 {
-			if len(args) > 3 {
-				event, err := ai.AnalyzeToolIntent(args[2], args[3], c)
-				if err != nil && c.AI.Enabled {
-					fmt.Fprintf(os.Stderr, "⚠️ AI Semantic Audio Error: %v\n", err)
-				}
-				if err := audio.PlaySound(event, true, c); err != nil {
-					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
-				}
-			} else {
-				if err := audio.PlaySound(args[1], true, c); err != nil {
-					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
-				}
-			}
-		} else {
+		if len(args) <= 1 {
 			fmt.Fprintln(os.Stderr, "Usage: claune play <event> [args...]")
 			os.Exit(1)
 		}
+
+		if len(args) > 3 {
+			event, err := ai.AnalyzeToolIntent(args[2], args[3], c)
+			if err != nil && c.AI.Enabled {
+				fmt.Fprintf(os.Stderr, "⚠️ AI Semantic Audio Error: %v\n", err)
+			}
+			if err := audio.PlaySound(event, true, c); err != nil {
+				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+			}
+		} else {
+			if err := audio.PlaySound(args[1], true, c); err != nil {
+				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+			}
+		}
+	case "config":
+		if len(args) <= 1 {
+			fmt.Println("Usage: claune config <natural language prompt>")
+			return nil
+		}
+
+		prompt := strings.Join(args[1:], " ")
+		if err := ai.HandleNaturalLanguageConfig(prompt, &c); err != nil {
+			return fmt.Errorf("AI config failed: %w", err)
+		}
+		fmt.Println("Config updated successfully via AI")
 	case "install":
 		if err := installHooks(); err != nil {
 			return err
@@ -67,21 +91,9 @@ func Run(args []string) error {
 			return err
 		}
 	case "status":
-		showStatus(c)
+		showStatus(c, nil)
 	case "test-sounds":
 		testSounds(c)
-	case "config":
-		if len(args) > 1 {
-			prompt := args[1]
-			if err := ai.HandleNaturalLanguageConfig(prompt, &c); err != nil {
-				return fmt.Errorf("AI config failed: %w", err)
-			}
-			fmt.Println("Config updated successfully via AI")
-		} else {
-			fmt.Println("Usage: claune config <natural language prompt>")
-		}
-	case "help":
-		printUsage()
 	case "import-circus":
 		if len(args) > 2 {
 			url := args[1]
@@ -101,17 +113,17 @@ func Run(args []string) error {
 					event = guessed
 					fmt.Printf("AI intelligently mapped %s to %s\n", filename, event)
 				}
-				
+
 				if c.Sounds == nil {
 					c.Sounds = make(map[string]config.EventSoundConfig)
 				}
 				cachedPath := filepath.Join(audio.SoundCacheDir(), filename)
-				
+
 				// Keep existing config if it exists, just append/overwrite
 				eventCfg := c.Sounds[event]
 				eventCfg.Paths = append(eventCfg.Paths, cachedPath)
 				c.Sounds[event] = eventCfg
-				
+
 				if err := config.Save(c); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to update config: %v\n", err)
 				} else {
@@ -159,11 +171,19 @@ func Run(args []string) error {
 	return nil
 }
 
-func showStatus(c config.ClauneConfig) {
-	if hooksInstalled() {
+func showStatus(c config.ClauneConfig, configErr error) {
+	hooksInstalled, hooksErr := hooksInstallState()
+	if hooksErr != nil {
+		fmt.Printf("Install state unknown — could not read Claude Code settings: %v\n", hooksErr)
+	} else if hooksInstalled {
 		fmt.Println("Installed — claune hooks are active in Claude Code.")
 	} else {
 		fmt.Println("Not installed — run 'claune install' to add sound hooks.")
+	}
+
+	if configErr != nil {
+		fmt.Printf("Config error: %v\n", configErr)
+		return
 	}
 
 	if c.ShouldMute() {
