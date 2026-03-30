@@ -33,16 +33,6 @@ func Run(args []string) error {
 		return nil
 	}
 
-	switch args[0] {
-	case "status":
-		c, err := config.Load()
-		showStatus(c, err)
-		return nil
-	case "help":
-		printUsage()
-		return nil
-	}
-
 	c, err := config.Load()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "claune: error loading config: %v\n", err)
@@ -50,27 +40,37 @@ func Run(args []string) error {
 	}
 
 	switch args[0] {
-	case "help":
-		printUsage()
 	case "play":
-		if len(args) <= 1 {
+		if len(args) > 1 {
+			if len(args) > 3 {
+				event, err := ai.AnalyzeToolIntent(args[2], args[3], c)
+				if err != nil && c.AI.Enabled {
+					fmt.Fprintf(os.Stderr, "⚠️ AI Semantic Audio Error: %v\n", err)
+				}
+				if err := audio.PlaySound(event, true, c); err != nil {
+					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+				}
+			} else {
+				if err := audio.PlaySound(args[1], true, c); err != nil {
+					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+				}
+			}
+		} else {
 			fmt.Fprintln(os.Stderr, "Usage: claune play <event> [args...]")
 			os.Exit(1)
 		}
-
-		if len(args) > 3 {
-			event, err := ai.AnalyzeToolIntent(args[2], args[3], c)
-			if err != nil && c.AI.Enabled {
-				fmt.Fprintf(os.Stderr, "⚠️ AI Semantic Audio Error: %v\n", err)
-			}
-			if err := audio.PlaySound(event, true, c); err != nil {
-				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
-			}
-		} else {
-			if err := audio.PlaySound(args[1], true, c); err != nil {
-				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
-			}
+	case "install":
+		if err := installHooks(); err != nil {
+			return err
 		}
+	case "uninstall":
+		if err := uninstallHooks(); err != nil {
+			return err
+		}
+	case "status":
+		showStatus(c)
+	case "test-sounds":
+		testSounds(c)
 	case "config":
 		if len(args) <= 1 {
 			fmt.Println("Usage: claune config <natural language prompt>")
@@ -82,18 +82,8 @@ func Run(args []string) error {
 			return fmt.Errorf("AI config failed: %w", err)
 		}
 		fmt.Println("Config updated successfully via AI")
-	case "install":
-		if err := installHooks(); err != nil {
-			return err
-		}
-	case "uninstall":
-		if err := uninstallHooks(); err != nil {
-			return err
-		}
-	case "status":
-		showStatus(c, nil)
-	case "test-sounds":
-		testSounds(c)
+	case "help":
+		printUsage()
 	case "import-circus":
 		if len(args) > 2 {
 			url := args[1]
@@ -171,19 +161,11 @@ func Run(args []string) error {
 	return nil
 }
 
-func showStatus(c config.ClauneConfig, configErr error) {
-	hooksInstalled, hooksErr := hooksInstallState()
-	if hooksErr != nil {
-		fmt.Printf("Install state unknown — could not read Claude Code settings: %v\n", hooksErr)
-	} else if hooksInstalled {
+func showStatus(c config.ClauneConfig) {
+	if hooksInstalled() {
 		fmt.Println("Installed — claune hooks are active in Claude Code.")
 	} else {
 		fmt.Println("Not installed — run 'claune install' to add sound hooks.")
-	}
-
-	if configErr != nil {
-		fmt.Printf("Config error: %v\n", configErr)
-		return
 	}
 
 	if c.ShouldMute() {
