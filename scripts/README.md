@@ -21,3 +21,13 @@ If you don't specify an output file, it will default to `<slug>.mp3`.
 ./scripts/download-boardsound.sh among-us-role-reveal-sound
 # Downloads to among-us-role-reveal-sound.mp3
 ```
+
+## Verifying `claune play` regression evidence
+
+Use `verify-play-regression-evidence.sh` to reproduce the `claune play` regression/fix relationship against git history without rewriting history.
+
+```bash
+./scripts/verify-play-regression-evidence.sh
+```
+
+The script checks that the same focused regression tests fail on the parent of the original `play` fix commit and pass on the current HEAD. This is honest best-possible evidence for QA now, but it does **not** prove the original chronological TDD red→green sequence happened in that order.
