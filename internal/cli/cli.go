@@ -13,6 +13,8 @@ import (
 	"github.com/everlier/claune/internal/config"
 )
 
+const playUsage = "Usage: claune play <event>\n       claune play <event> <tool-name> <tool-input>"
+
 var clauneSubcommands = map[string]bool{
 	"play":          true,
 	"install":       true,
@@ -56,23 +58,18 @@ func Run(args []string) error {
 
 	switch args[0] {
 	case "play":
-		if len(args) > 1 {
-			if len(args) > 3 {
-				event, err := ai.AnalyzeToolIntent(args[2], args[3], c)
-				if err != nil && c.AI.Enabled {
-					fmt.Fprintf(os.Stderr, "⚠️ AI Semantic Audio Error: %v\n", err)
-				}
-				if err := audio.PlaySound(event, true, c); err != nil {
-					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
-				}
-			} else {
-				if err := audio.PlaySound(args[1], true, c); err != nil {
-					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
-				}
+		if len(args) == 4 {
+			event, err := ai.AnalyzeToolIntent(args[2], args[3], c)
+			if err != nil && c.AI.Enabled {
+				fmt.Fprintf(os.Stderr, "⚠️ AI Semantic Audio Error: %v\n", err)
+			}
+			if err := audio.PlaySound(event, true, c); err != nil {
+				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
 			}
 		} else {
-			fmt.Fprintln(os.Stderr, "Usage: claune play <event> [args...]")
-			os.Exit(1)
+			if err := audio.PlaySound(args[1], true, c); err != nil {
+				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+			}
 		}
 	case "status":
 		showStatus(c)
@@ -163,6 +160,10 @@ func validateManagementArgs(args []string) {
 	switch args[0] {
 	case "status":
 		ensureExactArgs(args, 1, "claune: status does not accept additional arguments", "Usage: claune status")
+	case "play":
+		if err := validatePlayArgs(args); err != nil {
+			exitUsageError(err.Error(), playUsage)
+		}
 	case "test-sounds":
 		ensureExactArgs(args, 1, "claune: test-sounds does not accept additional arguments", "Usage: claune test-sounds")
 	case "config":
@@ -191,6 +192,19 @@ func validateManagementArgs(args []string) {
 		ensureExactArgs(args, 1, "claune: analyze-log does not accept additional arguments", "Usage: claune analyze-log")
 	case "analyze-resp":
 		ensureExactArgs(args, 1, "claune: analyze-resp does not accept additional arguments", "Usage: claune analyze-resp")
+	}
+}
+
+func validatePlayArgs(args []string) error {
+	switch len(args) {
+	case 1:
+		return fmt.Errorf("claune: play requires an event")
+	case 2, 4:
+		return nil
+	case 3:
+		return fmt.Errorf("claune: play accepts either <event> or <event> <tool-name> <tool-input>")
+	default:
+		return fmt.Errorf("claune: play does not accept additional arguments")
 	}
 }
 
@@ -264,7 +278,9 @@ Management commands:
   install       Install sound hooks into Claude Code settings
   uninstall     Remove sound hooks from Claude Code settings
   status        Show whether hooks are installed
-  play <event>  Play a sound
+  play <event>  Play a sound for an event
+  play <event> <tool-name> <tool-input>
+                 Play a sound using semantic tool context
   test-sounds   Play all sounds to verify audio works
   config <msg>  Natural language configuration (e.g., "mute sound")
   automap <dir> Automatically map sound files in a directory to events using AI

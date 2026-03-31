@@ -330,6 +330,123 @@ func TestRunManagementCommandsBadUsageWinsOverMalformedConfig(t *testing.T) {
 	}
 }
 
+func TestRunPlayRejectsBadUsage(t *testing.T) {
+	tests := []struct {
+		name         string
+		args         []string
+		wantExitCode int
+		wantStderr   []string
+	}{
+		{
+			name:         "play requires event",
+			args:         []string{"play"},
+			wantExitCode: 1,
+			wantStderr: []string{
+				"claune: play requires an event",
+				"Usage: claune play <event>",
+				"claune play <event> <tool-name> <tool-input>",
+			},
+		},
+		{
+			name:         "play rejects incomplete semantic analysis form",
+			args:         []string{"play", "tool:success", "Bash"},
+			wantExitCode: 1,
+			wantStderr: []string{
+				"claune: play accepts either <event> or <event> <tool-name> <tool-input>",
+				"Usage: claune play <event>",
+				"claune play <event> <tool-name> <tool-input>",
+			},
+		},
+		{
+			name:         "play rejects too many args",
+			args:         []string{"play", "tool:success", "Bash", "input", "extra"},
+			wantExitCode: 1,
+			wantStderr: []string{
+				"claune: play does not accept additional arguments",
+				"Usage: claune play <event>",
+				"claune play <event> <tool-name> <tool-input>",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			home := t.TempDir()
+			stdout, stderr, exitCode, err := runInSubprocess(t, home, tt.args)
+			if err == nil {
+				t.Fatalf("Run(%v) error = nil, want exit code %d\nstdout:\n%s\nstderr:\n%s", tt.args, tt.wantExitCode, stdout, stderr)
+			}
+			if exitCode != tt.wantExitCode {
+				t.Fatalf("Run(%v) exit code = %d, want %d\nstdout:\n%s\nstderr:\n%s", tt.args, exitCode, tt.wantExitCode, stdout, stderr)
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			for _, want := range tt.wantStderr {
+				assertContains(t, stderr, want)
+			}
+		})
+	}
+}
+
+func TestRunPlayBadUsageWinsOverMalformedConfig(t *testing.T) {
+	home := t.TempDir()
+	configPath := filepath.Join(home, ".claune.json")
+	if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
+		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
+	}
+
+	stdout, stderr, exitCode, err := runInSubprocess(t, home, []string{"play"})
+	if err == nil {
+		t.Fatalf("Run(play) error = nil, want exit code 1\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
+	}
+	if exitCode != 1 {
+		t.Fatalf("Run(play) exit code = %d, want 1\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty", stdout)
+	}
+	assertContains(t, stderr, "claune: play requires an event")
+	assertContains(t, stderr, "Usage: claune play <event>")
+	assertContains(t, stderr, "claune play <event> <tool-name> <tool-input>")
+	if strings.Contains(stderr, "error loading config") {
+		t.Fatalf("stderr = %q, should not contain config load error", stderr)
+	}
+}
+
+func TestValidatePlayArgsAllowsOnlyExactSupportedForms(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{name: "event only", args: []string{"play", "tool:success"}},
+		{name: "event with semantic analysis", args: []string{"play", "tool:success", "Bash", "input"}},
+		{name: "missing event", args: []string{"play"}, want: "claune: play requires an event"},
+		{name: "partial semantic analysis", args: []string{"play", "tool:success", "Bash"}, want: "claune: play accepts either <event> or <event> <tool-name> <tool-input>"},
+		{name: "too many args", args: []string{"play", "tool:success", "Bash", "input", "extra"}, want: "claune: play does not accept additional arguments"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validatePlayArgs(tt.args)
+			if tt.want == "" {
+				if err != nil {
+					t.Fatalf("validatePlayArgs(%v) error = %v, want nil", tt.args, err)
+				}
+				return
+			}
+
+			if err == nil {
+				t.Fatalf("validatePlayArgs(%v) error = nil, want %q", tt.args, tt.want)
+			}
+			if err.Error() != tt.want {
+				t.Fatalf("validatePlayArgs(%v) error = %q, want %q", tt.args, err.Error(), tt.want)
+			}
+		})
+	}
+}
+
 func TestRunAnalyzeCommandsRejectUnexpectedArgs(t *testing.T) {
 	tests := []struct {
 		name         string
