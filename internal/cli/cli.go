@@ -120,10 +120,8 @@ func Run(args []string) error {
 			}
 		}
 	case "analyze-log":
-		logText, err := io.ReadAll(os.Stdin)
-		if err == nil {
-			circus.AnalyzeLogSentiment(string(logText), c, true)
-		}
+		logText := mustReadStdin("analyze-log")
+		circus.AnalyzeLogSentiment(logText, c, true)
 	case "automap":
 		dir := args[1]
 		mapping, err := ai.AutoMapSounds(dir, &c)
@@ -138,15 +136,13 @@ func Run(args []string) error {
 			}
 		}
 	case "analyze-resp":
-		respText, err := io.ReadAll(os.Stdin)
-		if err == nil {
-			event, strategy, err := ai.AnalyzeResponseSentiment(string(respText), c)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Analyze response sentiment failed: %v\n", err)
-			} else if event != "" {
-				if err := audio.PlaySoundWithStrategy(event, strategy, true, c); err != nil {
-					fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
-				}
+		respText := mustReadStdin("analyze-resp")
+		event, strategy, err := ai.AnalyzeResponseSentiment(respText, c)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Analyze response sentiment failed: %v\n", err)
+		} else if event != "" {
+			if err := audio.PlaySoundWithStrategy(event, strategy, true, c); err != nil {
+				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
 			}
 		}
 	}
@@ -187,6 +183,10 @@ func validateManagementArgs(args []string) {
 		default:
 			exitUsageError("claune: import-circus does not accept additional arguments", "Usage: claune import-circus <url> <filename> [event]")
 		}
+	case "analyze-log":
+		ensureExactArgs(args, 1, "claune: analyze-log does not accept additional arguments", "Usage: claune analyze-log")
+	case "analyze-resp":
+		ensureExactArgs(args, 1, "claune: analyze-resp does not accept additional arguments", "Usage: claune analyze-resp")
 	}
 }
 
@@ -194,6 +194,16 @@ func exitUsageError(message string, usage string) {
 	fmt.Fprintln(os.Stderr, message)
 	fmt.Fprintln(os.Stderr, usage)
 	os.Exit(1)
+}
+
+func mustReadStdin(command string) string {
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "claune: failed to read stdin for %s: %v\n", command, err)
+		os.Exit(1)
+	}
+
+	return string(data)
 }
 
 func loadCommandConfig(command string) (config.ClauneConfig, error) {

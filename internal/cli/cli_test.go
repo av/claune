@@ -234,6 +234,20 @@ func TestRunManagementCommandsBadUsageWinsOverMalformedConfig(t *testing.T) {
 		avoidStderr  []string
 	}{
 		{
+			name:         "analyze-log rejects extra args",
+			args:         []string{"analyze-log", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: analyze-log does not accept additional arguments", "Usage: claune analyze-log"},
+			avoidStderr:  []string{"error loading config"},
+		},
+		{
+			name:         "analyze-resp rejects extra args",
+			args:         []string{"analyze-resp", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: analyze-resp does not accept additional arguments", "Usage: claune analyze-resp"},
+			avoidStderr:  []string{"error loading config"},
+		},
+		{
 			name:         "config missing prompt",
 			args:         []string{"config"},
 			wantExitCode: 1,
@@ -310,6 +324,86 @@ func TestRunManagementCommandsBadUsageWinsOverMalformedConfig(t *testing.T) {
 					t.Fatalf("stderr = %q, should not contain %q", stderr, avoid)
 				}
 			}
+		})
+	}
+}
+
+func TestRunAnalyzeCommandsRejectUnexpectedArgs(t *testing.T) {
+	tests := []struct {
+		name         string
+		args         []string
+		wantExitCode int
+		wantStderr   []string
+	}{
+		{
+			name:         "analyze-log rejects extra args",
+			args:         []string{"analyze-log", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: analyze-log does not accept additional arguments", "Usage: claune analyze-log"},
+		},
+		{
+			name:         "analyze-resp rejects extra args",
+			args:         []string{"analyze-resp", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: analyze-resp does not accept additional arguments", "Usage: claune analyze-resp"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			home := t.TempDir()
+			stdout, stderr, exitCode, err := runInSubprocess(t, home, tt.args)
+			if err == nil {
+				t.Fatalf("Run(%v) error = nil, want exit code %d\nstdout:\n%s\nstderr:\n%s", tt.args, tt.wantExitCode, stdout, stderr)
+			}
+			if exitCode != tt.wantExitCode {
+				t.Fatalf("Run(%v) exit code = %d, want %d\nstdout:\n%s\nstderr:\n%s", tt.args, exitCode, tt.wantExitCode, stdout, stderr)
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			for _, want := range tt.wantStderr {
+				assertContains(t, stderr, want)
+			}
+		})
+	}
+}
+
+func TestRunAnalyzeCommandsFailLoudlyOnStdinReadError(t *testing.T) {
+	tests := []struct {
+		name         string
+		args         []string
+		wantExitCode int
+		wantStderr   string
+	}{
+		{
+			name:         "analyze-log stdin read failure",
+			args:         []string{"analyze-log"},
+			wantExitCode: 1,
+			wantStderr:   "claune: failed to read stdin for analyze-log:",
+		},
+		{
+			name:         "analyze-resp stdin read failure",
+			args:         []string{"analyze-resp"},
+			wantExitCode: 1,
+			wantStderr:   "claune: failed to read stdin for analyze-resp:",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			home := t.TempDir()
+			stdout, stderr, exitCode, err := runInSubprocessWithEnv(t, home, tt.args, []string{"CLAUNE_SUBPROCESS_STDIN_MODE=write-only"})
+			if err == nil {
+				t.Fatalf("Run(%v) error = nil, want exit code %d\nstdout:\n%s\nstderr:\n%s", tt.args, tt.wantExitCode, stdout, stderr)
+			}
+			if exitCode != tt.wantExitCode {
+				t.Fatalf("Run(%v) exit code = %d, want %d\nstdout:\n%s\nstderr:\n%s", tt.args, exitCode, tt.wantExitCode, stdout, stderr)
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			assertContains(t, stderr, tt.wantStderr)
 		})
 	}
 }
@@ -428,6 +522,21 @@ func TestRunSubprocessHelper(t *testing.T) {
 	if home != "" {
 		if err := os.Setenv("HOME", home); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to set HOME: %v\n", err)
+			os.Exit(2)
+		}
+	}
+
+	if stdinMode := os.Getenv("CLAUNE_SUBPROCESS_STDIN_MODE"); stdinMode != "" {
+		switch stdinMode {
+		case "write-only":
+			_, stdinWriter, err := os.Pipe()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to create stdin pipe: %v\n", err)
+				os.Exit(2)
+			}
+			os.Stdin = stdinWriter
+		default:
+			fmt.Fprintf(os.Stderr, "unknown stdin mode: %s\n", stdinMode)
 			os.Exit(2)
 		}
 	}
