@@ -106,11 +106,11 @@ func TestRunConfigRepairsMalformedConfigUsingDefaults(t *testing.T) {
 
 func TestRunManagementCommandsRejectBadUsage(t *testing.T) {
 	tests := []struct {
-		name           string
-		args           []string
-		wantExitCode   int
-		wantStderr     []string
-		wantNoStdout   bool
+		name         string
+		args         []string
+		wantExitCode int
+		wantStderr   []string
+		wantNoStdout bool
 	}{
 		{
 			name:         "config requires prompt",
@@ -127,10 +127,24 @@ func TestRunManagementCommandsRejectBadUsage(t *testing.T) {
 			wantNoStdout: true,
 		},
 		{
+			name:         "automap rejects extra args",
+			args:         []string{"automap", "dir", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: automap does not accept additional arguments", "Usage: claune automap <directory>"},
+			wantNoStdout: true,
+		},
+		{
 			name:         "import-circus requires url and filename",
 			args:         []string{"import-circus"},
 			wantExitCode: 1,
 			wantStderr:   []string{"claune: import-circus requires a URL and filename", "Usage: claune import-circus <url> <filename> [event]"},
+			wantNoStdout: true,
+		},
+		{
+			name:         "import-circus rejects extra args beyond optional event",
+			args:         []string{"import-circus", "https://example.com", "sound.mp3", "cli:start", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: import-circus does not accept additional arguments", "Usage: claune import-circus <url> <filename> [event]"},
 			wantNoStdout: true,
 		},
 		{
@@ -211,6 +225,95 @@ func TestRunUnknownCommandStillPassthroughs(t *testing.T) {
 	}
 }
 
+func TestRunManagementCommandsBadUsageWinsOverMalformedConfig(t *testing.T) {
+	tests := []struct {
+		name         string
+		args         []string
+		wantExitCode int
+		wantStderr   []string
+		avoidStderr  []string
+	}{
+		{
+			name:         "config missing prompt",
+			args:         []string{"config"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: config requires a natural language prompt", "Usage: claune config <natural language prompt>"},
+			avoidStderr:  []string{"error loading config", "warning: invalid config"},
+		},
+		{
+			name:         "status rejects extra args",
+			args:         []string{"status", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: status does not accept additional arguments", "Usage: claune status"},
+			avoidStderr:  []string{"error loading config"},
+		},
+		{
+			name:         "test-sounds rejects extra args",
+			args:         []string{"test-sounds", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: test-sounds does not accept additional arguments", "Usage: claune test-sounds"},
+			avoidStderr:  []string{"error loading config"},
+		},
+		{
+			name:         "automap requires directory",
+			args:         []string{"automap"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: automap requires a directory", "Usage: claune automap <directory>"},
+			avoidStderr:  []string{"error loading config"},
+		},
+		{
+			name:         "automap rejects extra args",
+			args:         []string{"automap", "dir", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: automap does not accept additional arguments", "Usage: claune automap <directory>"},
+			avoidStderr:  []string{"error loading config"},
+		},
+		{
+			name:         "import-circus requires url and filename",
+			args:         []string{"import-circus"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: import-circus requires a URL and filename", "Usage: claune import-circus <url> <filename> [event]"},
+			avoidStderr:  []string{"error loading config"},
+		},
+		{
+			name:         "import-circus rejects extra args beyond optional event",
+			args:         []string{"import-circus", "https://example.com", "sound.mp3", "cli:start", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: import-circus does not accept additional arguments", "Usage: claune import-circus <url> <filename> [event]"},
+			avoidStderr:  []string{"error loading config"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			home := t.TempDir()
+			configPath := filepath.Join(home, ".claune.json")
+			if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
+				t.Fatalf("WriteFile(%q) error = %v", configPath, err)
+			}
+
+			stdout, stderr, exitCode, err := runInSubprocess(t, home, tt.args)
+			if err == nil {
+				t.Fatalf("Run(%v) error = nil, want exit code %d\nstdout:\n%s\nstderr:\n%s", tt.args, tt.wantExitCode, stdout, stderr)
+			}
+			if exitCode != tt.wantExitCode {
+				t.Fatalf("Run(%v) exit code = %d, want %d\nstdout:\n%s\nstderr:\n%s", tt.args, exitCode, tt.wantExitCode, stdout, stderr)
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			for _, want := range tt.wantStderr {
+				assertContains(t, stderr, want)
+			}
+			for _, avoid := range tt.avoidStderr {
+				if strings.Contains(stderr, avoid) {
+					t.Fatalf("stderr = %q, should not contain %q", stderr, avoid)
+				}
+			}
+		})
+	}
+}
+
 type capturedOutput struct {
 	stdout string
 	stderr string
@@ -284,7 +387,7 @@ func assertContains(t *testing.T, got string, want string) {
 func runInSubprocess(t *testing.T, home string, args []string) (string, string, int, error) {
 	t.Helper()
 	return runInSubprocessWithEnv(t, home, args, nil)
-	}
+}
 
 func runInSubprocessWithEnv(t *testing.T, home string, args []string, extraEnv []string) (string, string, int, error) {
 	t.Helper()

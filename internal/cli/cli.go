@@ -46,6 +46,8 @@ func Run(args []string) error {
 		return uninstallHooks()
 	}
 
+	validateManagementArgs(args)
+
 	c, err := loadCommandConfig(args[0])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "claune: error loading config: %v\n", err)
@@ -73,59 +75,49 @@ func Run(args []string) error {
 			os.Exit(1)
 		}
 	case "status":
-		ensureExactArgs(args, 1, "claune: status does not accept additional arguments", "Usage: claune status")
 		showStatus(c)
 	case "test-sounds":
-		ensureExactArgs(args, 1, "claune: test-sounds does not accept additional arguments", "Usage: claune test-sounds")
 		testSounds(c)
 	case "config":
-		if len(args) <= 1 {
-			exitUsageError("claune: config requires a natural language prompt", "Usage: claune config <natural language prompt>")
-		}
-
 		prompt := strings.Join(args[1:], " ")
 		if err := ai.HandleNaturalLanguageConfig(prompt, &c); err != nil {
 			return fmt.Errorf("AI config failed: %w", err)
 		}
 		fmt.Println("Config updated successfully via AI")
 	case "import-circus":
-		if len(args) > 2 {
-			url := args[1]
-			filename := args[2]
-			if err := circus.ImportMemeSound(url, filename); err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			} else {
-				var event string
-				if len(args) > 3 {
-					event = args[3]
-				} else {
-					guessed, err := ai.GuessEventForSound(url, filename, c)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "AI mapping failed: %v. Please specify an event manually.\n", err)
-						return nil
-					}
-					event = guessed
-					fmt.Printf("AI intelligently mapped %s to %s\n", filename, event)
-				}
-				
-				if c.Sounds == nil {
-					c.Sounds = make(map[string]config.EventSoundConfig)
-				}
-				cachedPath := filepath.Join(audio.SoundCacheDir(), filename)
-				
-				// Keep existing config if it exists, just append/overwrite
-				eventCfg := c.Sounds[event]
-				eventCfg.Paths = append(eventCfg.Paths, cachedPath)
-				c.Sounds[event] = eventCfg
-				
-				if err := config.Save(c); err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to update config: %v\n", err)
-				} else {
-					fmt.Printf("Mapped %s to event %s\n", filename, event)
-				}
-			}
+		url := args[1]
+		filename := args[2]
+		if err := circus.ImportMemeSound(url, filename); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		} else {
-			exitUsageError("claune: import-circus requires a URL and filename", "Usage: claune import-circus <url> <filename> [event]")
+			var event string
+			if len(args) == 4 {
+				event = args[3]
+			} else {
+				guessed, err := ai.GuessEventForSound(url, filename, c)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "AI mapping failed: %v. Please specify an event manually.\n", err)
+					return nil
+				}
+				event = guessed
+				fmt.Printf("AI intelligently mapped %s to %s\n", filename, event)
+			}
+
+			if c.Sounds == nil {
+				c.Sounds = make(map[string]config.EventSoundConfig)
+			}
+			cachedPath := filepath.Join(audio.SoundCacheDir(), filename)
+
+			// Keep existing config if it exists, just append/overwrite
+			eventCfg := c.Sounds[event]
+			eventCfg.Paths = append(eventCfg.Paths, cachedPath)
+			c.Sounds[event] = eventCfg
+
+			if err := config.Save(c); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to update config: %v\n", err)
+			} else {
+				fmt.Printf("Mapped %s to event %s\n", filename, event)
+			}
 		}
 	case "analyze-log":
 		logText, err := io.ReadAll(os.Stdin)
@@ -133,21 +125,17 @@ func Run(args []string) error {
 			circus.AnalyzeLogSentiment(string(logText), c, true)
 		}
 	case "automap":
-		if len(args) > 1 {
-			dir := args[1]
-			mapping, err := ai.AutoMapSounds(dir, &c)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Automap failed: %v\n", err)
-			} else {
-				fmt.Println("Sounds mapped successfully:")
-				for event, cfg := range mapping {
-					if len(cfg.Paths) > 0 {
-						fmt.Printf("  - %s mapped to: %s\n", event, cfg.Paths[0])
-					}
+		dir := args[1]
+		mapping, err := ai.AutoMapSounds(dir, &c)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Automap failed: %v\n", err)
+		} else {
+			fmt.Println("Sounds mapped successfully:")
+			for event, cfg := range mapping {
+				if len(cfg.Paths) > 0 {
+					fmt.Printf("  - %s mapped to: %s\n", event, cfg.Paths[0])
 				}
 			}
-		} else {
-			exitUsageError("claune: automap requires a directory", "Usage: claune automap <directory>")
 		}
 	case "analyze-resp":
 		respText, err := io.ReadAll(os.Stdin)
@@ -168,6 +156,37 @@ func Run(args []string) error {
 func ensureExactArgs(args []string, expected int, message string, usage string) {
 	if len(args) != expected {
 		exitUsageError(message, usage)
+	}
+}
+
+func validateManagementArgs(args []string) {
+	switch args[0] {
+	case "status":
+		ensureExactArgs(args, 1, "claune: status does not accept additional arguments", "Usage: claune status")
+	case "test-sounds":
+		ensureExactArgs(args, 1, "claune: test-sounds does not accept additional arguments", "Usage: claune test-sounds")
+	case "config":
+		if len(args) <= 1 {
+			exitUsageError("claune: config requires a natural language prompt", "Usage: claune config <natural language prompt>")
+		}
+	case "automap":
+		switch len(args) {
+		case 1:
+			exitUsageError("claune: automap requires a directory", "Usage: claune automap <directory>")
+		case 2:
+			return
+		default:
+			exitUsageError("claune: automap does not accept additional arguments", "Usage: claune automap <directory>")
+		}
+	case "import-circus":
+		switch len(args) {
+		case 1, 2:
+			exitUsageError("claune: import-circus requires a URL and filename", "Usage: claune import-circus <url> <filename> [event]")
+		case 3, 4:
+			return
+		default:
+			exitUsageError("claune: import-circus does not accept additional arguments", "Usage: claune import-circus <url> <filename> [event]")
+		}
 	}
 }
 
