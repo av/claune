@@ -33,7 +33,17 @@ func Run(args []string) error {
 		return nil
 	}
 
-	c, err := config.Load()
+	switch args[0] {
+	case "help":
+		printUsage()
+		return nil
+	case "install":
+		return installHooks()
+	case "uninstall":
+		return uninstallHooks()
+	}
+
+	c, err := loadCommandConfig(args[0])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "claune: error loading config: %v\n", err)
 		os.Exit(1)
@@ -59,14 +69,6 @@ func Run(args []string) error {
 			fmt.Fprintln(os.Stderr, "Usage: claune play <event> [args...]")
 			os.Exit(1)
 		}
-	case "install":
-		if err := installHooks(); err != nil {
-			return err
-		}
-	case "uninstall":
-		if err := uninstallHooks(); err != nil {
-			return err
-		}
 	case "status":
 		showStatus(c)
 	case "test-sounds":
@@ -82,8 +84,6 @@ func Run(args []string) error {
 			return fmt.Errorf("AI config failed: %w", err)
 		}
 		fmt.Println("Config updated successfully via AI")
-	case "help":
-		printUsage()
 	case "import-circus":
 		if len(args) > 2 {
 			url := args[1]
@@ -159,6 +159,20 @@ func Run(args []string) error {
 		}
 	}
 	return nil
+}
+
+func loadCommandConfig(command string) (config.ClauneConfig, error) {
+	c, err := config.Load()
+	if err == nil {
+		return c, nil
+	}
+
+	if command == "config" {
+		fmt.Fprintf(os.Stderr, "claune: warning: invalid config, starting from defaults: %v\n", err)
+		return c, nil
+	}
+
+	return c, err
 }
 
 func showStatus(c config.ClauneConfig) {
