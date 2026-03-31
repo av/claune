@@ -408,6 +408,76 @@ func TestRunAnalyzeCommandsFailLoudlyOnStdinReadError(t *testing.T) {
 	}
 }
 
+func TestRunAutomapFailsLoudlyOnRuntimeDirectoryErrors(t *testing.T) {
+	tests := []struct {
+		name       string
+		setupDir   func(t *testing.T) string
+		wantStderr []string
+	}{
+		{
+			name: "missing directory",
+			setupDir: func(t *testing.T) string {
+				return filepath.Join(t.TempDir(), "does-not-exist")
+			},
+			wantStderr: []string{"Automap failed: failed to read directory:", "no such file or directory"},
+		},
+		{
+			name: "unreadable directory",
+			setupDir: func(t *testing.T) string {
+				dir := filepath.Join(t.TempDir(), "restricted")
+				if err := os.Mkdir(dir, 0o755); err != nil {
+					t.Fatalf("os.Mkdir(%q) error = %v", dir, err)
+				}
+				if err := os.Chmod(dir, 0); err != nil {
+					t.Fatalf("os.Chmod(%q) error = %v", dir, err)
+				}
+				t.Cleanup(func() {
+					_ = os.Chmod(dir, 0o755)
+				})
+				return dir
+			},
+			wantStderr: []string{"Automap failed: failed to read directory:", "permission denied"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			home := t.TempDir()
+			stdout, stderr, exitCode, err := runInSubprocess(t, home, []string{"automap", tt.setupDir(t)})
+			if err == nil {
+				t.Fatalf("Run(automap) error = nil, want exit code 1\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
+			}
+			if exitCode != 1 {
+				t.Fatalf("Run(automap) exit code = %d, want 1\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			for _, want := range tt.wantStderr {
+				assertContains(t, stderr, want)
+			}
+		})
+	}
+}
+
+func TestRunAutomapFailsLoudlyOnEmptyDirectory(t *testing.T) {
+	home := t.TempDir()
+	dir := t.TempDir()
+
+	stdout, stderr, exitCode, err := runInSubprocess(t, home, []string{"automap", dir})
+	if err == nil {
+		t.Fatalf("Run(automap) error = nil, want exit code 1\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
+	}
+	if exitCode != 1 {
+		t.Fatalf("Run(automap) exit code = %d, want 1\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty", stdout)
+	}
+	assertContains(t, stderr, "Automap failed: no audio files found in")
+	assertContains(t, stderr, dir)
+}
+
 type capturedOutput struct {
 	stdout string
 	stderr string

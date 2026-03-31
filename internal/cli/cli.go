@@ -127,6 +127,7 @@ func Run(args []string) error {
 		mapping, err := ai.AutoMapSounds(dir, &c)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Automap failed: %v\n", err)
+			os.Exit(1)
 		} else {
 			fmt.Println("Sounds mapped successfully:")
 			for event, cfg := range mapping {
