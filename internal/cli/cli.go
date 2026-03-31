@@ -141,6 +141,7 @@ func Run(args []string) error {
 		event, strategy, err := ai.AnalyzeResponseSentiment(respText, c)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Analyze response sentiment failed: %v\n", err)
+			os.Exit(1)
 		} else if event != "" {
 			if err := audio.PlaySoundWithStrategy(event, strategy, true, c); err != nil {
 				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)

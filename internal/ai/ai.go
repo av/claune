@@ -31,6 +31,14 @@ type ClaudeResponse struct {
 	} `json:"content"`
 }
 
+func messagesAPIURL(c config.ClauneConfig) string {
+	baseURL := strings.TrimRight(c.AI.APIURL, "/")
+	if baseURL == "" {
+		baseURL = "https://api.anthropic.com"
+	}
+	return baseURL + "/v1/messages"
+}
+
 func AnalyzeToolIntent(toolName, input string, c config.ClauneConfig) (string, error) {
 	if !c.AI.Enabled {
 		return "tool:start", nil
@@ -118,7 +126,7 @@ func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (strin
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(bodyBytes))
+	req, _ := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
 	req.Header.Set("x-api-key", key)
 	req.Header.Set("anthropic-version", "2023-06-01")
 	req.Header.Set("content-type", "application/json")

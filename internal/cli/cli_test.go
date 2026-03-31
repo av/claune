@@ -570,6 +570,31 @@ func TestRunAnalyzeCommandsFailLoudlyOnStdinReadError(t *testing.T) {
 	}
 }
 
+func TestRunAnalyzeRespExitsNonZeroOnRuntimeAIFailure(t *testing.T) {
+	failingServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "bad gateway", http.StatusBadGateway)
+	}))
+	defer failingServer.Close()
+
+	home := t.TempDir()
+	configPath := filepath.Join(home, ".claune.json")
+	if err := os.WriteFile(configPath, []byte(fmt.Sprintf(`{"ai":{"enabled":true,"api_key":"test-key","api_url":%q}}`, failingServer.URL)), 0o644); err != nil {
+		t.Fatalf("os.WriteFile(%q) error = %v", configPath, err)
+	}
+
+	stdout, stderr, exitCode, err := runInSubprocessWithInput(t, home, []string{"analyze-resp"}, "response body", nil)
+	if err == nil {
+		t.Fatalf("Run(analyze-resp) error = nil, want exit code 1\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
+	}
+	if exitCode != 1 {
+		t.Fatalf("Run(analyze-resp) exit code = %d, want 1\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty", stdout)
+	}
+	assertContains(t, stderr, "Analyze response sentiment failed:")
+}
+
 func TestRunAutomapFailsLoudlyOnRuntimeDirectoryErrors(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -833,10 +858,15 @@ func assertContains(t *testing.T, got string, want string) {
 
 func runInSubprocess(t *testing.T, home string, args []string) (string, string, int, error) {
 	t.Helper()
-	return runInSubprocessWithEnv(t, home, args, nil)
+	return runInSubprocessWithInput(t, home, args, "", nil)
 }
 
 func runInSubprocessWithEnv(t *testing.T, home string, args []string, extraEnv []string) (string, string, int, error) {
+	t.Helper()
+	return runInSubprocessWithInput(t, home, args, "", extraEnv)
+}
+
+func runInSubprocessWithInput(t *testing.T, home string, args []string, stdin string, extraEnv []string) (string, string, int, error) {
 	t.Helper()
 
 	cmdArgs := append([]string{"-test.run=TestRunSubprocessHelper", "--"}, args...)
@@ -852,6 +882,7 @@ func runInSubprocessWithEnv(t *testing.T, home string, args []string, extraEnv [
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+	cmd.Stdin = strings.NewReader(stdin)
 
 	err := cmd.Run()
 	if err == nil {
