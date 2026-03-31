@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -476,6 +478,55 @@ func TestRunAutomapFailsLoudlyOnEmptyDirectory(t *testing.T) {
 	}
 	assertContains(t, stderr, "Automap failed: no audio files found in")
 	assertContains(t, stderr, dir)
+}
+
+func TestRunImportCircusFailsLoudlyOnRuntimeImportError(t *testing.T) {
+	home := t.TempDir()
+
+	stdout, stderr, exitCode, err := runInSubprocess(t, home, []string{"import-circus", "notaurl", "alert.mp3", "tool:start"})
+	if err == nil {
+		t.Fatalf("Run(import-circus) error = nil, want exit code 1\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
+	}
+	if exitCode != 1 {
+		t.Fatalf("Run(import-circus) exit code = %d, want 1\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty", stdout)
+	}
+	assertContains(t, stderr, "Import failed:")
+	assertContains(t, stderr, `invalid URL format: "notaurl"`)
+}
+
+func TestRunImportCircusFailsLoudlyOnConfigSaveErrorAfterSuccessfulImport(t *testing.T) {
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/alert.mp3" {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write([]byte("fake mp3 bytes"))
+	}))
+	defer testServer.Close()
+
+	homeParent := t.TempDir()
+	homeFile := filepath.Join(homeParent, "not-a-directory")
+	if err := os.WriteFile(homeFile, []byte("blocking home path"), 0o644); err != nil {
+		t.Fatalf("os.WriteFile(%q) error = %v", homeFile, err)
+	}
+	cacheDir := t.TempDir()
+
+	stdout, stderr, exitCode, err := runInSubprocessWithEnv(t, homeFile, []string{"import-circus", testServer.URL + "/alert.mp3", "alert.mp3", "tool:start"}, []string{fmt.Sprintf("XDG_CACHE_HOME=%s", cacheDir)})
+	if err == nil {
+		t.Fatalf("Run(import-circus) error = nil, want exit code 1\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
+	}
+	if exitCode != 1 {
+		t.Fatalf("Run(import-circus) exit code = %d, want 1\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+	assertContains(t, stdout, "🤡 Successfully imported meme sound to")
+	if strings.Contains(stdout, "Mapped alert.mp3 to event tool:start") {
+		t.Fatalf("stdout = %q, should not report successful mapping when config save fails", stdout)
+	}
+	assertContains(t, stderr, "Failed to update config:")
+	assertContains(t, stderr, "not a directory")
 }
 
 type capturedOutput struct {

@@ -88,7 +88,8 @@ func Run(args []string) error {
 		url := args[1]
 		filename := args[2]
 		if err := circus.ImportMemeSound(url, filename); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Import failed: %v\n", err)
+			os.Exit(1)
 		} else {
 			var event string
 			if len(args) == 4 {
@@ -115,6 +116,7 @@ func Run(args []string) error {
 
 			if err := config.Save(c); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to update config: %v\n", err)
+				os.Exit(1)
 			} else {
 				fmt.Printf("Mapped %s to event %s\n", filename, event)
 			}
