@@ -521,12 +521,84 @@ func TestRunImportCircusFailsLoudlyOnConfigSaveErrorAfterSuccessfulImport(t *tes
 	if exitCode != 1 {
 		t.Fatalf("Run(import-circus) exit code = %d, want 1\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
 	}
-	assertContains(t, stdout, "🤡 Successfully imported meme sound to")
-	if strings.Contains(stdout, "Mapped alert.mp3 to event tool:start") {
-		t.Fatalf("stdout = %q, should not report successful mapping when config save fails", stdout)
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty when config save fails after download", stdout)
 	}
 	assertContains(t, stderr, "Failed to update config:")
+	assertContains(t, stderr, "alert.mp3 was downloaded to")
+	assertContains(t, stderr, "but claune could not update ~/.claune.json")
 	assertContains(t, stderr, "not a directory")
+}
+
+func TestRunImportCircusPrintsFinalSuccessSummaryOnlyAfterConfigUpdate(t *testing.T) {
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/alert.mp3" {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write([]byte("fake mp3 bytes"))
+	}))
+	defer testServer.Close()
+
+	home := t.TempDir()
+	cacheDir := t.TempDir()
+
+	stdout, stderr, exitCode, err := runInSubprocessWithEnv(t, home, []string{"import-circus", testServer.URL + "/alert.mp3", "alert.mp3", "tool:start"}, []string{fmt.Sprintf("XDG_CACHE_HOME=%s", cacheDir)})
+	if err != nil {
+		t.Fatalf("Run(import-circus) error = %v (exit %d)\nstdout:\n%s\nstderr:\n%s", err, exitCode, stdout, stderr)
+	}
+	if exitCode != 0 {
+		t.Fatalf("Run(import-circus) exit code = %d, want 0\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
+	}
+	assertContains(t, stdout, "Imported alert.mp3 and mapped it to event tool:start")
+	if strings.Contains(stdout, "Successfully imported meme sound") {
+		t.Fatalf("stdout = %q, should not contain low-level importer success output", stdout)
+	}
+	if strings.Contains(stdout, "Mapped alert.mp3 to event tool:start") {
+		t.Fatalf("stdout = %q, want only the final success summary", stdout)
+	}
+}
+
+func TestRunImportCircusReportsPartialSuccessWhenAIMappingFails(t *testing.T) {
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/alert.mp3" {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write([]byte("fake mp3 bytes"))
+	}))
+	defer testServer.Close()
+
+	home := t.TempDir()
+	cacheDir := t.TempDir()
+	configPath := filepath.Join(home, ".claune.json")
+	if err := os.WriteFile(configPath, []byte(`{"ai":{"enabled":true,"api_key":"dummy-key"}}`), 0o644); err != nil {
+		t.Fatalf("os.WriteFile(%q) error = %v", configPath, err)
+	}
+
+	stdout, stderr, exitCode, err := runInSubprocessWithEnv(t, home, []string{"import-circus", testServer.URL + "/alert.mp3", "alert.mp3"}, []string{
+		fmt.Sprintf("XDG_CACHE_HOME=%s", cacheDir),
+		"HTTPS_PROXY=http://127.0.0.1:1",
+	})
+	if err != nil {
+		t.Fatalf("Run(import-circus) error = %v (exit %d)\nstdout:\n%s\nstderr:\n%s", err, exitCode, stdout, stderr)
+	}
+	if exitCode != 0 {
+		t.Fatalf("Run(import-circus) exit code = %d, want 0\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+	assertContains(t, stdout, "Imported alert.mp3 to")
+	assertContains(t, stdout, "but could not map it to an event automatically")
+	if strings.Contains(stdout, "Successfully imported meme sound") {
+		t.Fatalf("stdout = %q, should not contain low-level importer success output", stdout)
+	}
+	if strings.Contains(stdout, "Mapped alert.mp3 to event") {
+		t.Fatalf("stdout = %q, should not claim successful mapping when AI guessing fails", stdout)
+	}
+	assertContains(t, stderr, "AI mapping failed:")
+	assertContains(t, stderr, "Please rerun with an explicit event")
 }
 
 type capturedOutput struct {

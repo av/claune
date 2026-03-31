@@ -87,6 +87,7 @@ func Run(args []string) error {
 	case "import-circus":
 		url := args[1]
 		filename := args[2]
+		cachedPath := filepath.Join(audio.SoundCacheDir(), filename)
 		if err := circus.ImportMemeSound(url, filename); err != nil {
 			fmt.Fprintf(os.Stderr, "Import failed: %v\n", err)
 			os.Exit(1)
@@ -97,17 +98,16 @@ func Run(args []string) error {
 			} else {
 				guessed, err := ai.GuessEventForSound(url, filename, c)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "AI mapping failed: %v. Please specify an event manually.\n", err)
+					fmt.Printf("Imported %s to %s, but could not map it to an event automatically.\n", filename, cachedPath)
+					fmt.Fprintf(os.Stderr, "AI mapping failed: %v. Please rerun with an explicit event to update ~/.claune.json.\n", err)
 					return nil
 				}
 				event = guessed
-				fmt.Printf("AI intelligently mapped %s to %s\n", filename, event)
 			}
 
 			if c.Sounds == nil {
 				c.Sounds = make(map[string]config.EventSoundConfig)
 			}
-			cachedPath := filepath.Join(audio.SoundCacheDir(), filename)
 
 			// Keep existing config if it exists, just append/overwrite
 			eventCfg := c.Sounds[event]
@@ -116,9 +116,10 @@ func Run(args []string) error {
 
 			if err := config.Save(c); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to update config: %v\n", err)
+				fmt.Fprintf(os.Stderr, "%s was downloaded to %s, but claune could not update ~/.claune.json.\n", filename, cachedPath)
 				os.Exit(1)
 			} else {
-				fmt.Printf("Mapped %s to event %s\n", filename, event)
+				fmt.Printf("Imported %s and mapped it to event %s\n", filename, event)
 			}
 		}
 	case "analyze-log":

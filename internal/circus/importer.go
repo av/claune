@@ -17,6 +17,9 @@ func ImportMemeSound(url, name string) error {
 	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 		return fmt.Errorf("invalid URL format: %q. Only http:// and https:// URLs are supported for importing meme sounds.", url)
 	}
+	if name == "" || name == "." || name != filepath.Base(name) {
+		return fmt.Errorf("invalid import name %q", name)
+	}
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -45,6 +48,5 @@ func ImportMemeSound(url, name string) error {
 		return fmt.Errorf("failed to save meme sound %s: %w", name, err)
 	}
 
-	fmt.Printf("🤡 Successfully imported meme sound to %s\n", dest)
 	return nil
 }
