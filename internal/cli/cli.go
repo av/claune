@@ -35,11 +35,14 @@ func Run(args []string) error {
 
 	switch args[0] {
 	case "help":
+		ensureExactArgs(args, 1, "claune: help does not accept additional arguments", "Usage: claune help")
 		printUsage()
 		return nil
 	case "install":
+		ensureExactArgs(args, 1, "claune: install does not accept additional arguments", "Usage: claune install")
 		return installHooks()
 	case "uninstall":
+		ensureExactArgs(args, 1, "claune: uninstall does not accept additional arguments", "Usage: claune uninstall")
 		return uninstallHooks()
 	}
 
@@ -70,13 +73,14 @@ func Run(args []string) error {
 			os.Exit(1)
 		}
 	case "status":
+		ensureExactArgs(args, 1, "claune: status does not accept additional arguments", "Usage: claune status")
 		showStatus(c)
 	case "test-sounds":
+		ensureExactArgs(args, 1, "claune: test-sounds does not accept additional arguments", "Usage: claune test-sounds")
 		testSounds(c)
 	case "config":
 		if len(args) <= 1 {
-			fmt.Println("Usage: claune config <natural language prompt>")
-			return nil
+			exitUsageError("claune: config requires a natural language prompt", "Usage: claune config <natural language prompt>")
 		}
 
 		prompt := strings.Join(args[1:], " ")
@@ -121,7 +125,7 @@ func Run(args []string) error {
 				}
 			}
 		} else {
-			fmt.Println("Usage: claune import-circus <url> <filename> [event]")
+			exitUsageError("claune: import-circus requires a URL and filename", "Usage: claune import-circus <url> <filename> [event]")
 		}
 	case "analyze-log":
 		logText, err := io.ReadAll(os.Stdin)
@@ -143,7 +147,7 @@ func Run(args []string) error {
 				}
 			}
 		} else {
-			fmt.Println("Usage: claune automap <directory>")
+			exitUsageError("claune: automap requires a directory", "Usage: claune automap <directory>")
 		}
 	case "analyze-resp":
 		respText, err := io.ReadAll(os.Stdin)
@@ -159,6 +163,18 @@ func Run(args []string) error {
 		}
 	}
 	return nil
+}
+
+func ensureExactArgs(args []string, expected int, message string, usage string) {
+	if len(args) != expected {
+		exitUsageError(message, usage)
+	}
+}
+
+func exitUsageError(message string, usage string) {
+	fmt.Fprintln(os.Stderr, message)
+	fmt.Fprintln(os.Stderr, usage)
+	os.Exit(1)
 }
 
 func loadCommandConfig(command string) (config.ClauneConfig, error) {

@@ -59,9 +59,9 @@ func TestRunHelpWorksWithMalformedConfig(t *testing.T) {
 		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
 	}
 
-	stdout, stderr, err := runInSubprocess(t, home, []string{"help"})
+	stdout, stderr, exitCode, err := runInSubprocess(t, home, []string{"help"})
 	if err != nil {
-		t.Fatalf("Run(help) error = %v\nstdout:\n%s\nstderr:\n%s", err, stdout, stderr)
+		t.Fatalf("Run(help) error = %v (exit %d)\nstdout:\n%s\nstderr:\n%s", err, exitCode, stdout, stderr)
 	}
 	assertContains(t, stderr, "Usage: claune")
 	if strings.Contains(stderr, "error loading config") {
@@ -79,9 +79,9 @@ func TestRunConfigRepairsMalformedConfigUsingDefaults(t *testing.T) {
 		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
 	}
 
-	stdout, stderr, err := runInSubprocess(t, home, []string{"config", "set", "volume", "to", "50%", "and", "unmute"})
+	stdout, stderr, exitCode, err := runInSubprocess(t, home, []string{"config", "set", "volume", "to", "50%", "and", "unmute"})
 	if err != nil {
-		t.Fatalf("Run(config) error = %v\nstdout:\n%s\nstderr:\n%s", err, stdout, stderr)
+		t.Fatalf("Run(config) error = %v (exit %d)\nstdout:\n%s\nstderr:\n%s", err, exitCode, stdout, stderr)
 	}
 	assertContains(t, stdout, "Config updated successfully via AI")
 	assertContains(t, stderr, "warning: invalid config")
@@ -101,6 +101,113 @@ func TestRunConfigRepairsMalformedConfigUsingDefaults(t *testing.T) {
 	}
 	if got := persisted["mute"]; got != false {
 		t.Fatalf("persisted mute = %#v, want false", got)
+	}
+}
+
+func TestRunManagementCommandsRejectBadUsage(t *testing.T) {
+	tests := []struct {
+		name           string
+		args           []string
+		wantExitCode   int
+		wantStderr     []string
+		wantNoStdout   bool
+	}{
+		{
+			name:         "config requires prompt",
+			args:         []string{"config"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: config requires a natural language prompt", "Usage: claune config <natural language prompt>"},
+			wantNoStdout: true,
+		},
+		{
+			name:         "automap requires directory",
+			args:         []string{"automap"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: automap requires a directory", "Usage: claune automap <directory>"},
+			wantNoStdout: true,
+		},
+		{
+			name:         "import-circus requires url and filename",
+			args:         []string{"import-circus"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: import-circus requires a URL and filename", "Usage: claune import-circus <url> <filename> [event]"},
+			wantNoStdout: true,
+		},
+		{
+			name:         "help rejects extra args",
+			args:         []string{"help", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: help does not accept additional arguments", "Usage: claune help"},
+			wantNoStdout: true,
+		},
+		{
+			name:         "status rejects extra args",
+			args:         []string{"status", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: status does not accept additional arguments", "Usage: claune status"},
+			wantNoStdout: true,
+		},
+		{
+			name:         "install rejects extra args",
+			args:         []string{"install", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: install does not accept additional arguments", "Usage: claune install"},
+			wantNoStdout: true,
+		},
+		{
+			name:         "uninstall rejects extra args",
+			args:         []string{"uninstall", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: uninstall does not accept additional arguments", "Usage: claune uninstall"},
+			wantNoStdout: true,
+		},
+		{
+			name:         "test-sounds rejects extra args",
+			args:         []string{"test-sounds", "extra"},
+			wantExitCode: 1,
+			wantStderr:   []string{"claune: test-sounds does not accept additional arguments", "Usage: claune test-sounds"},
+			wantNoStdout: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			home := t.TempDir()
+			stdout, stderr, exitCode, err := runInSubprocess(t, home, tt.args)
+			if err == nil {
+				t.Fatalf("Run(%v) error = nil, want exit code %d\nstdout:\n%s\nstderr:\n%s", tt.args, tt.wantExitCode, stdout, stderr)
+			}
+			if exitCode != tt.wantExitCode {
+				t.Fatalf("Run(%v) exit code = %d, want %d\nstdout:\n%s\nstderr:\n%s", tt.args, exitCode, tt.wantExitCode, stdout, stderr)
+			}
+			for _, want := range tt.wantStderr {
+				assertContains(t, stderr, want)
+			}
+			if tt.wantNoStdout && stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+		})
+	}
+}
+
+func TestRunUnknownCommandStillPassthroughs(t *testing.T) {
+	home := t.TempDir()
+	binDir := t.TempDir()
+	claudePath := filepath.Join(binDir, "claude")
+	if err := os.WriteFile(claudePath, []byte("#!/bin/sh\nprintf 'passthrough:%s\\n' \"$*\"\n"), 0755); err != nil {
+		t.Fatalf("WriteFile(%q) error = %v", claudePath, err)
+	}
+
+	stdout, stderr, exitCode, err := runInSubprocessWithEnv(t, home, []string{"not-a-claune-command", "alpha", "beta"}, []string{fmt.Sprintf("PATH=%s:%s", binDir, os.Getenv("PATH"))})
+	if err != nil {
+		t.Fatalf("Run(unknown) error = %v (exit %d)\nstdout:\n%s\nstderr:\n%s", err, exitCode, stdout, stderr)
+	}
+	if exitCode != 0 {
+		t.Fatalf("Run(unknown) exit code = %d, want 0\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+	assertContains(t, stdout, "passthrough:not-a-claune-command alpha beta")
+	if strings.Contains(stderr, "does not accept additional arguments") {
+		t.Fatalf("stderr = %q, should not contain claune usage validation for unknown commands", stderr)
 	}
 }
 
@@ -174,7 +281,12 @@ func assertContains(t *testing.T, got string, want string) {
 	}
 }
 
-func runInSubprocess(t *testing.T, home string, args []string) (string, string, error) {
+func runInSubprocess(t *testing.T, home string, args []string) (string, string, int, error) {
+	t.Helper()
+	return runInSubprocessWithEnv(t, home, args, nil)
+	}
+
+func runInSubprocessWithEnv(t *testing.T, home string, args []string, extraEnv []string) (string, string, int, error) {
 	t.Helper()
 
 	cmdArgs := append([]string{"-test.run=TestRunSubprocessHelper", "--"}, args...)
@@ -184,6 +296,7 @@ func runInSubprocess(t *testing.T, home string, args []string) (string, string, 
 		"ANTHROPIC_API_KEY=",
 		fmt.Sprintf("CLAUNE_SUBPROCESS_HOME=%s", home),
 	)
+	cmd.Env = append(cmd.Env, extraEnv...)
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -191,7 +304,16 @@ func runInSubprocess(t *testing.T, home string, args []string) (string, string, 
 	cmd.Stderr = &stderr
 
 	err := cmd.Run()
-	return stdout.String(), stderr.String(), err
+	if err == nil {
+		return stdout.String(), stderr.String(), 0, nil
+	}
+
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok {
+		return stdout.String(), stderr.String(), -1, err
+	}
+
+	return stdout.String(), stderr.String(), exitErr.ExitCode(), err
 }
 
 func TestRunSubprocessHelper(t *testing.T) {
