@@ -230,7 +230,7 @@ func loadCommandConfig(command string) (config.ClauneConfig, error) {
 		return c, nil
 	}
 
-	if command == "config" {
+	if command == "config" && config.IsInvalidConfigError(err) {
 		fmt.Fprintf(os.Stderr, "claune: warning: invalid config, starting from defaults: %v\n", err)
 		return c, nil
 	}

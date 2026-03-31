@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -30,6 +31,23 @@ type AIConfig struct {
 	APIURL  string `json:"api_url,omitempty"`
 }
 
+type InvalidConfigError struct {
+	err error
+}
+
+func (e InvalidConfigError) Error() string {
+	return e.err.Error()
+}
+
+func (e InvalidConfigError) Unwrap() error {
+	return e.err
+}
+
+func IsInvalidConfigError(err error) bool {
+	var invalidConfigError InvalidConfigError
+	return errors.As(err, &invalidConfigError)
+}
+
 func Load() (ClauneConfig, error) {
 	config := ClauneConfig{
 		Sounds: make(map[string]EventSoundConfig),
@@ -37,13 +55,15 @@ func Load() (ClauneConfig, error) {
 	home, _ := os.UserHomeDir()
 	configPath := filepath.Join(home, ".claune.json")
 	data, err := os.ReadFile(configPath)
-	if err == nil {
-		if err := json.Unmarshal(data, &config); err != nil {
-			if strings.Contains(err.Error(), "cannot unmarshal string into Go struct field") {
-				return config, fmt.Errorf("invalid config format detected in ~/.claune.json. Sounds must now be configured as objects with 'paths' array, not strings. Please update your configuration schema: %w", err)
-			}
-			return config, fmt.Errorf("invalid configuration format in ~/.claune.json: %w", err)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return config, fmt.Errorf("failed to read ~/.claune.json: %w", err)
 		}
+	} else if err := json.Unmarshal(data, &config); err != nil {
+		if strings.Contains(err.Error(), "cannot unmarshal string into Go struct field") {
+			return config, InvalidConfigError{err: fmt.Errorf("invalid config format detected in ~/.claune.json. Sounds must now be configured as objects with 'paths' array, not strings. Please update your configuration schema: %w", err)}
+		}
+		return config, InvalidConfigError{err: fmt.Errorf("invalid configuration format in ~/.claune.json: %w", err)}
 	}
 	if config.Sounds == nil {
 		config.Sounds = make(map[string]EventSoundConfig)
@@ -75,6 +95,12 @@ func (c ClauneConfig) ShouldMute() bool {
 
 func (c ClauneConfig) GetVolume() float64 {
 	if c.Volume != nil {
+		if *c.Volume < 0.0 {
+			return 0.0
+		}
+		if *c.Volume > 1.0 {
+			return 1.0
+		}
 		return *c.Volume
 	}
 	return 1.0

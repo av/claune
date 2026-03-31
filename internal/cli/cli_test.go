@@ -106,6 +106,49 @@ func TestRunConfigRepairsMalformedConfigUsingDefaults(t *testing.T) {
 	}
 }
 
+func TestRunConfigFailsWhenConfigPathUnreadable(t *testing.T) {
+	home := t.TempDir()
+	configPath := filepath.Join(home, ".claune.json")
+	if err := os.Mkdir(configPath, 0755); err != nil {
+		t.Fatalf("Mkdir(%q) error = %v", configPath, err)
+	}
+
+	stdout, stderr, exitCode, err := runInSubprocess(t, home, []string{"config", "set", "volume", "to", "50%", "and", "unmute"})
+	if err == nil {
+		t.Fatalf("Run(config) error = nil, want exit code 1\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
+	}
+	if exitCode != 1 {
+		t.Fatalf("Run(config) exit code = %d, want 1\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty", stdout)
+	}
+	assertContains(t, stderr, "claune: error loading config: failed to read ~/.claune.json")
+	if strings.Contains(stderr, "warning: invalid config") {
+		t.Fatalf("stderr = %q, should not contain malformed-config recovery warning", stderr)
+	}
+}
+
+func TestRunStatusFailsWhenConfigPathUnreadable(t *testing.T) {
+	home := t.TempDir()
+	configPath := filepath.Join(home, ".claune.json")
+	if err := os.Mkdir(configPath, 0755); err != nil {
+		t.Fatalf("Mkdir(%q) error = %v", configPath, err)
+	}
+
+	stdout, stderr, exitCode, err := runInSubprocess(t, home, []string{"status"})
+	if err == nil {
+		t.Fatalf("Run(status) error = nil, want exit code 1\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
+	}
+	if exitCode != 1 {
+		t.Fatalf("Run(status) exit code = %d, want 1\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty", stdout)
+	}
+	assertContains(t, stderr, "claune: error loading config: failed to read ~/.claune.json")
+}
+
 func TestRunManagementCommandsRejectBadUsage(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -624,14 +667,14 @@ func TestRunImportCircusFailsLoudlyOnConfigSaveErrorAfterSuccessfulImport(t *tes
 	}))
 	defer testServer.Close()
 
-	homeParent := t.TempDir()
-	homeFile := filepath.Join(homeParent, "not-a-directory")
-	if err := os.WriteFile(homeFile, []byte("blocking home path"), 0o644); err != nil {
-		t.Fatalf("os.WriteFile(%q) error = %v", homeFile, err)
+	home := t.TempDir()
+	configPath := filepath.Join(home, ".claune.json")
+	if err := os.WriteFile(configPath, []byte(`{"sounds":{}}`), 0o444); err != nil {
+		t.Fatalf("os.WriteFile(%q) error = %v", configPath, err)
 	}
 	cacheDir := t.TempDir()
 
-	stdout, stderr, exitCode, err := runInSubprocessWithEnv(t, homeFile, []string{"import-circus", testServer.URL + "/alert.mp3", "alert.mp3", "tool:start"}, []string{fmt.Sprintf("XDG_CACHE_HOME=%s", cacheDir)})
+	stdout, stderr, exitCode, err := runInSubprocessWithEnv(t, home, []string{"import-circus", testServer.URL + "/alert.mp3", "alert.mp3", "tool:start"}, []string{fmt.Sprintf("XDG_CACHE_HOME=%s", cacheDir)})
 	if err == nil {
 		t.Fatalf("Run(import-circus) error = nil, want exit code 1\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}
@@ -644,7 +687,7 @@ func TestRunImportCircusFailsLoudlyOnConfigSaveErrorAfterSuccessfulImport(t *tes
 	assertContains(t, stderr, "Failed to update config:")
 	assertContains(t, stderr, "alert.mp3 was downloaded to")
 	assertContains(t, stderr, "but claune could not update ~/.claune.json")
-	assertContains(t, stderr, "not a directory")
+	assertContains(t, stderr, "permission denied")
 }
 
 func TestRunImportCircusPrintsFinalSuccessSummaryOnlyAfterConfigUpdate(t *testing.T) {

@@ -1,47 +1,204 @@
 package config
 
 import (
-	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 )
 
-func TestShouldMute(t *testing.T) {
-	c := ClauneConfig{}
-	_ = c.ShouldMute()
+func TestLoadMissingConfigReturnsDefaults(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	config, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if config.Sounds == nil {
+		t.Fatal("Load() returned nil Sounds map")
+	}
+	if len(config.Sounds) != 0 {
+		t.Fatalf("Load() Sounds length = %d, want 0", len(config.Sounds))
+	}
+	if got := config.GetVolume(); got != 1.0 {
+		t.Fatalf("GetVolume() = %v, want 1.0", got)
+	}
 }
 
-func TestParseNewConfig(t *testing.T) {
-	data := []byte(`{
+func TestLoadValidConfig(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	configPath := filepath.Join(home, ".claune.json")
+	contents := `{
+		"mute": true,
+		"volume": 0.35,
+		"strategy": "round_robin",
 		"sounds": {
 			"success": {
 				"paths": ["test1.mp3", "test2.mp3"],
-				"strategy": "round_robin"
+				"strategy": "random"
 			}
+		},
+		"ai": {
+			"enabled": true,
+			"model": "gpt-test",
+			"api_key": "secret",
+			"api_url": "https://example.invalid"
 		}
-	}`)
-	var c ClauneConfig
-	err := json.Unmarshal(data, &c)
+	}`
+	if err := os.WriteFile(configPath, []byte(contents), 0644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	config, err := Load()
 	if err != nil {
-		t.Fatalf("Failed to parse new config: %v", err)
+		t.Fatalf("Load() error = %v", err)
 	}
-	sc, ok := c.Sounds["success"]
+	if config.Mute == nil || !*config.Mute {
+		t.Fatalf("Load() Mute = %v, want true", config.Mute)
+	}
+	if got := config.GetVolume(); got != 0.35 {
+		t.Fatalf("GetVolume() = %v, want 0.35", got)
+	}
+	if !config.ShouldMute() {
+		t.Fatal("ShouldMute() = false, want true")
+	}
+	if config.Strategy != "round_robin" {
+		t.Fatalf("Strategy = %q, want round_robin", config.Strategy)
+	}
+	success, ok := config.Sounds["success"]
 	if !ok {
-		t.Fatalf("Expected success config")
+		t.Fatal("Load() missing success sound config")
 	}
-	if len(sc.Paths) != 2 || sc.Paths[0] != "test1.mp3" || sc.Strategy != "round_robin" {
-		t.Errorf("Parsed incorrectly: %+v", sc)
+	if len(success.Paths) != 2 || success.Paths[0] != "test1.mp3" || success.Paths[1] != "test2.mp3" {
+		t.Fatalf("success.Paths = %#v, want [test1.mp3 test2.mp3]", success.Paths)
+	}
+	if success.Strategy != "random" {
+		t.Fatalf("success.Strategy = %q, want random", success.Strategy)
+	}
+	if !config.AI.Enabled || config.AI.Model != "gpt-test" || config.AI.APIKey != "secret" || config.AI.APIURL != "https://example.invalid" {
+		t.Fatalf("AI config parsed incorrectly: %+v", config.AI)
 	}
 }
 
-func TestParseOldConfigFailsGracefully(t *testing.T) {
-	data := []byte(`{
+func TestLoadMalformedConfigFails(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	configPath := filepath.Join(home, ".claune.json")
+	if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("Load() error = nil, want malformed config failure")
+	}
+	if !strings.Contains(err.Error(), "invalid configuration format in ~/.claune.json") {
+		t.Fatalf("Load() error = %q, want invalid configuration format context", err)
+	}
+}
+
+func TestLoadLegacySchemaRejected(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	configPath := filepath.Join(home, ".claune.json")
+	if err := os.WriteFile(configPath, []byte(`{
 		"sounds": {
 			"success": "test1.mp3"
 		}
-	}`)
-	var c ClauneConfig
-	err := json.Unmarshal(data, &c)
-	if err == nil {
-		t.Fatalf("Expected clear parsing failure for old config shape, but got no error")
+	}`), 0644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
 	}
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("Load() error = nil, want legacy schema rejection")
+	}
+	if !strings.Contains(err.Error(), "Sounds must now be configured as objects with 'paths' array, not strings") {
+		t.Fatalf("Load() error = %q, want legacy schema guidance", err)
+	}
+}
+
+func TestLoadUnreadableConfigPathFails(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	configPath := filepath.Join(home, ".claune.json")
+	if err := os.Mkdir(configPath, 0755); err != nil {
+		t.Fatalf("Mkdir(%q) error = %v", configPath, err)
+	}
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("Load() error = nil, want unreadable config path failure")
+	}
+	if !strings.Contains(err.Error(), "failed to read ~/.claune.json") {
+		t.Fatalf("Load() error = %q, want read failure context", err)
+	}
+}
+
+func TestShouldMuteUsesMuteUntilBeforeMuteFlag(t *testing.T) {
+	falseValue := false
+	future := time.Now().Add(24 * time.Hour)
+
+	config := ClauneConfig{
+		Mute:      &falseValue,
+		MuteUntil: &future,
+	}
+
+	if !config.ShouldMute() {
+		t.Fatal("ShouldMute() = false, want true while mute_until is in the future")
+	}
+}
+
+func TestShouldMuteUsesExplicitMuteWhenMuteUntilExpired(t *testing.T) {
+	trueValue := true
+	past := time.Now().Add(-24 * time.Hour)
+
+	config := ClauneConfig{
+		Mute:      &trueValue,
+		MuteUntil: &past,
+	}
+
+	if !config.ShouldMute() {
+		t.Fatal("ShouldMute() = false, want true from explicit mute flag after mute_until expires")
+	}
+}
+
+func TestGetVolumeDefaultAndExplicit(t *testing.T) {
+	config := ClauneConfig{}
+	if got := config.GetVolume(); got != 1.0 {
+		t.Fatalf("GetVolume() = %v, want 1.0", got)
+	}
+
+	volume := 0.75
+	config.Volume = &volume
+	if got := config.GetVolume(); got != 0.75 {
+		t.Fatalf("GetVolume() = %v, want 0.75", got)
+	}
+}
+
+func TestGetVolumeClampsOutOfRangeValues(t *testing.T) {
+	t.Run("below zero", func(t *testing.T) {
+		volume := -0.25
+		config := ClauneConfig{Volume: &volume}
+
+		if got := config.GetVolume(); got != 0.0 {
+			t.Fatalf("GetVolume() = %v, want 0.0", got)
+		}
+	})
+
+	t.Run("above one", func(t *testing.T) {
+		volume := 1.25
+		config := ClauneConfig{Volume: &volume}
+
+		if got := config.GetVolume(); got != 1.0 {
+			t.Fatalf("GetVolume() = %v, want 1.0", got)
+		}
+	})
 }
