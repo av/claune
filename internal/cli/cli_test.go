@@ -179,17 +179,17 @@ func TestRunManagementCommandsRejectBadUsage(t *testing.T) {
 			wantNoStdout: true,
 		},
 		{
-			name:         "import-circus requires url and filename",
+			name:         "import-circus requires url and name",
 			args:         []string{"import-circus"},
 			wantExitCode: 1,
-			wantStderr:   []string{"claune: import-circus requires a URL and filename", "Usage: claune import-circus <url> <filename> [event]"},
+			wantStderr:   []string{"claune: import-circus requires a URL and name", "Usage: claune import-circus <url> <name> [event]"},
 			wantNoStdout: true,
 		},
 		{
 			name:         "import-circus rejects extra args beyond optional event",
 			args:         []string{"import-circus", "https://example.com", "sound.mp3", "cli:start", "extra"},
 			wantExitCode: 1,
-			wantStderr:   []string{"claune: import-circus does not accept additional arguments", "Usage: claune import-circus <url> <filename> [event]"},
+			wantStderr:   []string{"claune: import-circus does not accept additional arguments", "Usage: claune import-circus <url> <name> [event]"},
 			wantNoStdout: true,
 		},
 		{
@@ -279,20 +279,6 @@ func TestRunManagementCommandsBadUsageWinsOverMalformedConfig(t *testing.T) {
 		avoidStderr  []string
 	}{
 		{
-			name:         "analyze-log rejects extra args",
-			args:         []string{"analyze-log", "extra"},
-			wantExitCode: 1,
-			wantStderr:   []string{"claune: analyze-log does not accept additional arguments", "Usage: claune analyze-log"},
-			avoidStderr:  []string{"error loading config"},
-		},
-		{
-			name:         "analyze-resp rejects extra args",
-			args:         []string{"analyze-resp", "extra"},
-			wantExitCode: 1,
-			wantStderr:   []string{"claune: analyze-resp does not accept additional arguments", "Usage: claune analyze-resp"},
-			avoidStderr:  []string{"error loading config"},
-		},
-		{
 			name:         "config missing prompt",
 			args:         []string{"config"},
 			wantExitCode: 1,
@@ -328,17 +314,17 @@ func TestRunManagementCommandsBadUsageWinsOverMalformedConfig(t *testing.T) {
 			avoidStderr:  []string{"error loading config"},
 		},
 		{
-			name:         "import-circus requires url and filename",
+			name:         "import-circus requires url and name",
 			args:         []string{"import-circus"},
 			wantExitCode: 1,
-			wantStderr:   []string{"claune: import-circus requires a URL and filename", "Usage: claune import-circus <url> <filename> [event]"},
+			wantStderr:   []string{"claune: import-circus requires a URL and name", "Usage: claune import-circus <url> <name> [event]"},
 			avoidStderr:  []string{"error loading config"},
 		},
 		{
 			name:         "import-circus rejects extra args beyond optional event",
 			args:         []string{"import-circus", "https://example.com", "sound.mp3", "cli:start", "extra"},
 			wantExitCode: 1,
-			wantStderr:   []string{"claune: import-circus does not accept additional arguments", "Usage: claune import-circus <url> <filename> [event]"},
+			wantStderr:   []string{"claune: import-circus does not accept additional arguments", "Usage: claune import-circus <url> <name> [event]"},
 			avoidStderr:  []string{"error loading config"},
 		},
 	}
@@ -490,46 +476,6 @@ func TestValidatePlayArgsAllowsOnlyExactSupportedForms(t *testing.T) {
 	}
 }
 
-func TestRunAnalyzeCommandsRejectUnexpectedArgs(t *testing.T) {
-	tests := []struct {
-		name         string
-		args         []string
-		wantExitCode int
-		wantStderr   []string
-	}{
-		{
-			name:         "analyze-log rejects extra args",
-			args:         []string{"analyze-log", "extra"},
-			wantExitCode: 1,
-			wantStderr:   []string{"claune: analyze-log does not accept additional arguments", "Usage: claune analyze-log"},
-		},
-		{
-			name:         "analyze-resp rejects extra args",
-			args:         []string{"analyze-resp", "extra"},
-			wantExitCode: 1,
-			wantStderr:   []string{"claune: analyze-resp does not accept additional arguments", "Usage: claune analyze-resp"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			home := t.TempDir()
-			stdout, stderr, exitCode, err := runInSubprocess(t, home, tt.args)
-			if err == nil {
-				t.Fatalf("Run(%v) error = nil, want exit code %d\nstdout:\n%s\nstderr:\n%s", tt.args, tt.wantExitCode, stdout, stderr)
-			}
-			if exitCode != tt.wantExitCode {
-				t.Fatalf("Run(%v) exit code = %d, want %d\nstdout:\n%s\nstderr:\n%s", tt.args, exitCode, tt.wantExitCode, stdout, stderr)
-			}
-			if stdout != "" {
-				t.Fatalf("stdout = %q, want empty", stdout)
-			}
-			for _, want := range tt.wantStderr {
-				assertContains(t, stderr, want)
-			}
-		})
-	}
-}
 
 func TestRunAnalyzeCommandsFailLoudlyOnStdinReadError(t *testing.T) {
 	tests := []struct {

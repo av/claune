@@ -120,7 +120,12 @@ func Run(args []string) error {
 			}
 		}
 	case "analyze-log":
-		logText := mustReadStdin("analyze-log")
+		var logText string
+		if len(args) > 1 {
+			logText = strings.Join(args[1:], " ")
+		} else {
+			logText = mustReadStdin("analyze-log")
+		}
 		circus.AnalyzeLogSentiment(logText, c, true)
 	case "automap":
 		dir := args[1]
@@ -137,7 +142,12 @@ func Run(args []string) error {
 			}
 		}
 	case "analyze-resp":
-		respText := mustReadStdin("analyze-resp")
+		var respText string
+		if len(args) > 1 {
+			respText = strings.Join(args[1:], " ")
+		} else {
+			respText = mustReadStdin("analyze-resp")
+		}
 		event, strategy, err := ai.AnalyzeResponseSentiment(respText, c)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Analyze response sentiment failed: %v\n", err)
@@ -183,16 +193,16 @@ func validateManagementArgs(args []string) {
 	case "import-circus":
 		switch len(args) {
 		case 1, 2:
-			exitUsageError("claune: import-circus requires a URL and filename", "Usage: claune import-circus <url> <filename> [event]")
+			exitUsageError("claune: import-circus requires a URL and name", "Usage: claune import-circus <url> <name> [event]")
 		case 3, 4:
 			return
 		default:
-			exitUsageError("claune: import-circus does not accept additional arguments", "Usage: claune import-circus <url> <filename> [event]")
+			exitUsageError("claune: import-circus does not accept additional arguments", "Usage: claune import-circus <url> <name> [event]")
 		}
 	case "analyze-log":
-		ensureExactArgs(args, 1, "claune: analyze-log does not accept additional arguments", "Usage: claune analyze-log")
+		return
 	case "analyze-resp":
-		ensureExactArgs(args, 1, "claune: analyze-resp does not accept additional arguments", "Usage: claune analyze-resp")
+		return
 	}
 }
 
@@ -285,7 +295,7 @@ Management commands:
   test-sounds   Play all sounds to verify audio works
   config <msg>  Natural language configuration (e.g., "mute sound")
   automap <dir> Automatically map sound files in a directory to events using AI
-  import-circus <url> <file> [event]  Import a meme sound and optionally map to event
+  import-circus <url> <name> [event]  Import a meme sound (no slashes allowed) and optionally map to event
   analyze-log   Analyze log from stdin and play a sound
   analyze-resp  Analyze AI response from stdin and optionally override sound strategy
   help          Show this help message`)
