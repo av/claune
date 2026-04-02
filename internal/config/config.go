@@ -74,11 +74,43 @@ func Load() (ClauneConfig, error) {
 func Save(c ClauneConfig) error {
 	home, _ := os.UserHomeDir()
 	configPath := filepath.Join(home, ".claune.json")
+	
+	lockPath := configPath + ".lock"
+	locked := false
+	for i := 0; i < 50; i++ {
+		f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
+		if err == nil {
+			f.Close()
+			locked = true
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if locked {
+		defer os.Remove(lockPath)
+	}
+
 	data, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(configPath, data, 0644)
+
+	dir := filepath.Dir(configPath)
+	tmpFile, err := os.CreateTemp(dir, ".claune.json.tmp.*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmpFile.Name())
+
+	if _, err := tmpFile.Write(data); err != nil {
+		tmpFile.Close()
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpFile.Name(), configPath)
 }
 
 func (c ClauneConfig) ShouldMute() bool {

@@ -175,6 +175,24 @@ func pickSound(eventType string, sounds []string, strategy string) string {
 	if strategy == "round_robin" {
 		rrMutex.Lock()
 		defer rrMutex.Unlock()
+
+		// Inter-process lock using O_EXCL
+		path := stateFilePath()
+		lockPath := path + ".lock"
+		locked := false
+		for i := 0; i < 50; i++ {
+			f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
+			if err == nil {
+				f.Close()
+				locked = true
+				break
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		if locked {
+			defer os.Remove(lockPath)
+		}
+
 		loadState()
 		idx := rrIndex[eventType]
 		selected := sounds[idx%len(sounds)]

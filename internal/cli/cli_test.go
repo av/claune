@@ -643,6 +643,10 @@ func TestRunImportCircusFailsLoudlyOnConfigSaveErrorAfterSuccessfulImport(t *tes
 	if err := os.WriteFile(configPath, []byte(`{"sounds":{}}`), 0o444); err != nil {
 		t.Fatalf("os.WriteFile(%q) error = %v", configPath, err)
 	}
+	if err := os.Chmod(home, 0o555); err != nil {
+		t.Fatalf("os.Chmod(%q) error = %v", home, err)
+	}
+	t.Cleanup(func() { os.Chmod(home, 0o755) })
 	cacheDir := t.TempDir()
 
 	stdout, stderr, exitCode, err := runInSubprocessWithEnv(t, home, []string{"import-circus", testServer.URL + "/alert.mp3", "alert.mp3", "tool:start"}, []string{fmt.Sprintf("XDG_CACHE_HOME=%s", cacheDir)})
