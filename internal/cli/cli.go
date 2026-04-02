@@ -226,6 +226,12 @@ func exitUsageError(message string, usage string) {
 }
 
 func mustReadStdin(command string) string {
+	info, err := os.Stdin.Stat()
+	if err == nil && (info.Mode()&os.ModeCharDevice) != 0 {
+		fmt.Fprintf(os.Stderr, "claune: %s requires piped input or direct string arguments\n", command)
+		os.Exit(1)
+	}
+
 	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "claune: failed to read stdin for %s: %v\n", command, err)

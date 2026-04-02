@@ -100,6 +100,9 @@ func AnalyzeToolIntent(toolName, input string, c config.ClauneConfig) (string, e
 }
 
 func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (string, string, error) {
+	if strings.TrimSpace(responseText) == "" {
+		return "", "", nil
+	}
 	if !c.AI.Enabled {
 		return "", "", nil
 	}
