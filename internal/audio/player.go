@@ -46,9 +46,6 @@ func stateFilePath() string {
 }
 
 func loadState() {
-	rrMutex.Lock()
-	defer rrMutex.Unlock()
-	
 	path := stateFilePath()
 	data, err := os.ReadFile(path)
 	if err == nil {
@@ -58,9 +55,6 @@ func loadState() {
 }
 
 func saveState() {
-	rrMutex.Lock()
-	defer rrMutex.Unlock()
-	
 	path := stateFilePath()
 	data := exportJSON()
 	os.WriteFile(path, data, 0644)
@@ -69,7 +63,9 @@ func saveState() {
 func importJSON(data []byte) {
 	var state map[string]int
 	if err := json.Unmarshal(data, &state); err == nil && state != nil {
-		rrIndex = state
+		for k, v := range state {
+			rrIndex[k] = v
+		}
 	}
 }
 
@@ -177,12 +173,12 @@ func pickSound(eventType string, sounds []string, strategy string) string {
 	}
 
 	if strategy == "round_robin" {
-		loadState()
 		rrMutex.Lock()
+		defer rrMutex.Unlock()
+		loadState()
 		idx := rrIndex[eventType]
 		selected := sounds[idx%len(sounds)]
 		rrIndex[eventType] = (idx + 1) % len(sounds)
-		rrMutex.Unlock()
 		saveState()
 		return selected
 	}

@@ -1,6 +1,7 @@
 package audio
 
 import (
+	"os"
 	"testing"
 )
 
@@ -11,6 +12,9 @@ func TestSoundMap(t *testing.T) {
 }
 
 func TestPickSoundRoundRobin(t *testing.T) {
+	// Ensure clean state
+	os.Remove(stateFilePath())
+
 	sounds := []string{"1.mp3", "2.mp3", "3.mp3"}
 	
 	// Reset index
