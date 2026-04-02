@@ -88,6 +88,8 @@ func Save(c ClauneConfig) error {
 	}
 	if locked {
 		defer os.Remove(lockPath)
+	} else {
+		return fmt.Errorf("failed to acquire config lock %s after 500ms", lockPath)
 	}
 
 	data, err := json.MarshalIndent(c, "", "  ")

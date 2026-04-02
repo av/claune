@@ -191,6 +191,9 @@ func pickSound(eventType string, sounds []string, strategy string) string {
 		}
 		if locked {
 			defer os.Remove(lockPath)
+		} else {
+			// Fallback if we cannot acquire inter-process lock
+			return sounds[rand.Intn(len(sounds))]
 		}
 
 		loadState()

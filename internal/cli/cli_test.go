@@ -662,7 +662,7 @@ func TestRunImportCircusFailsLoudlyOnConfigSaveErrorAfterSuccessfulImport(t *tes
 	assertContains(t, stderr, "Failed to update config:")
 	assertContains(t, stderr, "alert.mp3 was downloaded to")
 	assertContains(t, stderr, "but claune could not update ~/.claune.json")
-	assertContains(t, stderr, "permission denied")
+	assertContains(t, stderr, "failed to acquire config lock")
 }
 
 func TestRunImportCircusPrintsFinalSuccessSummaryOnlyAfterConfigUpdate(t *testing.T) {
