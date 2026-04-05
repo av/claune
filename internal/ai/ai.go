@@ -169,7 +169,7 @@ type ConfigPatch struct {
 func HandleNaturalLanguageConfig(prompt string, c *config.ClauneConfig) error {
 	var updates ConfigPatch
 	// Mock logic for tests when API key is missing
-	if os.Getenv("ANTHROPIC_API_KEY") == "" && (c.AI.APIKey == "" || !c.AI.Enabled) {
+	if !c.AI.Enabled || (os.Getenv("ANTHROPIC_API_KEY") == "" && c.AI.APIKey == "") {
 		if strings.Contains(strings.ToLower(prompt), "mute all sounds for the next 2 hours") {
 			t := time.Now().Add(2 * time.Hour).Format(time.RFC3339)
 			updates.MuteUntil = &t
@@ -310,7 +310,7 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventS
 		return nil, fmt.Errorf("no audio files found in %s", absDir)
 	}
 
-	if os.Getenv("ANTHROPIC_API_KEY") == "" && (c.AI.APIKey == "" || !c.AI.Enabled) {
+	if !c.AI.Enabled || (os.Getenv("ANTHROPIC_API_KEY") == "" && c.AI.APIKey == "") {
 		mapping := make(map[string]config.EventSoundConfig)
 		for _, f := range files {
 			path := filepath.Join(absDir, f)
@@ -470,7 +470,7 @@ func DiagnoseInstallFailure(err error, c config.ClauneConfig) string {
 }
 
 func GuessEventForSound(url, filename string, c config.ClauneConfig) (string, error) {
-	if os.Getenv("ANTHROPIC_API_KEY") == "" && (c.AI.APIKey == "" || !c.AI.Enabled) {
+	if !c.AI.Enabled || (os.Getenv("ANTHROPIC_API_KEY") == "" && c.AI.APIKey == "") {
 		if strings.Contains(strings.ToLower(filename), "sad") {
 			return "tool:error", nil
 		}
