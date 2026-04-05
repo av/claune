@@ -12,7 +12,9 @@ import (
 	"time"
 
 	"github.com/everlier/claune/internal/config"
+	"github.com/gopxl/beep"
 	"github.com/gopxl/beep/mp3"
+	"github.com/gopxl/beep/wav"
 )
 
 //go:embed sounds/*.mp3
@@ -85,7 +87,15 @@ func playMP3File(mp3Path string, volume float64, blocking bool) error {
 		return err
 	}
 
-	streamer, format, err := mp3.Decode(f)
+	var streamer beep.StreamSeekCloser
+	var format beep.Format
+	
+	if strings.HasSuffix(strings.ToLower(mp3Path), ".wav") {
+		streamer, format, err = wav.Decode(f)
+	} else {
+		streamer, format, err = mp3.Decode(f)
+	}
+
 	if err != nil {
 		f.Close()
 		return err
