@@ -107,7 +107,7 @@ claune uninstall  # Remove hooks from ~/.claude/settings.json
 | `play <event> <tool-name> <tool-input>` | Play a sound using semantic tool context |
 | `config <msg>` | Update configuration from a natural-language prompt |
 | `automap <dir>` | Use AI to map sound files in a directory to events |
-| `import-circus <url> <file> [event]` | Import a meme sound and optionally map it to an event |
+| `import-circus <url> <name> [event]` | Import a meme sound (name must be a short alias without slashes) |
 | `analyze-log` | Analyze stdin log text and play a sound |
 | `analyze-resp` | Analyze stdin AI response text and optionally override the sound strategy |
 | `help` | Show help message |

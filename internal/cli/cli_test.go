@@ -625,7 +625,7 @@ func TestRunImportCircusFailsLoudlyOnRuntimeImportError(t *testing.T) {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
 	assertContains(t, stderr, "Import failed:")
-	assertContains(t, stderr, `invalid URL format: "notaurl"`)
+	assertContains(t, stderr, `failed to fetch meme sound from https://notaurl`)
 }
 
 func TestRunImportCircusFailsLoudlyOnConfigSaveErrorAfterSuccessfulImport(t *testing.T) {

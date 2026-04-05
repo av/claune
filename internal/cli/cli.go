@@ -83,6 +83,9 @@ func Run(args []string) error {
 		fmt.Println("Config updated successfully via AI")
 	case "import-circus":
 		url := args[1]
+		if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+			url = "https://" + url
+		}
 		filename := args[2]
 		cachedPath := filepath.Join(audio.SoundCacheDir(), filename)
 		if err := circus.ImportMemeSound(url, filename); err != nil {
@@ -179,7 +182,7 @@ func validateManagementArgs(args []string) {
 		ensureExactArgs(args, 1, "claune: test-sounds does not accept additional arguments", "Usage: claune test-sounds")
 	case "config":
 		if len(args) <= 1 {
-			exitUsageError("claune: config requires a natural language prompt", "Usage: claune config <natural language prompt>")
+			exitUsageError("claune: config requires a natural language prompt", "Usage: claune config <natural language prompt>\nExamples:\n  claune config \"mute sound\"\n  claune config \"set volume to 50%\"")
 		}
 	case "automap":
 		switch len(args) {

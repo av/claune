@@ -120,21 +120,24 @@ func mergeHooks(existing []HookEntry, newHooks []HookEntry) []HookEntry {
 	return existing
 }
 
-func removeClauneHooks(entries []HookEntry) []HookEntry {
+func removeClauneHooks(entries []HookEntry) ([]HookEntry, bool) {
 	var kept []HookEntry
+	changed := false
 	for _, entry := range entries {
-		isClaune := false
+		var keptHooks []Hook
 		for _, hook := range entry.Hooks {
 			if isClauneHook(hook.Command) {
-				isClaune = true
-				break
+				changed = true
+			} else {
+				keptHooks = append(keptHooks, hook)
 			}
 		}
-		if !isClaune {
+		if len(keptHooks) > 0 {
+			entry.Hooks = keptHooks
 			kept = append(kept, entry)
 		}
 	}
-	return kept
+	return kept, changed
 }
 
 func directHookCmd(wavPath string, event string) string {
@@ -245,8 +248,8 @@ func uninstallHooks() error {
 	changed := false
 	for _, key := range []string{"SessionStart", "PreToolUse", "PostToolUse", "PostToolUseFailure", "SessionEnd"} {
 		entries := parseHookEntries(hooksMap, key)
-		filtered := removeClauneHooks(entries)
-		if len(filtered) != len(entries) {
+		filtered, keyChanged := removeClauneHooks(entries)
+		if keyChanged {
 			changed = true
 		}
 		if len(filtered) == 0 {
