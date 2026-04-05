@@ -66,7 +66,7 @@ func AnalyzeToolIntent(toolName, input string, c config.ClauneConfig) (string, e
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(bodyBytes))
+	req, _ := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
 	req.Header.Set("x-api-key", key)
 	req.Header.Set("anthropic-version", "2023-06-01")
 	req.Header.Set("content-type", "application/json")
@@ -213,7 +213,7 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 		}
 
 		bodyBytes, _ := json.Marshal(reqBody)
-		req, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(bodyBytes))
+		req, _ := http.NewRequest("POST", messagesAPIURL(*c), bytes.NewReader(bodyBytes))
 		req.Header.Set("x-api-key", key)
 		req.Header.Set("anthropic-version", "2023-06-01")
 		req.Header.Set("content-type", "application/json")
@@ -365,7 +365,7 @@ Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, s
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(bodyBytes))
+	req, _ := http.NewRequest("POST", messagesAPIURL(*c), bytes.NewReader(bodyBytes))
 	req.Header.Set("x-api-key", key)
 	req.Header.Set("anthropic-version", "2023-06-01")
 	req.Header.Set("content-type", "application/json")
@@ -444,7 +444,7 @@ func DiagnoseInstallFailure(err error, c config.ClauneConfig) string {
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(bodyBytes))
+	req, _ := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
 	req.Header.Set("x-api-key", key)
 	req.Header.Set("anthropic-version", "2023-06-01")
 	req.Header.Set("content-type", "application/json")
@@ -509,7 +509,7 @@ Reply with ONE WORD ONLY representing the most appropriate event for this sound 
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(bodyBytes))
+	req, _ := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
 	req.Header.Set("x-api-key", key)
 	req.Header.Set("anthropic-version", "2023-06-01")
 	req.Header.Set("content-type", "application/json")
