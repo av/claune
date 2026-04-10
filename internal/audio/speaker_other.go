@@ -12,7 +12,10 @@ import (
 	"github.com/gopxl/beep/speaker"
 )
 
-var speakerInitDone bool
+var (
+	speakerInitDone bool
+	globalSampleRate beep.SampleRate
+)
 
 func initSpeaker(sampleRate beep.SampleRate) error {
 	if speakerInitDone {
@@ -23,6 +26,7 @@ func initSpeaker(sampleRate beep.SampleRate) error {
 		return err
 	}
 	speakerInitDone = true
+	globalSampleRate = sampleRate
 	return nil
 }
 
@@ -37,15 +41,21 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 
 	done := make(chan bool, 1)
 
-	// Apply volume if needed
 	var ctrl beep.Streamer = streamer
+
+	// Resample if the format's sample rate doesn't match the global one
+	if format.SampleRate != globalSampleRate {
+		ctrl = beep.Resample(4, format.SampleRate, globalSampleRate, ctrl)
+	}
+
+	// Apply volume if needed
 	if volume != 1.0 {
 		volLog := 0.0
 		if volume > 0.001 {
 			volLog = math.Log2(volume)
 		}
 		ctrl = &effects.Volume{
-			Streamer: streamer,
+			Streamer: ctrl,
 			Base:     2,
 			Volume:   volLog,
 			Silent:   volume <= 0.001,
