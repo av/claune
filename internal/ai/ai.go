@@ -62,7 +62,10 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 			time.Sleep(time.Duration(attempt) * 500 * time.Millisecond)
 		}
 
-		req, _ := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
+		req, err := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create request: %w", err)
+		}
 		req.Header.Set("x-api-key", key)
 		req.Header.Set("anthropic-version", "2023-06-01")
 		req.Header.Set("content-type", "application/json")
