@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/everlier/claune/internal/audio"
 	"github.com/everlier/claune/internal/config"
 )
 
@@ -393,11 +394,11 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventS
 	}
 
 	sysPrompt := fmt.Sprintf(`You are an AI configuring a sound application. Map the following audio files to appropriate events based on their names.
-Available events: cli:start, tool:start, tool:success, tool:error, cli:done, build:success, test:fail, panic, warn.
+Available events: %s.
 Available files: %s.
 Directory path: %s.
 Return ONLY a valid JSON object mapping event strings to an object with "paths" (array of full absolute paths) and "strategy" ("random" or "round_robin").
-Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, strings.Join(files, ", "), absDir)
+Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, audio.ValidEventTypes(), strings.Join(files, ", "), absDir)
 
 	reqBody := ClaudeRequest{
 		Model: model,
@@ -512,8 +513,8 @@ func GuessEventForSound(url, filename string, c config.ClauneConfig) (string, er
 	}
 
 	prompt := fmt.Sprintf(`Analyze this audio file download: URL="%s", Filename="%s".
-Available events: cli:start, tool:start, tool:success, tool:error, cli:done, build:success, test:fail, panic, warn.
-Reply with ONE WORD ONLY representing the most appropriate event for this sound based on its name and URL context.`, url, filename)
+Available events: %s.
+Reply with ONE WORD ONLY representing the most appropriate event for this sound based on its name and URL context.`, url, filename, audio.ValidEventTypes())
 	
 	reqBody := ClaudeRequest{
 		Model: model,
@@ -532,13 +533,7 @@ Reply with ONE WORD ONLY representing the most appropriate event for this sound 
 	if len(cr.Content) > 0 {
 		text := strings.ToLower(strings.TrimSpace(cr.Content[0].Text))
 		
-		validEvents := []string{
-			"cli:start", "tool:start", "tool:success", "tool:error",
-			"cli:done", "build:success", "test:fail", "panic", "warn",
-			"tool:destructive", "tool:readonly", "build:fail",
-		}
-		
-		for _, e := range validEvents {
+		for e := range audio.DefaultSoundMap {
 			if strings.Contains(text, e) {
 				return e, nil
 			}

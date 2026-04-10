@@ -139,7 +139,12 @@ func EnsureSoundCache() error {
 			if info, err := os.Stat(dest); err == nil && info.Size() == int64(len(data)) {
 				continue
 			}
-			if err := os.WriteFile(dest, data, 0644); err != nil {
+			tmpDest := dest + ".tmp"
+			if err := os.WriteFile(tmpDest, data, 0644); err != nil {
+				return err
+			}
+			if err := os.Rename(tmpDest, dest); err != nil {
+				os.Remove(tmpDest)
 				return err
 			}
 		}
@@ -274,7 +279,7 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 	// Fallback to default sounds
 	soundFiles, ok := DefaultSoundMap[eventType]
 	if !ok || len(soundFiles) == 0 {
-		return fmt.Errorf("unknown event type: %s\nValid types: %s", eventType, validEventTypes())
+		return fmt.Errorf("unknown event type: %s\nValid types: %s", eventType, ValidEventTypes())
 	}
 
 	strategy := overrideStrategy
@@ -297,7 +302,7 @@ func PlaySound(eventType string, blocking bool, c config.ClauneConfig) error {
 	return PlaySoundWithStrategy(eventType, "", blocking, c)
 }
 
-func validEventTypes() string {
+func ValidEventTypes() string {
 	keys := make([]string, 0, len(DefaultSoundMap))
 	for k := range DefaultSoundMap {
 		keys = append(keys, k)
