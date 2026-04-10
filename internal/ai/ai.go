@@ -39,6 +39,71 @@ func messagesAPIURL(c config.ClauneConfig) string {
 	return baseURL + "/v1/messages"
 }
 
+func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse, error) {
+	key := c.AI.APIKey
+	if key == "" {
+		key = os.Getenv("ANTHROPIC_API_KEY")
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	maxRetries := 2
+	var lastErr error
+	var lastStatus int
+	var lastRespBytes []byte
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			time.Sleep(time.Duration(attempt) * 500 * time.Millisecond)
+		}
+
+		req, _ := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
+		req.Header.Set("x-api-key", key)
+		req.Header.Set("anthropic-version", "2023-06-01")
+		req.Header.Set("content-type", "application/json")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		respBytes, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		if resp.StatusCode == 429 || resp.StatusCode >= 500 {
+			lastStatus = resp.StatusCode
+			lastRespBytes = respBytes
+			continue
+		}
+
+		if resp.StatusCode != 200 {
+			return nil, fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(respBytes))
+		}
+
+		var cr ClaudeResponse
+		if err := json.Unmarshal(respBytes, &cr); err != nil {
+			return nil, fmt.Errorf("AI response parse failed: %w", err)
+		}
+
+		if len(cr.Content) == 0 {
+			lastErr = fmt.Errorf("empty AI response")
+			continue
+		}
+
+		return &cr, nil
+	}
+
+	if lastErr != nil {
+		return nil, fmt.Errorf("AI request failed after retries: %w", lastErr)
+	}
+	return nil, fmt.Errorf("AI API returned status %d after retries: %s", lastStatus, string(lastRespBytes))
+}
+
 func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig) (string, error) {
 	if !c.AI.Enabled {
 		return baseEvent, nil
@@ -65,27 +130,9 @@ func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig)
 		MaxTokens: 10,
 	}
 
-	bodyBytes, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
-	req.Header.Set("x-api-key", key)
-	req.Header.Set("anthropic-version", "2023-06-01")
-	req.Header.Set("content-type", "application/json")
-
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	cr, err := doAIRequest(c, reqBody)
 	if err != nil {
 		return baseEvent, fmt.Errorf("AI request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return baseEvent, fmt.Errorf("AI API returned status %d", resp.StatusCode)
-	}
-
-	respBytes, _ := io.ReadAll(resp.Body)
-	var cr ClaudeResponse
-	if err := json.Unmarshal(respBytes, &cr); err != nil {
-		return baseEvent, fmt.Errorf("AI response parse failed: %w", err)
 	}
 
 	if len(cr.Content) > 0 {
@@ -128,27 +175,12 @@ func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (strin
 		MaxTokens: 10,
 	}
 
-	bodyBytes, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
-	req.Header.Set("x-api-key", key)
-	req.Header.Set("anthropic-version", "2023-06-01")
-	req.Header.Set("content-type", "application/json")
-
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	cr, err := doAIRequest(c, reqBody)
 	if err != nil {
 		return "", "", err
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return "", "", fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(respBody))
-	}
-
-	respBytes, _ := io.ReadAll(resp.Body)
-	var cr ClaudeResponse
-	if json.Unmarshal(respBytes, &cr) == nil && len(cr.Content) > 0 {
+	if len(cr.Content) > 0 {
 		text := strings.ToUpper(strings.TrimSpace(cr.Content[0].Text))
 		if strings.Contains(text, "URGENT") {
 			return "panic", "random", nil // override to panic with random strategy
@@ -212,32 +244,9 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 			MaxTokens: 200,
 		}
 
-		bodyBytes, _ := json.Marshal(reqBody)
-		req, _ := http.NewRequest("POST", messagesAPIURL(*c), bytes.NewReader(bodyBytes))
-		req.Header.Set("x-api-key", key)
-		req.Header.Set("anthropic-version", "2023-06-01")
-		req.Header.Set("content-type", "application/json")
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
+		cr, err := doAIRequest(*c, reqBody)
 		if err != nil {
 			return err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != 200 {
-			respBody, _ := io.ReadAll(resp.Body)
-			return fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(respBody))
-		}
-
-		respBytes, _ := io.ReadAll(resp.Body)
-		var cr ClaudeResponse
-		if err := json.Unmarshal(respBytes, &cr); err != nil {
-			return err
-		}
-
-		if len(cr.Content) == 0 {
-			return fmt.Errorf("empty AI response")
 		}
 
 		text := strings.TrimSpace(cr.Content[0].Text)
@@ -314,7 +323,7 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventS
 		return nil, fmt.Errorf("no audio files found in %s", absDir)
 	}
 
-	if !c.AI.Enabled || (os.Getenv("ANTHROPIC_API_KEY") == "" && c.AI.APIKey == "") {
+	fallbackMapping := func() (map[string]config.EventSoundConfig, error) {
 		mapping := make(map[string]config.EventSoundConfig)
 		for _, f := range files {
 			path := filepath.Join(absDir, f)
@@ -335,6 +344,10 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventS
 			c.Sounds[k] = v
 		}
 		return mapping, config.Save(*c)
+	}
+
+	if !c.AI.Enabled || (os.Getenv("ANTHROPIC_API_KEY") == "" && c.AI.APIKey == "") {
+		return fallbackMapping()
 	}
 
 	if !c.AI.Enabled {
@@ -368,28 +381,10 @@ Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, s
 		MaxTokens: 500,
 	}
 
-	bodyBytes, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", messagesAPIURL(*c), bytes.NewReader(bodyBytes))
-	req.Header.Set("x-api-key", key)
-	req.Header.Set("anthropic-version", "2023-06-01")
-	req.Header.Set("content-type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	cr, err := doAIRequest(*c, reqBody)
 	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(respBody))
-	}
-
-	respBytes, _ := io.ReadAll(resp.Body)
-	var cr ClaudeResponse
-	if err := json.Unmarshal(respBytes, &cr); err != nil {
-		return nil, err
+		fmt.Fprintf(os.Stderr, "⚠️ AI Automap Warning: %v. Using fallback heuristic.\n", err)
+		return fallbackMapping()
 	}
 
 	if len(cr.Content) > 0 {
@@ -447,26 +442,12 @@ func DiagnoseInstallFailure(err error, c config.ClauneConfig) string {
 		MaxTokens: 100,
 	}
 
-	bodyBytes, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
-	req.Header.Set("x-api-key", key)
-	req.Header.Set("anthropic-version", "2023-06-01")
-	req.Header.Set("content-type", "application/json")
-
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, reqErr := client.Do(req)
-	if reqErr != nil {
-		return "AI diagnostics failed to connect."
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return "AI diagnostics returned an API error."
+	cr, err := doAIRequest(c, reqBody)
+	if err != nil {
+		return "AI diagnostics failed or returned an API error."
 	}
 
-	respBytes, _ := io.ReadAll(resp.Body)
-	var cr ClaudeResponse
-	if parseErr := json.Unmarshal(respBytes, &cr); parseErr == nil && len(cr.Content) > 0 {
+	if len(cr.Content) > 0 {
 		return strings.TrimSpace(cr.Content[0].Text)
 	}
 
@@ -474,7 +455,7 @@ func DiagnoseInstallFailure(err error, c config.ClauneConfig) string {
 }
 
 func GuessEventForSound(url, filename string, c config.ClauneConfig) (string, error) {
-	if !c.AI.Enabled || (os.Getenv("ANTHROPIC_API_KEY") == "" && c.AI.APIKey == "") {
+	fallbackGuess := func() (string, error) {
 		if strings.Contains(strings.ToLower(filename), "sad") {
 			return "tool:error", nil
 		}
@@ -482,6 +463,10 @@ func GuessEventForSound(url, filename string, c config.ClauneConfig) (string, er
 			return "tool:success", nil
 		}
 		return "tool:start", nil
+	}
+
+	if !c.AI.Enabled || (os.Getenv("ANTHROPIC_API_KEY") == "" && c.AI.APIKey == "") {
+		return fallbackGuess()
 	}
 
 	if !c.AI.Enabled {
@@ -512,27 +497,10 @@ Reply with ONE WORD ONLY representing the most appropriate event for this sound 
 		MaxTokens: 20,
 	}
 
-	bodyBytes, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
-	req.Header.Set("x-api-key", key)
-	req.Header.Set("anthropic-version", "2023-06-01")
-	req.Header.Set("content-type", "application/json")
-
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	cr, err := doAIRequest(c, reqBody)
 	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("AI API returned status %d", resp.StatusCode)
-	}
-
-	respBytes, _ := io.ReadAll(resp.Body)
-	var cr ClaudeResponse
-	if err := json.Unmarshal(respBytes, &cr); err != nil {
-		return "", err
+		fmt.Fprintf(os.Stderr, "⚠️ AI Guessing Warning: %v. Using fallback heuristic.\n", err)
+		return fallbackGuess()
 	}
 
 	if len(cr.Content) > 0 {

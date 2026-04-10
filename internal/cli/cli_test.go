@@ -476,7 +476,6 @@ func TestValidatePlayArgsAllowsOnlyExactSupportedForms(t *testing.T) {
 	}
 }
 
-
 func TestRunAnalyzeCommandsFailLoudlyOnStdinReadError(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -718,22 +717,20 @@ func TestRunImportCircusReportsPartialSuccessWhenAIMappingFails(t *testing.T) {
 		fmt.Sprintf("XDG_CACHE_HOME=%s", cacheDir),
 		"HTTPS_PROXY=http://127.0.0.1:1",
 	})
-	if err == nil {
-		t.Fatalf("Run(import-circus) error = nil, want exit code 2\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
+	if err != nil {
+		t.Fatalf("Run(import-circus) error = %v (exit %d)\nstdout:\n%s\nstderr:\n%s", err, exitCode, stdout, stderr)
 	}
-	if exitCode != 2 {
-		t.Fatalf("Run(import-circus) exit code = %d, want 2\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+
+	if exitCode != 0 {
+		t.Fatalf("exit code = %d, want 0 for fallback success", exitCode)
 	}
-	assertContains(t, stdout, "Imported alert.mp3 to")
-	assertContains(t, stdout, "but could not map it to an event automatically")
+
+	assertContains(t, stdout, "Imported alert.mp3 and mapped it to event tool:start")
 	if strings.Contains(stdout, "Successfully imported meme sound") {
 		t.Fatalf("stdout = %q, should not contain low-level importer success output", stdout)
 	}
-	if strings.Contains(stdout, "Mapped alert.mp3 to event") {
-		t.Fatalf("stdout = %q, should not claim successful mapping when AI guessing fails", stdout)
-	}
-	assertContains(t, stderr, "AI mapping failed:")
-	assertContains(t, stderr, "Please rerun with an explicit event")
+
+	assertContains(t, stderr, "Using fallback heuristic")
 }
 
 type capturedOutput struct {
