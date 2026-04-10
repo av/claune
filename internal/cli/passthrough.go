@@ -34,7 +34,10 @@ var settingsPathFunc = func() string {
 			return localPath
 		}
 	}
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		home = os.TempDir()
+	}
 	path1 := filepath.Join(home, ".claude.json")
 	if _, err := os.Stat(path1); err == nil {
 		return path1

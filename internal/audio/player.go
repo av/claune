@@ -41,10 +41,10 @@ var (
 )
 
 func stateFilePath() string {
-	if home, err := os.UserHomeDir(); err == nil {
+	if home, err := os.UserHomeDir(); err == nil && home != "" {
 		return filepath.Join(home, ".claune.state.json")
 	}
-	return ".claune.state.json"
+	return filepath.Join(os.TempDir(), ".claune.state.json")
 }
 
 func loadState() {
@@ -115,7 +115,10 @@ func SoundCacheDir() string {
 	if dir := os.Getenv("XDG_CACHE_HOME"); dir != "" {
 		return filepath.Join(dir, "claune")
 	}
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		home = os.TempDir()
+	}
 	return filepath.Join(home, ".cache", "claune")
 }
 
@@ -245,7 +248,10 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 		customPath := pickSound(eventType+":custom", customConfig.Paths, strategy)
 		if customPath != "" {
 			if strings.HasPrefix(customPath, "~/") {
-				home, _ := os.UserHomeDir()
+				home, err := os.UserHomeDir()
+				if err != nil || home == "" {
+					home = os.TempDir()
+				}
 				customPath = filepath.Join(home, customPath[2:])
 			}
 			if info, err := os.Stat(customPath); err == nil && info.Size() > 0 {
