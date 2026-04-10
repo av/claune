@@ -100,7 +100,7 @@ func Run(args []string) error {
 				if err != nil {
 					fmt.Printf("Imported %s to %s, but could not map it to an event automatically.\n", filename, cachedPath)
 					fmt.Fprintf(os.Stderr, "AI mapping failed: %v. Please rerun with an explicit event to update ~/.claune.json.\n", err)
-					return nil
+					os.Exit(2)
 				}
 				event = guessed
 			}

@@ -718,11 +718,11 @@ func TestRunImportCircusReportsPartialSuccessWhenAIMappingFails(t *testing.T) {
 		fmt.Sprintf("XDG_CACHE_HOME=%s", cacheDir),
 		"HTTPS_PROXY=http://127.0.0.1:1",
 	})
-	if err != nil {
-		t.Fatalf("Run(import-circus) error = %v (exit %d)\nstdout:\n%s\nstderr:\n%s", err, exitCode, stdout, stderr)
+	if err == nil {
+		t.Fatalf("Run(import-circus) error = nil, want exit code 2\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}
-	if exitCode != 0 {
-		t.Fatalf("Run(import-circus) exit code = %d, want 0\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	if exitCode != 2 {
+		t.Fatalf("Run(import-circus) exit code = %d, want 2\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
 	}
 	assertContains(t, stdout, "Imported alert.mp3 to")
 	assertContains(t, stdout, "but could not map it to an event automatically")
