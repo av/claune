@@ -466,6 +466,21 @@ Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, a
 			return nil, fmt.Errorf("failed to parse AI response: %w\nResponse: %s", err, text)
 		}
 
+		// Sanitize AI-provided paths to prevent path traversal outside absDir
+		for k, v := range mapping {
+			var safePaths []string
+			for _, p := range v.Paths {
+				cleanPath := filepath.Clean(p)
+				if !strings.HasPrefix(cleanPath, absDir+string(filepath.Separator)) && cleanPath != absDir {
+					fmt.Fprintf(os.Stderr, "Warning: AI mapped path %q is outside the directory %q, skipping.\n", cleanPath, absDir)
+					continue
+				}
+				safePaths = append(safePaths, cleanPath)
+			}
+			v.Paths = safePaths
+			mapping[k] = v
+		}
+
 		if c.Sounds == nil {
 			c.Sounds = make(map[string]config.EventSoundConfig)
 		}
