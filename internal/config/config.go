@@ -98,6 +98,12 @@ func Save(c ClauneConfig) error {
 		} else if os.IsPermission(err) {
 			return fmt.Errorf("permission denied writing config lock: %w", err)
 		}
+		if info, err := os.Stat(lockPath); err == nil {
+			if time.Since(info.ModTime()) > 2*time.Second {
+				os.Remove(lockPath)
+				continue
+			}
+		}
 		time.Sleep(10 * time.Millisecond)
 	}
 	if locked {

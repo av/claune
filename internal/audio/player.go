@@ -76,7 +76,6 @@ func exportJSON() []byte {
 	return data
 }
 
-
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
@@ -89,7 +88,7 @@ func playMP3File(mp3Path string, volume float64, blocking bool) error {
 
 	var streamer beep.StreamSeekCloser
 	var format beep.Format
-	
+
 	if strings.HasSuffix(strings.ToLower(mp3Path), ".wav") {
 		streamer, format, err = wav.Decode(f)
 	} else {
@@ -197,6 +196,12 @@ func pickSound(stateKey string, sounds []string, strategy string) string {
 				locked = true
 				break
 			}
+			if info, err := os.Stat(lockPath); err == nil {
+				if time.Since(info.ModTime()) > 2*time.Second {
+					os.Remove(lockPath)
+					continue
+				}
+			}
 			time.Sleep(10 * time.Millisecond)
 		}
 		if locked {
@@ -223,7 +228,7 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 		return nil
 	}
 	volume := c.GetVolume()
-	
+
 	// Check custom configured sounds first
 	if customConfig, ok := c.Sounds[eventType]; ok && len(customConfig.Paths) > 0 {
 		strategy := overrideStrategy
@@ -236,7 +241,7 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 				}
 			}
 		}
-		
+
 		customPath := pickSound(eventType+":custom", customConfig.Paths, strategy)
 		if customPath != "" {
 			if strings.HasPrefix(customPath, "~/") {
@@ -257,13 +262,13 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 			}
 		}
 	}
-	
+
 	// Fallback to default sounds
 	soundFiles, ok := DefaultSoundMap[eventType]
 	if !ok || len(soundFiles) == 0 {
 		return fmt.Errorf("unknown event type: %s\nValid types: %s", eventType, validEventTypes())
 	}
-	
+
 	strategy := overrideStrategy
 	if strategy == "" {
 		if customConfig, ok := c.Sounds[eventType]; ok && customConfig.Strategy != "" {
@@ -274,7 +279,7 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 			strategy = "random"
 		}
 	}
-	
+
 	soundFile := pickSound(eventType, soundFiles, strategy)
 	err := playEmbeddedSound(soundFile, volume, blocking)
 	return err
