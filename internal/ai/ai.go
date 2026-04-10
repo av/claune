@@ -39,16 +39,16 @@ func messagesAPIURL(c config.ClauneConfig) string {
 	return baseURL + "/v1/messages"
 }
 
-func AnalyzeToolIntent(toolName, input string, c config.ClauneConfig) (string, error) {
+func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig) (string, error) {
 	if !c.AI.Enabled {
-		return "tool:start", nil
+		return baseEvent, nil
 	}
 	key := c.AI.APIKey
 	if key == "" {
 		key = os.Getenv("ANTHROPIC_API_KEY")
 	}
 	if key == "" {
-		return "tool:start", fmt.Errorf("AI enabled but no ANTHROPIC_API_KEY found")
+		return baseEvent, fmt.Errorf("AI enabled but no ANTHROPIC_API_KEY found")
 	}
 
 	model := c.AI.Model
@@ -74,18 +74,18 @@ func AnalyzeToolIntent(toolName, input string, c config.ClauneConfig) (string, e
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "tool:start", fmt.Errorf("AI request failed: %w", err)
+		return baseEvent, fmt.Errorf("AI request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return "tool:start", fmt.Errorf("AI API returned status %d", resp.StatusCode)
+		return baseEvent, fmt.Errorf("AI API returned status %d", resp.StatusCode)
 	}
 
 	respBytes, _ := io.ReadAll(resp.Body)
 	var cr ClaudeResponse
 	if err := json.Unmarshal(respBytes, &cr); err != nil {
-		return "tool:start", fmt.Errorf("AI response parse failed: %w", err)
+		return baseEvent, fmt.Errorf("AI response parse failed: %w", err)
 	}
 
 	if len(cr.Content) > 0 {
@@ -96,7 +96,7 @@ func AnalyzeToolIntent(toolName, input string, c config.ClauneConfig) (string, e
 			return "tool:readonly", nil
 		}
 	}
-	return "tool:start", nil
+	return baseEvent, nil
 }
 
 func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (string, string, error) {

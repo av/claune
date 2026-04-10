@@ -11,9 +11,9 @@ import (
 
 func TestAnalyze(t *testing.T) {
 	c := config.ClauneConfig{}
-	res, _ := AnalyzeToolIntent("bash", "rm -rf /", c)
-	if res != "tool:start" {
-		t.Error("Expected tool:start fallback when disabled")
+	res, _ := AnalyzeToolIntent("tool:success", "bash", "rm -rf /", c)
+	if res != "tool:success" {
+		t.Errorf("Expected tool:success fallback when disabled, got %s", res)
 	}
 }
 

@@ -59,7 +59,7 @@ func Run(args []string) error {
 	switch args[0] {
 	case "play":
 		if len(args) == 4 {
-			event, err := ai.AnalyzeToolIntent(args[2], args[3], c)
+			event, err := ai.AnalyzeToolIntent(args[1], args[2], args[3], c)
 			if err != nil && c.AI.Enabled {
 				fmt.Fprintf(os.Stderr, "⚠️ AI Semantic Audio Error: %v\n", err)
 			}
