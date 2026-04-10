@@ -94,30 +94,8 @@ func isClauneHook(cmd string) bool {
 }
 
 func mergeHooks(existing []HookEntry, newHooks []HookEntry) []HookEntry {
-	if len(existing) == 0 {
-		return newHooks
-	}
-	existingCmds := make(map[string]bool)
-	for _, entry := range existing {
-		for _, hook := range entry.Hooks {
-			if isClauneHook(hook.Command) {
-				existingCmds[hook.Command] = true
-			}
-		}
-	}
-	for _, entry := range newHooks {
-		alreadyExists := true
-		for _, hook := range entry.Hooks {
-			if !existingCmds[hook.Command] {
-				alreadyExists = false
-				break
-			}
-		}
-		if !alreadyExists {
-			existing = append(existing, entry)
-		}
-	}
-	return existing
+	kept, _ := removeClauneHooks(existing)
+	return append(kept, newHooks...)
 }
 
 func removeClauneHooks(entries []HookEntry) ([]HookEntry, bool) {
