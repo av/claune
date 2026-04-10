@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/everlier/claune/internal/ai"
 	"github.com/everlier/claune/internal/audio"
@@ -316,7 +318,22 @@ func runPassthrough(args []string) {
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), "CLAUNE_ACTIVE=1")
 
-	if err := cmd.Run(); err != nil {
+	if err := cmd.Start(); err != nil {
+		fmt.Fprintf(os.Stderr, "claune: failed to start claude: %v\n", err)
+		os.Exit(1)
+	}
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	go func() {
+		for sig := range sigChan {
+			if cmd.Process != nil {
+				cmd.Process.Signal(sig)
+			}
+		}
+	}()
+
+	if err := cmd.Wait(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			os.Exit(exitError.ExitCode())
 		}

@@ -238,7 +238,9 @@ func mustReadStdin(command string) string {
 		os.Exit(1)
 	}
 
-	data, err := io.ReadAll(os.Stdin)
+	// Limit to 10MB to prevent memory exhaustion from massive stdout/stderr pipelines
+	limitReader := io.LimitReader(os.Stdin, 10*1024*1024)
+	data, err := io.ReadAll(limitReader)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "claune: failed to read stdin for %s: %v\n", command, err)
 		os.Exit(1)
