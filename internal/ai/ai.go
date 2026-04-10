@@ -536,13 +536,21 @@ Reply with ONE WORD ONLY representing the most appropriate event for this sound 
 	}
 
 	if len(cr.Content) > 0 {
-		text := strings.TrimSpace(cr.Content[0].Text)
-		// Clean up common AI fluff
-		text = strings.TrimPrefix(text, "'")
-		text = strings.TrimSuffix(text, "'")
-		text = strings.TrimPrefix(text, "\"")
-		text = strings.TrimSuffix(text, "\"")
-		return text, nil
+		text := strings.ToLower(strings.TrimSpace(cr.Content[0].Text))
+		
+		validEvents := []string{
+			"cli:start", "tool:start", "tool:success", "tool:error",
+			"cli:done", "build:success", "test:fail", "panic", "warn",
+			"tool:destructive", "tool:readonly", "build:fail",
+		}
+		
+		for _, e := range validEvents {
+			if strings.Contains(text, e) {
+				return e, nil
+			}
+		}
+		
+		return "", fmt.Errorf("AI response did not contain a valid event: %s", text)
 	}
 	return "", fmt.Errorf("empty AI response")
 }

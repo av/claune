@@ -65,10 +65,12 @@ func Run(args []string) error {
 			}
 			if err := audio.PlaySound(event, true, c); err != nil {
 				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+				os.Exit(1)
 			}
 		} else {
 			if err := audio.PlaySound(args[1], true, c); err != nil {
 				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+				os.Exit(1)
 			}
 		}
 	case "status":
@@ -158,6 +160,7 @@ func Run(args []string) error {
 		} else if event != "" {
 			if err := audio.PlaySoundWithStrategy(event, strategy, true, c); err != nil {
 				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+				os.Exit(1)
 			}
 		}
 	}
@@ -277,13 +280,18 @@ func testSounds(c config.ClauneConfig) {
 		return
 	}
 	fmt.Println("Testing all sounds...")
+	hasError := false
 	for _, event := range []string{"cli:start", "tool:start", "tool:success", "tool:error", "cli:done", "build:success", "test:fail", "panic", "warn"} {
 		fmt.Printf("  %s ", event)
 		if err := audio.PlaySound(event, true, c); err != nil {
 			fmt.Printf("FAILED: %v\n", err)
+			hasError = true
 		} else {
 			fmt.Println("OK")
 		}
+	}
+	if hasError {
+		os.Exit(1)
 	}
 }
 
