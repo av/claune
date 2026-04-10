@@ -90,8 +90,8 @@ Hooks are auto-installed on first run. Sound effects only play in sessions start
 ### Manual hook management
 
 ```
-claune install    # Add hooks to ~/.claude/settings.json
-claune uninstall  # Remove hooks from ~/.claude/settings.json
+claune install    # Add hooks to Claude Code settings
+claune uninstall  # Remove hooks from Claude Code settings
 ```
 
 ## Commands
@@ -129,7 +129,7 @@ The first form plays the requested event directly. The second preserves the exis
 
 ## Configuration
 
-Config file: `~/.claune.json`
+Config file: `~/.config/claune/config.json` (or `~/.claune.json` as legacy fallback)
 
 ```json
 {
@@ -152,11 +152,11 @@ Config file: `~/.claune.json`
 When `mute` is not set in the config, claune auto-mutes between 23:00 and 07:00 local time.
 Set `"mute": false` to disable this behavior.
 
-For a zero-improvisation cold-start audio check, create `~/.claune.json` with mute explicitly disabled, then run the sound commands:
+For a zero-improvisation cold-start audio check, create `~/.config/claune/config.json` with mute explicitly disabled, then run the sound commands:
 
 ```bash
-mkdir -p "$HOME"
-printf '{"mute":false}\n' > "$HOME/.claune.json"
+mkdir -p "$HOME/.config/claune"
+printf '{"mute":false}\n' > "$HOME/.config/claune/config.json"
 claune test-sounds
 claune play tool:success
 ```
