@@ -350,17 +350,48 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventS
 		return nil, fmt.Errorf("no audio files found in %s", absDir)
 	}
 
+	uniquePaths := func(paths []string) []string {
+		seen := make(map[string]bool)
+		var result []string
+		for _, p := range paths {
+			if !seen[p] {
+				seen[p] = true
+				result = append(result, p)
+			}
+		}
+		return result
+	}
+
 	fallbackMapping := func() (map[string]config.EventSoundConfig, error) {
 		mapping := make(map[string]config.EventSoundConfig)
 		for _, f := range files {
 			path := filepath.Join(absDir, f)
 			lowerF := strings.ToLower(f)
-			if strings.Contains(lowerF, "triumphant") || strings.Contains(lowerF, "success") {
-				mapping["tool:success"] = config.EventSoundConfig{Paths: []string{path}, Strategy: "random"}
-			} else if strings.Contains(lowerF, "bomb") || strings.Contains(lowerF, "explosion") || strings.Contains(lowerF, "panic") {
-				mapping["panic"] = config.EventSoundConfig{Paths: []string{path}, Strategy: "random"}
+			var event, strategy string
+
+			if strings.Contains(lowerF, "triumphant") || strings.Contains(lowerF, "success") || strings.Contains(lowerF, "yay") || strings.Contains(lowerF, "win") {
+				event, strategy = "tool:success", "random"
+			} else if strings.Contains(lowerF, "bomb") || strings.Contains(lowerF, "explosion") || strings.Contains(lowerF, "panic") || strings.Contains(lowerF, "destruct") {
+				event, strategy = "panic", "random"
+			} else if strings.Contains(lowerF, "sad") || strings.Contains(lowerF, "error") || strings.Contains(lowerF, "fail") || strings.Contains(lowerF, "oof") {
+				event, strategy = "tool:error", "random"
+			} else if strings.Contains(lowerF, "warn") || strings.Contains(lowerF, "alert") {
+				event, strategy = "warn", "random"
+			} else if strings.Contains(lowerF, "build") {
+				event, strategy = "build:success", "random"
+			} else if strings.Contains(lowerF, "test") {
+				event, strategy = "test:fail", "random"
+			} else if strings.Contains(lowerF, "cli") || strings.Contains(lowerF, "done") {
+				event, strategy = "cli:done", "random"
 			} else {
-				mapping["tool:start"] = config.EventSoundConfig{Paths: []string{path}, Strategy: "round_robin"}
+				event, strategy = "tool:start", "round_robin"
+			}
+
+			if existing, ok := mapping[event]; ok {
+				existing.Paths = append(existing.Paths, path)
+				mapping[event] = existing
+			} else {
+				mapping[event] = config.EventSoundConfig{Paths: []string{path}, Strategy: strategy}
 			}
 		}
 		
@@ -368,7 +399,13 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventS
 			c.Sounds = make(map[string]config.EventSoundConfig)
 		}
 		for k, v := range mapping {
-			c.Sounds[k] = v
+			if existing, ok := c.Sounds[k]; ok {
+				existing.Paths = uniquePaths(append(existing.Paths, v.Paths...))
+				existing.Strategy = v.Strategy
+				c.Sounds[k] = existing
+			} else {
+				c.Sounds[k] = v
+			}
 		}
 		return mapping, config.Save(*c)
 	}
@@ -433,7 +470,13 @@ Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, a
 			c.Sounds = make(map[string]config.EventSoundConfig)
 		}
 		for k, v := range mapping {
-			c.Sounds[k] = v
+			if existing, ok := c.Sounds[k]; ok {
+				existing.Paths = uniquePaths(append(existing.Paths, v.Paths...))
+				existing.Strategy = v.Strategy
+				c.Sounds[k] = existing
+			} else {
+				c.Sounds[k] = v
+			}
 		}
 
 		return mapping, config.Save(*c)
