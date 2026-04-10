@@ -4,6 +4,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -96,10 +97,18 @@ func playMP3File(mp3Path string, volume float64, blocking bool) error {
 	var streamer beep.StreamSeekCloser
 	var format beep.Format
 
+	// Enforce a strict 50MB read limit to prevent Denial of Service (Memory/CPU)
+	// from extremely large or maliciously constructed WAV/MP3 files during decoding.
+	lr := io.LimitReader(f, 50*1024*1024)
+	rc := struct {
+		io.Reader
+		io.Closer
+	}{lr, f}
+
 	if strings.HasSuffix(strings.ToLower(mp3Path), ".wav") {
-		streamer, format, err = wav.Decode(f)
+		streamer, format, err = wav.Decode(rc)
 	} else {
-		streamer, format, err = mp3.Decode(f)
+		streamer, format, err = mp3.Decode(rc)
 	}
 
 	if err != nil {

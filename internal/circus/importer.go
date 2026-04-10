@@ -43,7 +43,9 @@ func ImportMemeSound(url, name string) error {
 	}
 	defer out.Close()
 
-	_, err = io.Copy(out, resp.Body)
+	// Apply a 50MB limit to prevent downloading excessively large files
+	// (Denial of Service - Disk/Memory exhaustion).
+	_, err = io.Copy(out, io.LimitReader(resp.Body, 50*1024*1024))
 	if err != nil {
 		return fmt.Errorf("failed to save meme sound %s: %w", name, err)
 	}
