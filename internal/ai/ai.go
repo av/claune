@@ -241,8 +241,12 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 		}
 
 		text := strings.TrimSpace(cr.Content[0].Text)
-		text = strings.TrimPrefix(text, "```json")
-		text = strings.TrimSuffix(text, "```")
+		start := strings.Index(text, "{")
+		end := strings.LastIndex(text, "}")
+		if start != -1 && end != -1 && end >= start {
+			text = text[start : end+1]
+		}
+		
 		
 		if err := json.Unmarshal([]byte(text), &updates); err != nil {
 			return fmt.Errorf("config schema validation failed: %w", err)
