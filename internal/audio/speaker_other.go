@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	speakerInitDone bool
+	speakerInitDone  bool
 	globalSampleRate beep.SampleRate
 )
 

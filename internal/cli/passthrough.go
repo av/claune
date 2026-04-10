@@ -274,7 +274,6 @@ func hooksInstalled() bool {
 	return false
 }
 
-
 func runPassthrough(args []string) {
 	audio.EnsureSoundCache()
 	c, err := config.Load()
@@ -316,7 +315,7 @@ func runPassthrough(args []string) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), "CLAUNE_ACTIVE=1")
-	
+
 	if err := cmd.Run(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			os.Exit(exitError.ExitCode())

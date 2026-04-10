@@ -9,7 +9,7 @@ import (
 func TestPickSoundRoundRobinRace(t *testing.T) {
 	// Ensure we start clean
 	os.Remove(stateFilePath())
-	
+
 	// Create multiple goroutines that concurrently pick sound
 	var wg sync.WaitGroup
 	for i := 0; i < 100; i++ {
@@ -20,11 +20,11 @@ func TestPickSoundRoundRobinRace(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	
+
 	// Load the final state
 	loadState()
 	idx := rrIndex["test:event:race"]
-	
+
 	// It should ideally be 100 % 5 = 0
 	t.Logf("Final index: %d", idx)
 	if idx != 0 {

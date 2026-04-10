@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestSaveWithStaleLock(t *testing.T) {
+func TestSaveWithFreshLock(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
@@ -18,6 +18,6 @@ func TestSaveWithStaleLock(t *testing.T) {
 	c := ClauneConfig{Strategy: "test"}
 	err := Save(c)
 	if err == nil {
-		t.Fatalf("Save succeeded despite stale lock! Expected an error.")
+		t.Fatalf("Save succeeded despite fresh lock! Expected an error.")
 	}
 }

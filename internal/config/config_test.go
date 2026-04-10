@@ -202,3 +202,50 @@ func TestGetVolumeClampsOutOfRangeValues(t *testing.T) {
 		}
 	})
 }
+
+func TestSaveConcurrentModifications(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	c := ClauneConfig{Strategy: "concurrent"}
+	
+	errCh := make(chan error, 10)
+	for i := 0; i < 10; i++ {
+		go func() {
+			errCh <- Save(c)
+		}()
+	}
+	
+	for i := 0; i < 10; i++ {
+		if err := <-errCh; err != nil {
+			t.Errorf("Concurrent Save failed: %v", err)
+		}
+	}
+}
+
+func TestSaveAutoRecoverStaleLock(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	configPath := filepath.Join(home, ".claune.json")
+	lockPath := configPath + ".lock"
+
+	// Create a "stale" lock file (older than 2 seconds)
+	if err := os.WriteFile(lockPath, []byte(""), 0666); err != nil {
+		t.Fatal(err)
+	}
+	past := time.Now().Add(-3 * time.Second)
+	if err := os.Chtimes(lockPath, past, past); err != nil {
+		t.Fatal(err)
+	}
+
+	c := ClauneConfig{Strategy: "recovered"}
+	if err := Save(c); err != nil {
+		t.Fatalf("Save failed with stale lock: %v", err)
+	}
+
+	// Lock file should be removed
+	if _, err := os.Stat(lockPath); !os.IsNotExist(err) {
+		t.Errorf("Lock file was not removed: %v", err)
+	}
+}

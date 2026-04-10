@@ -74,7 +74,6 @@ func TestImportMemeSoundSavesDownloadedFileInCache(t *testing.T) {
 	}
 }
 
-
 func TestImportMemeSoundRejectsNamesThatEscapeCacheDir(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)

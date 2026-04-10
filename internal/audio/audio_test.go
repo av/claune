@@ -16,14 +16,14 @@ func TestPickSoundRoundRobin(t *testing.T) {
 	os.Remove(stateFilePath())
 
 	sounds := []string{"1.mp3", "2.mp3", "3.mp3"}
-	
+
 	// Reset index
 	rrMutex.Lock()
 	rrIndex["test:event"] = 0
 	rrMutex.Unlock()
 
 	expected := []string{"1.mp3", "2.mp3", "3.mp3", "1.mp3", "2.mp3"}
-	
+
 	for i, exp := range expected {
 		got := pickSound("test:event", sounds, "round_robin")
 		if got != exp {
