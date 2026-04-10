@@ -16,7 +16,8 @@ func FuzzParseConfig(f *testing.F) {
 		tmpDir := os.TempDir()
 		t.Setenv("HOME", tmpDir)
 		
-		configPath := filepath.Join(tmpDir, ".claune.json")
+		configPath := filepath.Join(tmpDir, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 		os.WriteFile(configPath, data, 0644)
 		
 		c, err := Load()

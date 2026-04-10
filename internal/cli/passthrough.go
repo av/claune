@@ -95,7 +95,8 @@ func parseHookEntries(hooksMap map[string]interface{}, key string) []HookEntry {
 }
 
 func isClauneHook(cmd string) bool {
-	return strings.Contains(cmd, "claune play") || strings.Contains(cmd, ".cache/claune/")
+	cacheDir := audio.SoundCacheDir()
+	return strings.Contains(cmd, "claune play") || strings.Contains(cmd, cacheDir)
 }
 
 func mergeHooks(existing []HookEntry, newHooks []HookEntry) []HookEntry {

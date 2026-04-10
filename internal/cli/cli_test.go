@@ -33,7 +33,8 @@ func TestRunConfigUsesFullNaturalLanguagePrompt(t *testing.T) {
 	}
 	assertContains(t, output.stdout, "Config updated successfully via AI")
 
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	configBytes, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", configPath, err)
@@ -56,7 +57,8 @@ func TestRunHelpWorksWithMalformedConfig(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
 		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
 	}
@@ -76,7 +78,8 @@ func TestRunConfigRepairsMalformedConfigUsingDefaults(t *testing.T) {
 	t.Setenv("HOME", home)
 	t.Setenv("ANTHROPIC_API_KEY", "")
 
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
 		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
 	}
@@ -108,7 +111,8 @@ func TestRunConfigRepairsMalformedConfigUsingDefaults(t *testing.T) {
 
 func TestRunConfigFailsWhenConfigPathUnreadable(t *testing.T) {
 	home := t.TempDir()
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.Mkdir(configPath, 0755); err != nil {
 		t.Fatalf("Mkdir(%q) error = %v", configPath, err)
 	}
@@ -123,7 +127,7 @@ func TestRunConfigFailsWhenConfigPathUnreadable(t *testing.T) {
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	assertContains(t, stderr, "claune: error loading config: failed to read ~/.claune.json")
+	assertContains(t, stderr, "claune: error loading config: failed to read " + configPath)
 	if strings.Contains(stderr, "warning: invalid config") {
 		t.Fatalf("stderr = %q, should not contain malformed-config recovery warning", stderr)
 	}
@@ -131,7 +135,8 @@ func TestRunConfigFailsWhenConfigPathUnreadable(t *testing.T) {
 
 func TestRunStatusFailsWhenConfigPathUnreadable(t *testing.T) {
 	home := t.TempDir()
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.Mkdir(configPath, 0755); err != nil {
 		t.Fatalf("Mkdir(%q) error = %v", configPath, err)
 	}
@@ -146,7 +151,7 @@ func TestRunStatusFailsWhenConfigPathUnreadable(t *testing.T) {
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	assertContains(t, stderr, "claune: error loading config: failed to read ~/.claune.json")
+	assertContains(t, stderr, "claune: error loading config: failed to read " + configPath)
 }
 
 func TestRunManagementCommandsRejectBadUsage(t *testing.T) {
@@ -332,7 +337,8 @@ func TestRunManagementCommandsBadUsageWinsOverMalformedConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			home := t.TempDir()
-			configPath := filepath.Join(home, ".claune.json")
+			configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 			if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
 				t.Fatalf("WriteFile(%q) error = %v", configPath, err)
 			}
@@ -420,7 +426,8 @@ func TestRunPlayRejectsBadUsage(t *testing.T) {
 
 func TestRunPlayBadUsageWinsOverMalformedConfig(t *testing.T) {
 	home := t.TempDir()
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
 		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
 	}
@@ -522,7 +529,8 @@ func TestRunAnalyzeRespExitsNonZeroOnRuntimeAIFailure(t *testing.T) {
 	defer failingServer.Close()
 
 	home := t.TempDir()
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(fmt.Sprintf(`{"ai":{"enabled":true,"api_key":"test-key","api_url":%q}}`, failingServer.URL)), 0o644); err != nil {
 		t.Fatalf("os.WriteFile(%q) error = %v", configPath, err)
 	}
@@ -638,14 +646,15 @@ func TestRunImportCircusFailsLoudlyOnConfigSaveErrorAfterSuccessfulImport(t *tes
 	defer testServer.Close()
 
 	home := t.TempDir()
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"sounds":{}}`), 0o444); err != nil {
 		t.Fatalf("os.WriteFile(%q) error = %v", configPath, err)
 	}
-	if err := os.Chmod(home, 0o555); err != nil {
+	if err := os.Chmod(filepath.Dir(configPath), 0o555); err != nil {
 		t.Fatalf("os.Chmod(%q) error = %v", home, err)
 	}
-	t.Cleanup(func() { os.Chmod(home, 0o755) })
+	t.Cleanup(func() { os.Chmod(filepath.Dir(configPath), 0o755) })
 	cacheDir := t.TempDir()
 
 	stdout, stderr, exitCode, err := runInSubprocessWithEnv(t, home, []string{"import-circus", testServer.URL + "/alert.mp3", "alert.mp3", "tool:start"}, []string{fmt.Sprintf("XDG_CACHE_HOME=%s", cacheDir)})
@@ -660,7 +669,7 @@ func TestRunImportCircusFailsLoudlyOnConfigSaveErrorAfterSuccessfulImport(t *tes
 	}
 	assertContains(t, stderr, "Failed to update config:")
 	assertContains(t, stderr, "alert.mp3 was downloaded to")
-	assertContains(t, stderr, "but claune could not update ~/.claune.json")
+	assertContains(t, stderr, "but claune could not update ~/.config/claune/config.json")
 	assertContains(t, stderr, "permission denied writing config lock")
 }
 
@@ -708,7 +717,8 @@ func TestRunImportCircusReportsPartialSuccessWhenAIMappingFails(t *testing.T) {
 
 	home := t.TempDir()
 	cacheDir := t.TempDir()
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"ai":{"enabled":true,"api_key":"dummy-key"}}`), 0o644); err != nil {
 		t.Fatalf("os.WriteFile(%q) error = %v", configPath, err)
 	}

@@ -58,7 +58,8 @@ func TestPlayRegressionEvidenceRejectsIncompleteSemanticAnalysisForm(t *testing.
 
 func TestPlayRegressionEvidenceBadUsageWinsOverMalformedConfig(t *testing.T) {
 	home := t.TempDir()
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0o644); err != nil {
 		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
 	}

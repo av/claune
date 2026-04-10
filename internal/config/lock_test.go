@@ -10,7 +10,8 @@ func TestSaveWithFreshLock(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	lockPath := configPath + ".lock"
 
 	os.WriteFile(lockPath, []byte(""), 0666)

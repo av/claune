@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"github.com/everlier/claune/internal/xdg"
 
 	"github.com/everlier/claune/internal/config"
 	"github.com/gopxl/beep"
@@ -41,10 +42,16 @@ var (
 )
 
 func stateFilePath() string {
-	if home, err := os.UserHomeDir(); err == nil && home != "" {
-		return filepath.Join(home, ".claune.state.json")
+	home, err := os.UserHomeDir()
+	if err == nil && home != "" {
+		legacyPath := filepath.Join(home, ".claune.state.json")
+		if _, err := os.Stat(legacyPath); err == nil {
+			return legacyPath
+		}
 	}
-	return filepath.Join(os.TempDir(), ".claune.state.json")
+	dir := xdg.StateHome()
+	os.MkdirAll(dir, 0755)
+	return filepath.Join(dir, "state.json")
 }
 
 func loadState() {
@@ -112,14 +119,9 @@ func playMP3File(mp3Path string, volume float64, blocking bool) error {
 }
 
 func SoundCacheDir() string {
-	if dir := os.Getenv("XDG_CACHE_HOME"); dir != "" {
-		return filepath.Join(dir, "claune")
-	}
-	home, err := os.UserHomeDir()
-	if err != nil || home == "" {
-		home = os.TempDir()
-	}
-	return filepath.Join(home, ".cache", "claune")
+	dir := xdg.CacheHome()
+	os.MkdirAll(dir, 0755)
+	return dir
 }
 
 func EnsureSoundCache() error {

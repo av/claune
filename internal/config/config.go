@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"github.com/everlier/claune/internal/xdg"
 )
 
 type EventSoundConfig struct {
@@ -48,6 +49,17 @@ func IsInvalidConfigError(err error) bool {
 	return errors.As(err, &invalidConfigError)
 }
 
+func configFilePath() string {
+	home, err := os.UserHomeDir()
+	if err == nil && home != "" {
+		legacyPath := filepath.Join(home, ".claune.json")
+		if _, err := os.Stat(legacyPath); err == nil {
+			return legacyPath
+		}
+	}
+	return filepath.Join(xdg.ConfigHome(), "config.json")
+}
+
 func Load() (ClauneConfig, error) {
 	config := ClauneConfig{
 		Sounds: make(map[string]EventSoundConfig),
@@ -57,7 +69,7 @@ func Load() (ClauneConfig, error) {
 		fmt.Fprintf(os.Stderr, "claune: warning: home directory not found or inaccessible, using default config\n")
 		return config, nil
 	}
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := configFilePath()
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -66,13 +78,13 @@ func Load() (ClauneConfig, error) {
 			fmt.Fprintf(os.Stderr, "claune: warning: permission denied reading %s, using default config\n", configPath)
 			// Return default config on permission error instead of crashing/failing
 		} else {
-			return config, fmt.Errorf("failed to read ~/.claune.json: %w", err)
+			return config, fmt.Errorf("failed to read %s: %w", configPath, err)
 		}
 	} else if err := json.Unmarshal(data, &config); err != nil {
 		if strings.Contains(err.Error(), "cannot unmarshal string into Go struct field") && strings.Contains(err.Error(), "EventSoundConfig") {
-			return config, InvalidConfigError{err: fmt.Errorf("invalid config format detected in ~/.claune.json. Sounds must now be configured as objects with 'paths' array, not strings. Please update your configuration schema: %w", err)}
+			return config, InvalidConfigError{err: fmt.Errorf("invalid config format detected in %s. Sounds must now be configured as objects with 'paths' array, not strings. Please update your configuration schema: %w", configPath, err)}
 		}
-		return config, InvalidConfigError{err: fmt.Errorf("invalid configuration format in ~/.claune.json: %w", err)}
+		return config, InvalidConfigError{err: fmt.Errorf("invalid configuration format in %s: %w", configPath, err)}
 	}
 	if config.Sounds == nil {
 		config.Sounds = make(map[string]EventSoundConfig)
@@ -85,8 +97,11 @@ func Save(c ClauneConfig) error {
 	if err != nil || home == "" {
 		return fmt.Errorf("home directory not found or inaccessible")
 	}
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := configFilePath()
 
+	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
 	lockPath := configPath + ".lock"
 	locked := false
 	for i := 0; i < 50; i++ {
@@ -118,7 +133,10 @@ func Save(c ClauneConfig) error {
 	}
 
 	dir := filepath.Dir(configPath)
-	tmpFile, err := os.CreateTemp(dir, ".claune.json.tmp.*")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+	tmpFile, err := os.CreateTemp(dir, "config.json.tmp.*")
 	if err != nil {
 		return err
 	}

@@ -31,7 +31,8 @@ func TestLoadValidConfig(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	contents := `{
 		"mute": true,
 		"volume": 0.35,
@@ -88,7 +89,8 @@ func TestLoadMalformedConfigFails(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -97,7 +99,7 @@ func TestLoadMalformedConfigFails(t *testing.T) {
 	if err == nil {
 		t.Fatal("Load() error = nil, want malformed config failure")
 	}
-	if !strings.Contains(err.Error(), "invalid configuration format in ~/.claune.json") {
+	if !strings.Contains(err.Error(), "invalid configuration format in " + configPath + "") {
 		t.Fatalf("Load() error = %q, want invalid configuration format context", err)
 	}
 }
@@ -106,7 +108,8 @@ func TestLoadLegacySchemaRejected(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{
 		"sounds": {
 			"success": "test1.mp3"
@@ -128,7 +131,8 @@ func TestLoadUnreadableConfigPathFails(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.Mkdir(configPath, 0755); err != nil {
 		t.Fatalf("Mkdir(%q) error = %v", configPath, err)
 	}
@@ -137,7 +141,7 @@ func TestLoadUnreadableConfigPathFails(t *testing.T) {
 	if err == nil {
 		t.Fatal("Load() error = nil, want unreadable config path failure")
 	}
-	if !strings.Contains(err.Error(), "failed to read ~/.claune.json") {
+	if !strings.Contains(err.Error(), "failed to read " + configPath + "") {
 		t.Fatalf("Load() error = %q, want read failure context", err)
 	}
 }
@@ -227,7 +231,8 @@ func TestSaveAutoRecoverStaleLock(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
-	configPath := filepath.Join(home, ".claune.json")
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 	lockPath := configPath + ".lock"
 
 	// Create a "stale" lock file (older than 2 seconds)

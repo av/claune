@@ -15,7 +15,8 @@ func FuzzConfigAggressive(f *testing.F) {
 		tmpDir := os.TempDir()
 		t.Setenv("HOME", tmpDir)
 		
-		configPath := filepath.Join(tmpDir, ".claune.json")
+		configPath := filepath.Join(tmpDir, ".config", "claune", "config.json")
+os.MkdirAll(filepath.Dir(configPath), 0755)
 		err := os.WriteFile(configPath, data, 0644)
 		if err != nil {
 			t.Skip()

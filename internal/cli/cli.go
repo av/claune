@@ -101,7 +101,7 @@ func Run(args []string) error {
 				guessed, err := ai.GuessEventForSound(url, filename, c)
 				if err != nil {
 					fmt.Printf("Imported %s to %s, but could not map it to an event automatically.\n", filename, cachedPath)
-					fmt.Fprintf(os.Stderr, "AI mapping failed: %v. Please rerun with an explicit event to update ~/.claune.json.\n", err)
+					fmt.Fprintf(os.Stderr, "AI mapping failed: %v. Please rerun with an explicit event to update ~/.config/claune/config.json.\n", err)
 					os.Exit(2)
 				}
 				event = guessed
@@ -118,7 +118,7 @@ func Run(args []string) error {
 
 			if err := config.Save(c); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to update config: %v\n", err)
-				fmt.Fprintf(os.Stderr, "%s was downloaded to %s, but claune could not update ~/.claune.json.\n", filename, cachedPath)
+				fmt.Fprintf(os.Stderr, "%s was downloaded to %s, but claune could not update ~/.config/claune/config.json.\n", filename, cachedPath)
 				os.Exit(1)
 			} else {
 				fmt.Printf("Imported %s and mapped it to event %s\n", filename, event)

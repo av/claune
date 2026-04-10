@@ -92,7 +92,7 @@ func TestImportMemeSoundRejectsNamesThatEscapeCacheDir(t *testing.T) {
 		t.Fatalf("expected invalid import name error, got %v", err)
 	}
 
-	if _, statErr := os.Stat(filepath.Join(home, ".cache", "escape.mp3")); !os.IsNotExist(statErr) {
+	if _, statErr := os.Stat(filepath.Join(audio.SoundCacheDir(), "..", "escape.mp3")); !os.IsNotExist(statErr) {
 		t.Fatalf("expected no file outside cache dir, stat err = %v", statErr)
 	}
 }
