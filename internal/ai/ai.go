@@ -29,6 +29,7 @@ type ClaudeResponse struct {
 	Content []struct {
 		Text string `json:"text"`
 	} `json:"content"`
+	StopReason string `json:"stop_reason"`
 }
 
 func messagesAPIURL(c config.ClauneConfig) string {
@@ -95,6 +96,14 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 			continue
 		}
 
+		if cr.StopReason == "max_tokens" {
+			reqBody.MaxTokens *= 2
+			// Need to regenerate bodyBytes since we mutated reqBody
+			bodyBytes, _ = json.Marshal(reqBody)
+			lastErr = fmt.Errorf("AI response incomplete due to token limit")
+			continue
+		}
+
 		return &cr, nil
 	}
 
@@ -119,6 +128,11 @@ func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig)
 	model := c.AI.Model
 	if model == "" {
 		model = "claude-3-haiku-20240307"
+	}
+
+	// Truncate huge inputs to avoid context limit errors and save tokens
+	if len(input) > 2000 {
+		input = input[:2000] + "... (truncated)"
 	}
 
 	prompt := fmt.Sprintf("Analyze this tool call: %s with input: %s. Reply with ONE WORD ONLY: 'destructive' if it mutates data, deletes files, or executes arbitrary code. 'readonly' if it just reads data.", toolName, input)
@@ -166,6 +180,11 @@ func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (strin
 		model = "claude-3-haiku-20240307"
 	}
 
+	// Truncate huge inputs to avoid context limit errors and save tokens
+	if len(responseText) > 4000 {
+		responseText = responseText[:2000] + "... (truncated middle) ..." + responseText[len(responseText)-2000:]
+	}
+
 	prompt := fmt.Sprintf("Analyze this AI response for urgency or sentiment: %q. If it's a critical error or extremely urgent, reply with 'URGENT'. If it's very positive/successful, reply with 'SUCCESS'. Otherwise, reply 'NEUTRAL'.", responseText)
 	reqBody := ClaudeRequest{
 		Model: model,
@@ -192,9 +211,10 @@ func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (strin
 }
 
 type ConfigPatch struct {
-	Mute      *bool                       `json:"mute"`
-	MuteUntil *string                     `json:"mute_until"`
-	Volume    *float64                    `json:"volume"`
+	Mute      *bool                              `json:"mute"`
+	MuteUntil *string                            `json:"mute_until"`
+	Volume    *float64                           `json:"volume"`
+	Strategy  *string                            `json:"strategy"`
 	Sounds    map[string]config.EventSoundConfig `json:"sounds"`
 }
 
@@ -234,14 +254,14 @@ func HandleNaturalLanguageConfig(prompt string, c *config.ClauneConfig) error {
 		sysPrompt := fmt.Sprintf(`You are configuring Claune, an audio tool. Current config: %+v.
 User prompt: %s
 Current time: %s
-Reply with ONLY valid JSON representing the updated configuration fields. Do not include markdown blocks. Example: {"mute": true, "mute_until": "2023-10-12T14:00:00Z", "volume": 0.5, "sounds": {"tool:start": {"paths": ["file.wav"], "strategy": "random"}}}`, c, prompt, time.Now().Format(time.RFC3339))
+Reply with ONLY valid JSON representing the updated configuration fields. Do not include markdown blocks. Example: {"mute": true, "mute_until": "2023-10-12T14:00:00Z", "volume": 0.5, "strategy": "round_robin", "sounds": {"tool:start": {"paths": ["file.wav"], "strategy": "random"}}}`, c, prompt, time.Now().Format(time.RFC3339))
 
 		reqBody := ClaudeRequest{
 			Model: model,
 			Messages: []ClaudeMessage{
 				{Role: "user", Content: sysPrompt},
 			},
-			MaxTokens: 200,
+			MaxTokens: 2048,
 		}
 
 		cr, err := doAIRequest(*c, reqBody)
@@ -268,6 +288,9 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 	}
 	if updates.Volume != nil {
 		c.Volume = updates.Volume
+	}
+	if updates.Strategy != nil {
+		c.Strategy = *updates.Strategy
 	}
 	if updates.Sounds != nil {
 		if c.Sounds == nil {
@@ -378,7 +401,7 @@ Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, s
 		Messages: []ClaudeMessage{
 			{Role: "user", Content: sysPrompt},
 		},
-		MaxTokens: 500,
+		MaxTokens: 2048,
 	}
 
 	cr, err := doAIRequest(*c, reqBody)
