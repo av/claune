@@ -69,7 +69,7 @@ func Load() (ClauneConfig, error) {
 			return config, fmt.Errorf("failed to read ~/.claune.json: %w", err)
 		}
 	} else if err := json.Unmarshal(data, &config); err != nil {
-		if strings.Contains(err.Error(), "cannot unmarshal string into Go struct field") {
+		if strings.Contains(err.Error(), "cannot unmarshal string into Go struct field") && strings.Contains(err.Error(), "EventSoundConfig") {
 			return config, InvalidConfigError{err: fmt.Errorf("invalid config format detected in ~/.claune.json. Sounds must now be configured as objects with 'paths' array, not strings. Please update your configuration schema: %w", err)}
 		}
 		return config, InvalidConfigError{err: fmt.Errorf("invalid configuration format in ~/.claune.json: %w", err)}
