@@ -124,13 +124,17 @@ func removeClauneHooks(entries []HookEntry) ([]HookEntry, bool) {
 	return kept, changed
 }
 
+func shellEscape(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
+
 func directHookCmd(wavPath string, event string) string {
 	// Fallback to slow claune play
 	bin := "claune"
 	if path, err := exec.LookPath("claune"); err == nil {
 		bin = path
 	}
-	return `bash -c '[ "$CLAUNE_ACTIVE" = "1" ] && ` + bin + ` play ` + event + ` </dev/null >/dev/null 2>&1 &'`
+	return `bash -c '[ "$CLAUNE_ACTIVE" = "1" ] && "$0" play "$1" </dev/null >/dev/null 2>&1 &' ` + shellEscape(bin) + ` ` + shellEscape(event)
 }
 
 func clauneHookEntries() map[string][]HookEntry {
