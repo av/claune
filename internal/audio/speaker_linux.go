@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/gopxl/beep"
 	"github.com/gopxl/beep/effects"
@@ -56,11 +57,27 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 			return fmt.Errorf("failed to encode stream to wav: %w", err)
 		}
 
-		cmd := exec.Command("aplay", "-q", tmpFile.Name())
+		var bin string
+		var args []string
+		if path, err := exec.LookPath("paplay"); err == nil {
+			bin = path
+			args = []string{tmpFile.Name()}
+		} else if path, err := exec.LookPath("pw-play"); err == nil {
+			bin = path
+			args = []string{tmpFile.Name()}
+		} else if path, err := exec.LookPath("aplay"); err == nil {
+			bin = path
+			args = []string{"-q", tmpFile.Name()}
+		} else {
+			os.Remove(tmpFile.Name())
+			return fmt.Errorf("no audio backend found (checked paplay, pw-play, aplay)")
+		}
+
+		cmd := exec.Command(bin, args...)
 		err = cmd.Run()
 		os.Remove(tmpFile.Name())
 		if err != nil {
-			return fmt.Errorf("aplay failed: %w", err)
+			return fmt.Errorf("%s failed: %w", filepath.Base(bin), err)
 		}
 		return nil
 	}
