@@ -52,11 +52,20 @@ func Load() (ClauneConfig, error) {
 	config := ClauneConfig{
 		Sounds: make(map[string]EventSoundConfig),
 	}
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		fmt.Fprintf(os.Stderr, "claune: warning: home directory not found or inaccessible, using default config\n")
+		return config, nil
+	}
 	configPath := filepath.Join(home, ".claune.json")
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		if !os.IsNotExist(err) {
+		if os.IsNotExist(err) {
+			// Fine, file doesn't exist, use default config
+		} else if os.IsPermission(err) {
+			fmt.Fprintf(os.Stderr, "claune: warning: permission denied reading %s, using default config\n", configPath)
+			// Return default config on permission error instead of crashing/failing
+		} else {
 			return config, fmt.Errorf("failed to read ~/.claune.json: %w", err)
 		}
 	} else if err := json.Unmarshal(data, &config); err != nil {
@@ -72,9 +81,12 @@ func Load() (ClauneConfig, error) {
 }
 
 func Save(c ClauneConfig) error {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return fmt.Errorf("home directory not found or inaccessible")
+	}
 	configPath := filepath.Join(home, ".claune.json")
-	
+
 	lockPath := configPath + ".lock"
 	locked := false
 	for i := 0; i < 50; i++ {
@@ -83,6 +95,8 @@ func Save(c ClauneConfig) error {
 			f.Close()
 			locked = true
 			break
+		} else if os.IsPermission(err) {
+			return fmt.Errorf("permission denied writing config lock: %w", err)
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
