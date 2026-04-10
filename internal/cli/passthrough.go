@@ -318,6 +318,21 @@ func runPassthrough(args []string) {
 		os.Exit(1)
 	}
 
+	myExe, err := os.Executable()
+	if err == nil {
+		myExeEval, err1 := filepath.EvalSymlinks(myExe)
+		claudeExeEval, err2 := filepath.EvalSymlinks(claudeBin)
+		if err1 == nil && err2 == nil && myExeEval == claudeExeEval {
+			fmt.Fprintf(os.Stderr, "claune: fork bomb detected! 'claude' resolves to this executable.\n")
+			os.Exit(1)
+		}
+	}
+
+	if os.Getenv("CLAUNE_ACTIVE") == "1" {
+		fmt.Fprintf(os.Stderr, "claune: nested execution detected! CLAUNE_ACTIVE is already set.\n")
+		os.Exit(1)
+	}
+
 	cmd := exec.Command(claudeBin, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
