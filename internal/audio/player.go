@@ -174,7 +174,7 @@ func playEmbeddedSound(soundFile string, volume float64, blocking bool) error {
 	return nil
 }
 
-func pickSound(eventType string, sounds []string, strategy string) string {
+func pickSound(stateKey string, sounds []string, strategy string) string {
 	if len(sounds) == 0 {
 		return ""
 	}
@@ -207,9 +207,9 @@ func pickSound(eventType string, sounds []string, strategy string) string {
 		}
 
 		loadState()
-		idx := rrIndex[eventType]
+		idx := rrIndex[stateKey]
 		selected := sounds[idx%len(sounds)]
-		rrIndex[eventType] = (idx + 1) % len(sounds)
+		rrIndex[stateKey] = (idx + 1) % len(sounds)
 		saveState()
 		return selected
 	}
@@ -237,7 +237,7 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 			}
 		}
 		
-		customPath := pickSound(eventType, customConfig.Paths, strategy)
+		customPath := pickSound(eventType+":custom", customConfig.Paths, strategy)
 		if customPath != "" {
 			if strings.HasPrefix(customPath, "~/") {
 				home, _ := os.UserHomeDir()
