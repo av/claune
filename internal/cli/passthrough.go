@@ -126,7 +126,7 @@ func directHookCmd(wavPath string, event string) string {
 	if path, err := exec.LookPath("claune"); err == nil {
 		bin = path
 	}
-	return `bash -c '[ "$CLAUNE_ACTIVE" = "1" ] && ` + bin + ` play ` + event + ` >/dev/null 2>&1 &'`
+	return `bash -c '[ "$CLAUNE_ACTIVE" = "1" ] && ` + bin + ` play ` + event + ` </dev/null >/dev/null 2>&1 &'`
 }
 
 func clauneHookEntries() map[string][]HookEntry {
