@@ -86,4 +86,32 @@ $COMMAND pack http://localhost:12345/test-pack.json > /dev/null
 kill $SERVER_PID || true
 echo "-> OK"
 
+# Test 12: Pack local file
+echo "Testing 'pack <local_file>' command..."
+cat << 'EOF' > /tmp/test-local-pack.json
+{
+  "name": "e2e-local-pack",
+  "description": "A dummy local pack for E2E tests",
+  "sounds": {
+    "cli:success": "anime-wow"
+  }
+}
+EOF
+$COMMAND pack /tmp/test-local-pack.json > /dev/null
+echo "-> OK"
+
+# Test 13: Pack invalid JSON file
+echo "Testing 'pack <invalid_file>' command..."
+cat << 'EOF' > /tmp/test-invalid-pack.json
+{
+  "name": "e2e-invalid-pack"
+  "description": "Missing comma"
+}
+EOF
+if $COMMAND pack /tmp/test-invalid-pack.json > /dev/null 2>&1; then
+    echo "Expected pack to fail with invalid JSON"
+    exit 1
+fi
+echo "-> OK"
+
 echo "All End-to-End tests passed successfully!"
