@@ -20,10 +20,10 @@
         }
         .container {
             width: 80%;
-            margin: 0 auto;
+            /* NO margin: 0 auto! USE CENTER TAGS! */
             border: 5px dashed #00ffff;
             padding: 20px;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: #000000;
         }
         .marquee {
             color: #ff0000;
@@ -118,6 +118,7 @@
 
 <marquee class="marquee" scrollamount="15">🚨 NEW APP ALERT: CLAUNE IS HERE TO MAKE YOUR TERMINAL NOISY!!! 🚨</marquee>
 
+<center>
 <div class="container" id="home">
     <h1><blink>🎉 Welcome to CLAUNE !! 🎉</blink></h1>
     
@@ -144,7 +145,7 @@
 
     <center style="margin-top: 20px;">
         <p style="font-size: 1.5em; color: magenta;"><blink>~*~ YOU ARE VISITOR NUMBER ~*~</blink></p>
-        <div id="hit-counter-container" style="display: inline-flex; border: 3px inset #888; background: #000; padding: 3px; box-shadow: 2px 2px 0px #fff;">
+        <div id="hit-counter-container" style="display: inline-block; border: 3px inset #888; background: #000; padding: 3px; box-shadow: 2px 2px 0px #fff;">
             <!-- Digits will be injected here by JS -->
         </div>
         
@@ -168,12 +169,15 @@
 
     </center>
 </div>
+</center>
 
+<center>
 <div class="footer">
     <p>Best viewed in Netscape Navigator 4.0 at 800x600 resolution.</p>
     <p>&copy; 2026 Claune Webmaster. All rights reserved.</p>
     <marquee scrollamount="5">This site is optimized for Web 1.0</marquee>
 </div>
+</center>
 
 <script src="assets/js/cursor-trail.js"></script>
 </body>
