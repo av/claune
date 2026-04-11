@@ -20,6 +20,12 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 	os.MkdirAll(cacheDir, 0755)
 
 	var ctrl beep.Streamer = streamer
+
+	// Limit playback to 5 minutes max to prevent disk exhaustion
+	// from massive uncompressed WAV encodings
+	maxFrames := format.SampleRate.N(5 * time.Minute)
+	ctrl = beep.Take(maxFrames, ctrl)
+
 	if volume != 1.0 {
 		volLog := 0.0
 		if volume > 0.001 {

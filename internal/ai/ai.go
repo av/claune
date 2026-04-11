@@ -293,6 +293,11 @@ type ConfigPatch struct {
 }
 
 func HandleNaturalLanguageConfig(prompt string, c *config.ClauneConfig) error {
+	// Truncate massive CLI inputs to prevent OOM/DoS or hitting Anthropic API limits
+	if len(prompt) > 2000 {
+		prompt = prompt[:2000] + "... (truncated)"
+	}
+
 	var updates ConfigPatch
 	// Mock logic for tests when API key is missing
 	if !c.AI.Enabled || (os.Getenv("ANTHROPIC_API_KEY") == "" && c.AI.APIKey == "") {
