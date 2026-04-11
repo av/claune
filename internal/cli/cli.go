@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/everlier/claune/internal/ai"
 	"github.com/everlier/claune/internal/audio"
@@ -131,6 +132,10 @@ func Run(args []string) error {
 		} else {
 			logText = mustReadStdin("analyze-log")
 		}
+		if !utf8.ValidString(logText) {
+			fmt.Fprintln(os.Stderr, "claune: error: input data is not valid UTF-8 text")
+			os.Exit(1)
+		}
 		circus.AnalyzeLogSentiment(logText, c, true)
 	case "automap":
 		dir := args[1]
@@ -152,6 +157,10 @@ func Run(args []string) error {
 			respText = strings.Join(args[1:], " ")
 		} else {
 			respText = mustReadStdin("analyze-resp")
+		}
+		if !utf8.ValidString(respText) {
+			fmt.Fprintln(os.Stderr, "claune: error: input data is not valid UTF-8 text")
+			os.Exit(1)
 		}
 		event, strategy, err := ai.AnalyzeResponseSentiment(respText, c)
 		if err != nil {
