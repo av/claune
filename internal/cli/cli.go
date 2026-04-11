@@ -30,6 +30,7 @@ var clauneSubcommands = map[string]bool{
 	"--help":        true,
 	"-h":            true,
 	"config":        true,
+	"auth":          true,
 	"import-circus": true,
 	"analyze-log":   true,
 	"automap":       true,
@@ -178,6 +179,14 @@ func Run(args []string, version string) error {
 			return fmt.Errorf("AI config failed: %w", err)
 		}
 		fmt.Println("Config updated successfully via AI")
+	case "auth":
+		c.AI.Enabled = true
+		c.AI.APIKey = args[1]
+		if err := config.Save(c); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to save config: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("API key saved. AI features are now enabled.")
 	case "import-circus":
 		url := args[1]
 		if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
@@ -290,6 +299,8 @@ func validateManagementArgs(args []string) {
 		if len(args) <= 1 {
 			exitUsageError("claune: config requires a natural language prompt", "Usage: claune config <natural language prompt>\nExamples:\n  claune config \"mute sound\"\n  claune config \"set volume to 50%\"")
 		}
+	case "auth":
+		ensureExactArgs(args, 2, "claune: auth requires an API key", "Usage: claune auth <api-key>")
 	case "automap":
 		switch len(args) {
 		case 1:
@@ -455,7 +466,7 @@ func loadCommandConfig(command string) (config.ClauneConfig, error) {
 		return c, nil
 	}
 
-	if command == "config" && config.IsInvalidConfigError(err) {
+	if (command == "config" || command == "auth") && config.IsInvalidConfigError(err) {
 		fmt.Fprintf(os.Stderr, "claune: warning: invalid config, starting from defaults: %v\n", err)
 		return c, nil
 	}
@@ -536,6 +547,9 @@ func printCommandUsage(cmd string) {
 		fmt.Fprintln(os.Stderr, "Usage: claune config <natural language prompt>")
 		fmt.Fprintln(os.Stderr, "\nExamples:\n  claune config \"mute sound\"\n  claune config \"set volume to 50%\"")
 		fmt.Fprintln(os.Stderr, "\nUses AI to update the configuration. Falls back to default limits (2048 tokens max).")
+	case "auth":
+		fmt.Fprintln(os.Stderr, "Usage: claune auth <api-key>")
+		fmt.Fprintln(os.Stderr, "\nSaves your Anthropic API key to ~/.claune.json and enables AI features.")
 	case "automap":
 		fmt.Fprintln(os.Stderr, "Usage: claune automap <directory>")
 		fmt.Fprintln(os.Stderr, "\nAutomatically maps sound files in the given directory to events.")
@@ -591,6 +605,7 @@ Management commands:
                  Play a sound using semantic tool context
   test-sounds   Play all sounds to verify audio works
   config <msg>  Natural language configuration (e.g., "mute sound")
+  auth <key>    Save API key and enable AI features
   automap <dir> Automatically map sound files in a directory to events using AI
   import-circus <url> <name> [event]  Import a meme sound (no slashes allowed) and optionally map to event
   analyze-log   Analyze log from stdin and play a sound
