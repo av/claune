@@ -93,52 +93,72 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 			time.Sleep(time.Duration(attempt) * 500 * time.Millisecond)
 		}
 
-		req, err := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
-		if err != nil {
-			return nil, fmt.Errorf("failed to create request: %w", err)
+		var cr *ClaudeResponse
+		var shouldRetry bool
+		
+		err := func() error {
+			req, err := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
+			if err != nil {
+				return fmt.Errorf("failed to create request: %w", err)
+			}
+			req.Header.Set("x-api-key", key)
+			req.Header.Set("anthropic-version", "2023-06-01")
+			req.Header.Set("content-type", "application/json")
+
+			resp, err := client.Do(req)
+			if err != nil {
+				lastErr = err
+				shouldRetry = true
+				return err
+			}
+			defer resp.Body.Close()
+
+			respBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				lastErr = err
+				shouldRetry = true
+				return err
+			}
+
+			if resp.StatusCode == 429 || resp.StatusCode >= 500 {
+				lastStatus = resp.StatusCode
+				lastRespBytes = respBytes
+				shouldRetry = true
+				return fmt.Errorf("retryable status: %d", resp.StatusCode)
+			}
+
+			if resp.StatusCode != 200 {
+				return fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, RedactSensitiveData(string(respBytes)))
+			}
+
+			cr = &ClaudeResponse{}
+			if err := json.Unmarshal(respBytes, cr); err != nil {
+				return fmt.Errorf("AI response parse failed: %w", err)
+			}
+
+			if len(cr.Content) == 0 {
+				lastErr = fmt.Errorf("empty AI response")
+				shouldRetry = true
+				return lastErr
+			}
+
+			if cr.StopReason == "max_tokens" {
+				reqBody.MaxTokens *= 2
+				bodyBytes, _ = json.Marshal(reqBody)
+				lastErr = fmt.Errorf("AI response incomplete due to token limit")
+				shouldRetry = true
+				return lastErr
+			}
+
+			return nil
+		}()
+
+		if err == nil {
+			return cr, nil
 		}
-		req.Header.Set("x-api-key", key)
-		req.Header.Set("anthropic-version", "2023-06-01")
-		req.Header.Set("content-type", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			lastErr = err
-			continue
+		if !shouldRetry {
+			return nil, err
 		}
-
-		respBytes, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-
-		if resp.StatusCode == 429 || resp.StatusCode >= 500 {
-			lastStatus = resp.StatusCode
-			lastRespBytes = respBytes
-			continue
-		}
-
-		if resp.StatusCode != 200 {
-			return nil, fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, RedactSensitiveData(string(respBytes)))
-		}
-
-		var cr ClaudeResponse
-		if err := json.Unmarshal(respBytes, &cr); err != nil {
-			return nil, fmt.Errorf("AI response parse failed: %w", err)
-		}
-
-		if len(cr.Content) == 0 {
-			lastErr = fmt.Errorf("empty AI response")
-			continue
-		}
-
-		if cr.StopReason == "max_tokens" {
-			reqBody.MaxTokens *= 2
-			// Need to regenerate bodyBytes since we mutated reqBody
-			bodyBytes, _ = json.Marshal(reqBody)
-			lastErr = fmt.Errorf("AI response incomplete due to token limit")
-			continue
-		}
-
-		return &cr, nil
 	}
 
 	if lastErr != nil {
