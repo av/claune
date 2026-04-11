@@ -224,7 +224,13 @@ Config file: `~/.config/claune/config.json` (or `~/.claune.json` as legacy fallb
   "mute": false,
   "volume": 0.7,
   "sounds": {
-    "tool:success": "/path/to/custom.wav"
+    "tool:success": {
+      "paths": [
+        "/path/to/custom.wav",
+        "/path/to/another.mp3"
+      ],
+      "strategy": "random"
+    }
   }
 }
 ```
