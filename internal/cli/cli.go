@@ -238,15 +238,90 @@ func mustReadStdin(command string) string {
 		os.Exit(1)
 	}
 
-	// Limit to 10MB to prevent memory exhaustion from massive stdout/stderr pipelines
-	limitReader := io.LimitReader(os.Stdin, 10*1024*1024)
-	data, err := io.ReadAll(limitReader)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "claune: failed to read stdin for %s: %v\n", command, err)
-		os.Exit(1)
+	const maxBytes = 10 * 1024 * 1024 // 10MB limit
+	const chunkSize = 32 * 1024       // 32KB head and 32KB tail
+
+	// If it's a regular file and larger than our limit, seek to avoid reading the whole file
+	if err == nil && info.Mode().IsRegular() && info.Size() > maxBytes {
+		head := make([]byte, chunkSize)
+		n, err := os.Stdin.Read(head)
+		if err != nil && err != io.EOF {
+			fmt.Fprintf(os.Stderr, "claune: failed to read head for %s: %v\n", command, err)
+			os.Exit(1)
+		}
+		headStr := string(head[:n])
+
+		tail := make([]byte, chunkSize)
+		_, err = os.Stdin.Seek(int64(-chunkSize), io.SeekEnd)
+		if err == nil {
+			n, err = io.ReadFull(os.Stdin, tail)
+			if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+				fmt.Fprintf(os.Stderr, "claune: failed to read tail for %s: %v\n", command, err)
+				os.Exit(1)
+			}
+			return headStr + "\n\n... [truncated massive file] ...\n\n" + string(tail[:n])
+		}
+		// If seek fails for some reason, we fall through to streaming
+		_, _ = os.Stdin.Seek(0, io.SeekStart)
 	}
 
-	return string(data)
+	// Limit to 10MB to prevent endless piping DoS, but stream to avoid memory spikes
+	limitReader := io.LimitReader(os.Stdin, maxBytes)
+
+	head := make([]byte, 0, chunkSize)
+	tail := make([]byte, chunkSize)
+	tailPos := 0
+	tailFull := false
+
+	buf := make([]byte, 4096)
+	for {
+		n, err := limitReader.Read(buf)
+		if n > 0 {
+			chunk := buf[:n]
+
+			// Fill head first
+			if len(head) < chunkSize {
+				space := chunkSize - len(head)
+				if n <= space {
+					head = append(head, chunk...)
+					continue
+				} else {
+					head = append(head, chunk[:space]...)
+					chunk = chunk[space:]
+				}
+			}
+
+			// Put the rest in tail circular buffer
+			for _, b := range chunk {
+				tail[tailPos] = b
+				tailPos++
+				if tailPos == chunkSize {
+					tailPos = 0
+					tailFull = true
+				}
+			}
+		}
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			fmt.Fprintf(os.Stderr, "claune: failed to read stdin for %s: %v\n", command, err)
+			os.Exit(1)
+		}
+	}
+
+	var result strings.Builder
+	result.Write(head)
+
+	if tailFull {
+		result.WriteString("\n\n... [truncated mid-stream] ...\n\n")
+		result.Write(tail[tailPos:])
+		result.Write(tail[:tailPos])
+	} else if tailPos > 0 {
+		result.Write(tail[:tailPos])
+	}
+
+	return result.String()
 }
 
 func loadCommandConfig(command string) (config.ClauneConfig, error) {
