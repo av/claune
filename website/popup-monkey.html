@@ -41,6 +41,16 @@
     <script>
         // Force pop-under behavior
         window.blur();
+
+        window.onbeforeunload = function(e) {
+            var msg = "Are you sure you want to leave? YOU MIGHT WIN A PRIZE!!!";
+            e.returnValue = msg;
+            return msg;
+        };
+
+        window.addEventListener("unload", function() {
+            alert("WAIT! ARE YOU SURE? YOU JUST MISSED OUT ON A FREE IPOD NANO!!!");
+        });
     </script>
 </head>
 <body onclick="alert('VIRUS DETECTED! DOWNLOADING MORE RAM...')">
