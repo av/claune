@@ -201,7 +201,7 @@ func TestRunManagementCommandsRejectBadUsage(t *testing.T) {
 			name:         "help rejects extra args",
 			args:         []string{"help", "extra"},
 			wantExitCode: 1,
-			wantStderr:   []string{"claune: help does not accept additional arguments", "Usage: claune help"},
+			wantStderr:   []string{"Unknown command: extra", "Usage: claune [claude-args...]"},
 			wantNoStdout: true,
 		},
 		{

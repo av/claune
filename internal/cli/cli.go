@@ -23,6 +23,8 @@ var clauneSubcommands = map[string]bool{
 	"status":        true,
 	"test-sounds":   true,
 	"help":          true,
+	"--help":        true,
+	"-h":            true,
 	"config":        true,
 	"import-circus": true,
 	"analyze-log":   true,
@@ -36,8 +38,17 @@ func Run(args []string) error {
 		return nil
 	}
 
+	if len(args) >= 2 && (args[1] == "--help" || args[1] == "-h") {
+		printCommandUsage(args[0])
+		return nil
+	}
+
 	switch args[0] {
-	case "help":
+	case "help", "--help", "-h":
+		if len(args) == 2 {
+			printCommandUsage(args[1])
+			return nil
+		}
 		ensureExactArgs(args, 1, "claune: help does not accept additional arguments", "Usage: claune help")
 		printUsage()
 		return nil
@@ -59,6 +70,10 @@ func Run(args []string) error {
 
 	switch args[0] {
 	case "play":
+		if len(args) > 1 && (args[1] == "--help" || args[1] == "-h") {
+			printCommandUsage("play")
+			return nil
+		}
 		if len(args) == 4 {
 			event, err := ai.AnalyzeToolIntent(args[1], args[2], args[3], c)
 			if err != nil && c.AI.Enabled {
@@ -377,6 +392,54 @@ func testSounds(c config.ClauneConfig) {
 		}
 	}
 	if hasError {
+		os.Exit(1)
+	}
+}
+
+func printCommandUsage(cmd string) {
+	switch cmd {
+	case "play":
+		fmt.Fprintln(os.Stderr, "Usage: claune play <event>\n       claune play <event> <tool-name> <tool-input>")
+		fmt.Fprintln(os.Stderr, "\nPlays a sound associated with the given event.")
+		fmt.Fprintln(os.Stderr, "If a tool name and input are provided, AI semantic audio mapping is used.")
+		fmt.Fprintln(os.Stderr, "Audio limits: Max 50MB or 5 minutes of decompressed audio.")
+		fmt.Fprintln(os.Stderr, "Linux fallback: Tries paplay, pw-play, then aplay.")
+	case "install":
+		fmt.Fprintln(os.Stderr, "Usage: claune install")
+		fmt.Fprintln(os.Stderr, "\nInstalls sound hooks into Claude Code settings.")
+	case "uninstall":
+		fmt.Fprintln(os.Stderr, "Usage: claune uninstall")
+		fmt.Fprintln(os.Stderr, "\nRemoves sound hooks from Claude Code settings.")
+	case "status":
+		fmt.Fprintln(os.Stderr, "Usage: claune status")
+		fmt.Fprintln(os.Stderr, "\nShows whether hooks are installed and current volume/mute status.")
+	case "test-sounds":
+		fmt.Fprintln(os.Stderr, "Usage: claune test-sounds")
+		fmt.Fprintln(os.Stderr, "\nPlays all available sounds sequentially to verify audio works.")
+	case "config":
+		fmt.Fprintln(os.Stderr, "Usage: claune config <natural language prompt>")
+		fmt.Fprintln(os.Stderr, "\nExamples:\n  claune config \"mute sound\"\n  claune config \"set volume to 50%\"")
+		fmt.Fprintln(os.Stderr, "\nUses AI to update the configuration. Falls back to default limits (2048 tokens max).")
+	case "automap":
+		fmt.Fprintln(os.Stderr, "Usage: claune automap <directory>")
+		fmt.Fprintln(os.Stderr, "\nAutomatically maps sound files in the given directory to events.")
+		fmt.Fprintln(os.Stderr, "Uses AI for semantic mapping, falls back to regex matching if AI is unavailable.")
+		fmt.Fprintln(os.Stderr, "Limits: Scans up to 500 audio files per directory.")
+	case "import-circus":
+		fmt.Fprintln(os.Stderr, "Usage: claune import-circus <url> <name> [event]")
+		fmt.Fprintln(os.Stderr, "\nDownloads a meme sound from the given URL and maps it to an event.")
+		fmt.Fprintln(os.Stderr, "Limits: 50MB max file size. 30-second timeout.")
+	case "analyze-log":
+		fmt.Fprintln(os.Stderr, "Usage: claune analyze-log [log text]")
+		fmt.Fprintln(os.Stderr, "\nAnalyzes log text for sentiment and plays an appropriate sound.")
+		fmt.Fprintln(os.Stderr, "Reads from stdin if no text is provided. Truncates inputs larger than 64KB (10MB hard limit).")
+	case "analyze-resp":
+		fmt.Fprintln(os.Stderr, "Usage: claune analyze-resp [response text]")
+		fmt.Fprintln(os.Stderr, "\nAnalyzes AI response text and overrides playback strategy dynamically.")
+		fmt.Fprintln(os.Stderr, "Reads from stdin if no text is provided. Truncates inputs larger than 64KB (10MB hard limit).")
+	default:
+		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
+		printUsage()
 		os.Exit(1)
 	}
 }
