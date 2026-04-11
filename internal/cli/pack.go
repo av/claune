@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -14,9 +16,9 @@ import (
 )
 
 type SoundPack struct {
-	Name        string
-	Description string
-	Sounds      map[string]string // Event -> Slug
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Sounds      map[string]string `json:"sounds"`
 }
 
 var AvailablePacks = []SoundPack{
@@ -126,10 +128,37 @@ func handlePack() {
 	}
 
 	var selectedPack *SoundPack
-	for _, p := range AvailablePacks {
-		if p.Name == packName {
-			selectedPack = &p
-			break
+	if len(packName) >= 7 && (packName[:7] == "http://" || (len(packName) >= 8 && packName[:8] == "https://")) {
+		importSpinner := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+		importSpinner.Prefix = " "
+		importSpinner.Suffix = fmt.Sprintf(" Fetching custom pack from %s... ", Style(packName, ColorCyan))
+		importSpinner.Start()
+		
+		resp, err := http.Get(packName)
+		importSpinner.Stop()
+		if err != nil {
+			PrintError("Failed to fetch custom pack: %v", err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			PrintError("Failed to fetch custom pack: HTTP %d", resp.StatusCode)
+			os.Exit(1)
+		}
+
+		var customPack SoundPack
+		if err := json.NewDecoder(resp.Body).Decode(&customPack); err != nil {
+			PrintError("Failed to parse custom pack JSON: %v", err)
+			os.Exit(1)
+		}
+		selectedPack = &customPack
+	} else {
+		for _, p := range AvailablePacks {
+			if p.Name == packName {
+				selectedPack = &p
+				break
+			}
 		}
 	}
 

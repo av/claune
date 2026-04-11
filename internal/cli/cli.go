@@ -701,8 +701,8 @@ func printCommandUsage(cmd string) {
 		fmt.Fprintln(os.Stderr, "Usage: claune test-sounds")
 		fmt.Fprintln(os.Stderr, "\nPlays all available sounds sequentially to verify audio works.")
 	case "pack":
-		fmt.Fprintln(os.Stderr, "Usage: claune pack [name]")
-		fmt.Fprintln(os.Stderr, "\nDownloads and installs a pre-configured sound pack.")
+		fmt.Fprintln(os.Stderr, "Usage: claune pack [name | url]")
+		fmt.Fprintln(os.Stderr, "\nDownloads and installs a pre-configured sound pack, or a custom JSON pack from a URL.")
 	case "config":
 		fmt.Fprintln(os.Stderr, "Usage: claune config <natural language prompt>")
 		fmt.Fprintln(os.Stderr, "\nExamples:\n  claune config \"mute sound\"\n  claune config \"set volume to 50%\"")
@@ -781,7 +781,7 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, "  play <event>  %sPlay a sound for an event%s\n", ColorDim, ColorReset)
 	fmt.Fprintf(os.Stderr, "  play <event> <tool-name> <tool-input>\n                 %sPlay a sound using semantic tool context%s\n", ColorDim, ColorReset)
 	fmt.Fprintf(os.Stderr, "  test-sounds   %sPlay all sounds to verify audio works%s\n", ColorDim, ColorReset)
-	fmt.Fprintf(os.Stderr, "  pack [name]   %sDownload and install a pre-configured sound pack%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  pack [name|url] %sDownload and install a pre-configured or custom sound pack%s\n", ColorDim, ColorReset)
 	fmt.Fprintf(os.Stderr, "  import-circus <url> <name> [event]  %sImport a meme sound (no slashes allowed) and optionally map to event%s\n\n", ColorDim, ColorReset)
 
 	fmt.Fprintf(os.Stderr, "%sAI Features:%s\n", ColorGreen, ColorReset)

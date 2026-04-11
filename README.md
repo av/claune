@@ -245,6 +245,9 @@ claune pack
 
 # Installs the Retro Games sound pack
 claune pack retro-games
+
+# Installs a custom JSON sound pack from a URL
+claune pack https://example.com/custom-pack.json
 ```
 
 ### IMPORTING SOUNDS (`IMPORT-CIRCUS`)!!!111

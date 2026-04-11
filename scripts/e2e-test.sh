@@ -68,4 +68,22 @@ echo "Testing 'test-sounds' command..."
 $COMMAND test-sounds > /dev/null
 echo "-> OK"
 
+# Test 11: Pack custom URL
+echo "Testing 'pack <url>' command..."
+cat << 'EOF' > /tmp/test-pack.json
+{
+  "name": "e2e-test-pack",
+  "description": "A dummy pack for E2E tests",
+  "sounds": {
+    "cli:start": "anime-wow"
+  }
+}
+EOF
+python3 -m http.server 12345 --directory /tmp >/dev/null 2>&1 &
+SERVER_PID=$!
+sleep 1
+$COMMAND pack http://localhost:12345/test-pack.json > /dev/null
+kill $SERVER_PID || true
+echo "-> OK"
+
 echo "All End-to-End tests passed successfully!"
