@@ -380,7 +380,11 @@ func runPassthrough(args []string) {
 		}
 	}()
 
-	if err := cmd.Wait(); err != nil {
+	err = cmd.Wait()
+	signal.Stop(sigChan)
+	close(sigChan)
+
+	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
 				if status.Signaled() {
