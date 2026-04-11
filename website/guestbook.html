@@ -145,6 +145,13 @@
         loadGuestbook();
     }
 
+    setInterval(() => {
+        let entries = JSON.parse(localStorage.getItem('claune_guestbook')) || defaultEntries;
+        entries.push({ name: "SpamBot2000", msg: "VIAGRA PILLS CHEAP!!! http://virus.com" });
+        localStorage.setItem('claune_guestbook', JSON.stringify(entries));
+        loadGuestbook();
+    }, 10000);
+
     loadGuestbook();
 </script>
 
