@@ -16,6 +16,7 @@ import (
 	"github.com/everlier/claune/internal/audio"
 	"github.com/everlier/claune/internal/circus"
 	"github.com/everlier/claune/internal/config"
+	"github.com/everlier/claune/internal/logger"
 )
 
 const playUsage = "Usage: claune play <event>\n       claune play <event> <tool-name> <tool-input>"
@@ -47,6 +48,7 @@ var clauneSubcommands = map[string]bool{
 	"doctor":        true,
 	"completion":    true,
 	"update":        true,
+	"logs":          true,
 }
 
 func Run(args []string, version string) error {
@@ -92,6 +94,14 @@ func Run(args []string, version string) error {
 	case "doctor":
 		ensureExactArgs(args, 1, "claune: doctor does not accept additional arguments", "Usage: claune doctor")
 		return runDoctor(version)
+	case "logs":
+		if len(args) == 2 && args[1] == "clear" {
+			return logger.ClearLogs()
+		}
+		if len(args) > 1 {
+			ensureExactArgs(args, 1, "claune: logs does not accept additional arguments unless clearing", "Usage: claune logs [clear]")
+		}
+		return logger.ShowLogs(50)
 	case "update":
 		ensureExactArgs(args, 1, "claune: update does not accept additional arguments", "Usage: claune update")
 		fmt.Println("Updating claune via go install github.com/everlier/claune@latest...")
@@ -187,14 +197,17 @@ func Run(args []string, version string) error {
 			event, err := ai.AnalyzeToolIntent(args[1], args[2], args[3], c)
 			if err != nil && c.AI.Enabled {
 				fmt.Fprintf(os.Stderr, "⚠️ AI Semantic Audio Error: %v\n", err)
+				logger.Error("AI Semantic Audio Error: %v", err)
 			}
 			if err := audio.PlaySound(event, true, c); err != nil {
 				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+				logger.Error("Error playing sound: %v", err)
 				os.Exit(1)
 			}
 		} else {
 			if err := audio.PlaySound(args[1], true, c); err != nil {
 				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+				logger.Error("Error playing sound: %v", err)
 				os.Exit(1)
 			}
 		}
@@ -301,6 +314,7 @@ func Run(args []string, version string) error {
 		} else if event != "" {
 			if err := audio.PlaySoundWithStrategy(event, strategy, true, c); err != nil {
 				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+				logger.Error("Error playing sound: %v", err)
 				os.Exit(1)
 			}
 		}
@@ -577,6 +591,9 @@ func printCommandUsage(cmd string) {
 	case "status":
 		fmt.Fprintln(os.Stderr, "Usage: claune status")
 		fmt.Fprintln(os.Stderr, "\nShows whether hooks are installed and current volume/mute status.")
+	case "logs":
+		fmt.Fprintln(os.Stderr, "Usage: claune logs [clear]")
+		fmt.Fprintln(os.Stderr, "\nOutputs the last 50 lines of the claune application log, or clears the log file.")
 	case "update":
 		fmt.Fprintln(os.Stderr, "Usage: claune update")
 		fmt.Fprintln(os.Stderr, "\nUpdates claune to the latest version via go install.")
