@@ -7,7 +7,8 @@
     // Create elements
     for (var i = 0; i < 15; i++) {
         var n = document.createElement("div");
-        n.innerHTML = "★";
+        var chars = ["★", "🎵", "♪", "💩", "💀", "💽"];
+        n.innerHTML = chars[Math.floor(Math.random() * chars.length)];
         n.style.position = "absolute";
         n.style.pointerEvents = "none";
         n.style.zIndex = "9999";
