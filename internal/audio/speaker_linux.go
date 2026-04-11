@@ -120,9 +120,9 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 
 		if !played {
 			if lastErr != nil {
-				return fmt.Errorf("all audio backends failed, last error: %w", lastErr)
+				return fmt.Errorf("all audio backends failed (paplay, pw-play, aplay) - missing audio dependency or daemon not running: %w", lastErr)
 			}
-			return fmt.Errorf("no audio backend found (checked paplay, pw-play, aplay)")
+			return fmt.Errorf("missing audio dependency: please install paplay (pulseaudio/libpulse), pw-play (pipewire), or aplay (alsa)")
 		}
 
 		return nil

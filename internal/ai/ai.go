@@ -82,7 +82,7 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: 30 * time.Second}
 	maxRetries := 2
 	var lastErr error
 	var lastStatus int
