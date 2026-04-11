@@ -2,7 +2,46 @@
 <html>
 <head>
     <title>~*~ CLAUNE ~*~ The Ultimate Sound Experience!</title>
+
+    <style>
+        /* Classic IE Scrollbar Colors */
+        body {
+            scrollbar-face-color: #ff00ff;
+            scrollbar-shadow-color: #00ff00;
+            scrollbar-highlight-color: #00ffff;
+            scrollbar-3dlight-color: #ffff00;
+            scrollbar-darkshadow-color: #0000ff;
+            scrollbar-track-color: #000000;
+            scrollbar-arrow-color: #ff0000;
+        }
+
+        /* Modern WebKit Equivalents */
+        ::-webkit-scrollbar {
+            width: 24px;
+            height: 24px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000;
+            border: 3px inset #00ff00;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff00ff;
+            border: 3px outset #00ffff;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ffff00;
+        }
+        ::-webkit-scrollbar-button:vertical:start:decrement,
+        ::-webkit-scrollbar-button:vertical:end:increment,
+        ::-webkit-scrollbar-button:horizontal:start:decrement,
+        ::-webkit-scrollbar-button:horizontal:end:increment {
+            display: block;
+            background: #0000ff;
+            border: 3px outset #ff0000;
+        }
+    </style>
 </head>
+
 <frameset cols="20%,80%" border="5" bordercolor="#FF00FF">
     <frame src="nav.html" name="navFrame" scrolling="auto" noresize>
     <frame src="splash.html" name="mainFrame" scrolling="auto">
