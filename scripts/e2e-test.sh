@@ -4,7 +4,7 @@ set -e
 echo "Running end-to-end tests for Claune CLI..."
 
 # Ensure we're using the freshly built binary
-COMMAND="claune"
+COMMAND="${CLAUNE_CMD:-claune}"
 
 # Test 1: Version command works
 echo "Testing 'version' command..."
