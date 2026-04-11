@@ -28,7 +28,7 @@ os.MkdirAll(filepath.Dir(configPath), 0755)
 			config.GetVolume()
 			Save(config)
 		} else {
-            err.Error()
+            _ = err.Error()
             IsInvalidConfigError(err)
         }
 	})

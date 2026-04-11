@@ -26,7 +26,7 @@ os.MkdirAll(filepath.Dir(configPath), 0755)
 			c.GetVolume()
 			Save(c)
 		} else {
-            err.Error()
+            _ = err.Error()
         }
         
         var c2 ClauneConfig
