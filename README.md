@@ -2,7 +2,7 @@
 
 Sound effects for Claude Code tool use events.
 
-🎉 **CHECK OUT OUR INCREDIBLE NEW WEBSITE:** [https://av.github.io/claune/](https://av.github.io/claune/) 🎉
+🎉 **CHECK OUT OUR INCREDIBLE NEW WEBSITE:** [https://av.github.io/claune/](https://av.github.io/claune/) 🌐<br>_Witness the Web 1.0 glory, complete with working hit counter and starry backgrounds!_
 (Warning: Highly cringe Web 1.0 experience inside)
 
 ## Install
