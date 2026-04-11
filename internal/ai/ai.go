@@ -8,12 +8,42 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/everlier/claune/internal/audio"
 	"github.com/everlier/claune/internal/config"
 )
+
+// RedactSensitiveData removes API keys, emails, and common secrets from text
+func RedactSensitiveData(input string) string {
+	if input == "" {
+		return input
+	}
+
+	// Redact AWS Keys
+	awsRe := regexp.MustCompile(`AKIA[0-9A-Z]{16}`)
+	input = awsRe.ReplaceAllString(input, "[REDACTED_AWS_KEY]")
+
+	// Redact Anthropic Keys
+	antRe := regexp.MustCompile(`sk-ant-api03-[a-zA-Z0-9\-_]+`)
+	input = antRe.ReplaceAllString(input, "[REDACTED_ANTHROPIC_KEY]")
+
+	// Redact OpenAI Keys
+	oaiRe := regexp.MustCompile(`sk-[a-zA-Z0-9]{48}`)
+	input = oaiRe.ReplaceAllString(input, "[REDACTED_OPENAI_KEY]")
+
+	// Redact Emails
+	emailRe := regexp.MustCompile(`[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}`)
+	input = emailRe.ReplaceAllString(input, "[REDACTED_EMAIL]")
+
+	// Redact Generic Bearer/Tokens/Passwords
+	bearerRe := regexp.MustCompile(`(?i)(bearer\s+|token\s*[:=]\s*|api[_\-]?key\s*[:=]\s*|password\s*[:=]\s*)["']?([a-zA-Z0-9\-_=+]{16,})["']?`)
+	input = bearerRe.ReplaceAllString(input, "$1[REDACTED]")
+
+	return input
+}
 
 type ClaudeMessage struct {
 	Role    string `json:"role"`
@@ -87,7 +117,7 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 		}
 
 		if resp.StatusCode != 200 {
-			return nil, fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(respBytes))
+			return nil, fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, RedactSensitiveData(string(respBytes)))
 		}
 
 		var cr ClaudeResponse
@@ -114,7 +144,7 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 	if lastErr != nil {
 		return nil, fmt.Errorf("AI request failed after retries: %w", lastErr)
 	}
-	return nil, fmt.Errorf("AI API returned status %d after retries: %s", lastStatus, string(lastRespBytes))
+	return nil, fmt.Errorf("AI API returned status %d after retries: %s", lastStatus, RedactSensitiveData(string(lastRespBytes)))
 }
 
 func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig) (string, error) {
@@ -138,6 +168,9 @@ func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig)
 	if len(input) > 2000 {
 		input = input[:2000] + "... (truncated)"
 	}
+	
+	// Sanitize PII and API keys from input before sending to Anthropic
+	input = RedactSensitiveData(input)
 
 	prompt := fmt.Sprintf("Analyze this tool call: %s with input: %s. Reply with ONE WORD ONLY: 'destructive' if it mutates data, deletes files, or executes arbitrary code. 'readonly' if it just reads data.", toolName, input)
 	reqBody := ClaudeRequest{
@@ -188,6 +221,9 @@ func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (strin
 	if len(responseText) > 4000 {
 		responseText = responseText[:2000] + "... (truncated middle) ..." + responseText[len(responseText)-2000:]
 	}
+
+	// Sanitize PII and API keys from response text before sending to Anthropic
+	responseText = RedactSensitiveData(responseText)
 
 	prompt := fmt.Sprintf("Analyze this AI response for urgency or sentiment: %q. If it's a critical error or extremely urgent, reply with 'URGENT'. If it's very positive/successful, reply with 'SUCCESS'. Otherwise, reply 'NEUTRAL'.", responseText)
 	reqBody := ClaudeRequest{
@@ -255,10 +291,12 @@ func HandleNaturalLanguageConfig(prompt string, c *config.ClauneConfig) error {
 			model = "claude-3-haiku-20240307"
 		}
 
+		cleanConfig := *c
+		cleanConfig.AI.APIKey = "[REDACTED]"
 		sysPrompt := fmt.Sprintf(`You are configuring Claune, an audio tool. Current config: %+v.
 User prompt: %s
 Current time: %s
-Reply with ONLY valid JSON representing the updated configuration fields. Do not include markdown blocks. Example: {"mute": true, "mute_until": "2023-10-12T14:00:00Z", "volume": 0.5, "strategy": "round_robin", "sounds": {"tool:start": {"paths": ["file.wav"], "strategy": "random"}}}`, c, prompt, time.Now().Format(time.RFC3339))
+Reply with ONLY valid JSON representing the updated configuration fields. Do not include markdown blocks. Example: {"mute": true, "mute_until": "2023-10-12T14:00:00Z", "volume": 0.5, "strategy": "round_robin", "sounds": {"tool:start": {"paths": ["file.wav"], "strategy": "random"}}}`, cleanConfig, RedactSensitiveData(prompt), time.Now().Format(time.RFC3339))
 
 		reqBody := ClaudeRequest{
 			Model: model,
