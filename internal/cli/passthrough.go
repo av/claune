@@ -400,3 +400,28 @@ func runPassthrough(args []string) {
 		osExit(1)
 	}
 }
+
+func uninstallAll() error {
+	fmt.Println("Removing claune hooks from Claude Code settings...")
+	_ = uninstallHooks()
+
+	fmt.Println("Removing configuration directory ~/.config/claune...")
+	homeDir, _ := os.UserHomeDir()
+	configDir := filepath.Join(homeDir, ".config", "claune")
+	_ = os.RemoveAll(configDir)
+
+	fmt.Println("Removing cache directory ~/.cache/claune...")
+	cacheDir := filepath.Join(homeDir, ".cache", "claune")
+	_ = os.RemoveAll(cacheDir)
+
+	fmt.Println("Removing logs directory ~/.local/state/claune...")
+	stateDir := filepath.Join(homeDir, ".local", "state", "claune")
+	_ = os.RemoveAll(stateDir)
+
+	fmt.Println("Removing binary from PATH (~/.local/bin/claune)...")
+	binPath := filepath.Join(homeDir, ".local", "bin", "claune")
+	_ = os.Remove(binPath)
+
+	fmt.Println("Uninstall complete.")
+	return nil
+}

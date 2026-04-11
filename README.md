@@ -53,12 +53,12 @@ Use the official cross-platform installer script! This will automatically detect
 
 **Linux / macOS:**
 ```bash
-curl -sSfL https://raw.githubusercontent.com/av/claune/main/install.sh | sh
+curl -sSfL https://raw.githubusercontent.com/everlier/claune/main/install.sh | sh
 ```
 
 **Windows (PowerShell):**
 ```powershell
-Invoke-RestMethod -Uri https://raw.githubusercontent.com/av/claune/main/install.ps1 | Invoke-Expression
+Invoke-RestMethod -Uri https://raw.githubusercontent.com/everlier/claune/main/install.ps1 | Invoke-Expression
 ```
 
 ### PREREQUISITES FOR SOURCE INSTALL!!!111
@@ -97,7 +97,7 @@ Invoke-RestMethod -Uri https://raw.githubusercontent.com/av/claune/main/install.
 
 ### PRE-BUILT BINARY!!!111
 
-Download the binary for your platform from [Releases](https://github.com/av/claune/releases).
+Download the binary for your platform from [Releases](https://github.com/everlier/claune/releases).
 
 ```
 chmod +x claune-linux-amd64
@@ -107,7 +107,7 @@ sudo mv claune-linux-amd64 /usr/local/bin/claune
 ### FROM SOURCE!!!111
 
 ```
-git clone git@github.com:av/claune.git
+git clone git@github.com:everlier/claune.git
 cd claune
 PATH="$HOME/go/bin:$PATH" make install
 ```

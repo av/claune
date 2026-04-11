@@ -3,7 +3,7 @@ set -e
 
 # Claune Installer
 
-REPO="av/claune"
+REPO="everlier/claune"
 
 echo "Installing Claune..."
 

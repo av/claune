@@ -83,7 +83,10 @@ func Run(args []string, version string) error {
 		ensureExactArgs(args, 1, "claune: install does not accept additional arguments", "Usage: claune install")
 		return installHooks()
 	case "uninstall":
-		ensureExactArgs(args, 1, "claune: uninstall does not accept additional arguments", "Usage: claune uninstall")
+		if len(args) == 2 && args[1] == "--all" {
+			return uninstallAll()
+		}
+		ensureExactArgs(args, 1, "claune: uninstall accepts only --all flag", "Usage: claune uninstall [--all]")
 		return uninstallHooks()
 	case "init":
 		ensureExactArgs(args, 1, "claune: init does not accept additional arguments", "Usage: claune init")
@@ -613,8 +616,9 @@ func printCommandUsage(cmd string) {
 		fmt.Fprintln(os.Stderr, "Usage: claune install")
 		fmt.Fprintln(os.Stderr, "\nInstalls sound hooks into Claude Code settings.")
 	case "uninstall":
-		fmt.Fprintln(os.Stderr, "Usage: claune uninstall")
+		fmt.Fprintln(os.Stderr, "Usage: claune uninstall [--all]")
 		fmt.Fprintln(os.Stderr, "\nRemoves sound hooks from Claude Code settings.")
+		fmt.Fprintln(os.Stderr, "If --all is provided, it completely removes the application binary, configuration, logs, cache, and sound files.")
 	case "completion":
 		fmt.Fprintln(os.Stderr, "Usage: claune completion <bash|zsh>")
 		fmt.Fprintln(os.Stderr, "\nOutputs shell completion code for the specified shell.")
@@ -707,7 +711,7 @@ Passthrough mode (default):
 
 Core Commands:
   install       Install sound hooks into Claude Code settings
-  uninstall     Remove sound hooks from Claude Code settings
+  uninstall     Remove sound hooks (use --all to completely remove claune)
   init          Create a default configuration file
   setup         Run the interactive first-run wizard
   status        Show whether hooks are installed

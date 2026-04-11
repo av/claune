@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$REPO = "av/claune"
+$REPO = "everlier/claune"
 
 Write-Host "Installing Claune..."
 

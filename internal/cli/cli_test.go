@@ -222,7 +222,7 @@ func TestRunManagementCommandsRejectBadUsage(t *testing.T) {
 			name:         "uninstall rejects extra args",
 			args:         []string{"uninstall", "extra"},
 			wantExitCode: 1,
-			wantStderr:   []string{"claune: uninstall does not accept additional arguments", "Usage: claune uninstall"},
+			wantStderr:   []string{"claune: uninstall accepts only --all flag", "Usage: claune uninstall"},
 			wantNoStdout: true,
 		},
 		{
