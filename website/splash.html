@@ -70,6 +70,12 @@
         }
     </style>
     <script>
+        function annoyingAlerts() {
+            alert("CONGRATULATIONS!!!");
+            alert("YOU ARE THE 1,000,000th VISITOR!!!");
+            alert("CLICK OK TO CLAIM YOUR PRIZE!!!");
+        }
+
         document.addEventListener("contextmenu", function(e) {
             e.preventDefault();
             alert("NO RIGHT CLICKING ALLOWED! COPYRIGHT xX_Everlier_Xx 2004");
@@ -89,7 +95,7 @@
 
     <p><font size="4" color="#FFFF00">Best viewed in Netscape Navigator 4.0+ at 800x600 resolution with 16-bit color!</font></p>
 
-    <a href="main.html" class="enter-btn" target="mainFrame"><blink>~*~ ENTER SITE ~*~</blink></a>
+    <a href="main.html" class="enter-btn" target="mainFrame" onclick="annoyingAlerts()"><blink>~*~ ENTER SITE ~*~</blink></a>
 
     <br><br>
     <img src="assets/images/construction.gif" alt="Under Construction">
