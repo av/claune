@@ -313,12 +313,18 @@ func hooksInstalled() bool {
 	return false
 }
 
+var (
+	execCommand  = exec.Command
+	execLookPath = exec.LookPath
+	osExit       = os.Exit
+)
+
 func runPassthrough(args []string) {
 	audio.EnsureSoundCache()
 	c, err := config.Load()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "claune: error loading config: %v\n", err)
-		os.Exit(1)
+		osExit(1)
 	}
 	audio.PlaySound("cli:start", false, c)
 
@@ -328,10 +334,10 @@ func runPassthrough(args []string) {
 		}
 	}
 
-	claudeBin, err := exec.LookPath("claude")
+	claudeBin, err := execLookPath("claude")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "claune: claude not found in PATH\n")
-		os.Exit(127)
+		osExit(127)
 	}
 
 	myExe, err := os.Executable()
@@ -340,24 +346,28 @@ func runPassthrough(args []string) {
 		claudeExeEval, err2 := filepath.EvalSymlinks(claudeBin)
 		if err1 == nil && err2 == nil && myExeEval == claudeExeEval {
 			fmt.Fprintf(os.Stderr, "claune: fork bomb detected! 'claude' resolves to this executable.\n")
-			os.Exit(1)
+			osExit(1)
 		}
 	}
 
 	if os.Getenv("CLAUNE_ACTIVE") == "1" {
 		fmt.Fprintf(os.Stderr, "claune: nested execution detected! CLAUNE_ACTIVE is already set. Preventing recursive hook loop.\n")
-		os.Exit(0)
+		osExit(0)
 	}
 
-	cmd := exec.Command(claudeBin, args...)
+	cmd := execCommand(claudeBin, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = append(os.Environ(), "CLAUNE_ACTIVE=1")
+	if cmd.Env == nil {
+		cmd.Env = append(os.Environ(), "CLAUNE_ACTIVE=1")
+	} else {
+		cmd.Env = append(cmd.Env, "CLAUNE_ACTIVE=1")
+	}
 
 	if err := cmd.Start(); err != nil {
 		fmt.Fprintf(os.Stderr, "claune: failed to start claude: %v\n", err)
-		os.Exit(126)
+		osExit(126)
 	}
 
 	sigChan := make(chan os.Signal, 1)
@@ -374,12 +384,12 @@ func runPassthrough(args []string) {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
 				if status.Signaled() {
-					os.Exit(128 + int(status.Signal()))
+					osExit(128 + int(status.Signal()))
 				}
 			}
-			os.Exit(exitError.ExitCode())
+			osExit(exitError.ExitCode())
 		}
 		fmt.Fprintf(os.Stderr, "claune: %v\n", err)
-		os.Exit(1)
+		osExit(1)
 	}
 }
