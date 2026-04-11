@@ -86,14 +86,62 @@ _claune() {
 _claune
 `
 
+const powershellCompletion = `
+using namespace System.Management.Automation
+using namespace System.Management.Automation.Language
+
+Register-ArgumentCompleter -Native -CommandName 'claune' -ScriptBlock {
+    param($wordToComplete, $commandAst, $cursorPosition)
+
+    $commands = @(
+        'install', 'uninstall', 'init', 'status', 'version', 'doctor',
+        'completion', 'update', 'help', 'play', 'config', 'automap',
+        'import-circus', 'analyze-log', 'analyze-resp', 'auth',
+        'skins', 'geocities', 'hack', 'website'
+    )
+
+    $events = @(
+        'cli:start', 'tool:start', 'tool:success', 'tool:error', 'cli:done',
+        'tool:destructive', 'tool:readonly', 'build:success', 'build:fail',
+        'test:fail', 'panic', 'warn'
+    )
+
+    $commandElements = $commandAst.CommandElements
+    $commandLength = $commandElements.Count
+
+    if ($commandLength -eq 1 -or ($commandLength -eq 2 -and $wordToComplete -ne '')) {
+        $commands | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+            [CompletionResult]::new($_, $_, 'ParameterValue', $_)
+        }
+    }
+    elseif ($commandLength -ge 2) {
+        $prevWord = $commandElements[$commandLength - 2].Extent.Text
+        if ($wordToComplete -ne '') {
+            $prevWord = $commandElements[$commandLength - 3].Extent.Text
+        }
+
+        if ($prevWord -eq 'play') {
+            $events | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+                [CompletionResult]::new($_, $_, 'ParameterValue', $_)
+            }
+        }
+        elseif ($prevWord -eq 'automap') {
+            # Let PowerShell handle directory completion
+        }
+    }
+}
+`
+
 func runCompletion(shell string) {
 	switch shell {
 	case "bash":
 		fmt.Print(bashCompletion)
 	case "zsh":
 		fmt.Print(zshCompletion)
+	case "powershell":
+		fmt.Print(powershellCompletion)
 	default:
-		fmt.Fprintf(os.Stderr, "Unsupported shell: %s. Supported shells are bash, zsh\n", shell)
+		fmt.Fprintf(os.Stderr, "Unsupported shell: %s. Supported shells are bash, zsh, powershell\n", shell)
 		os.Exit(1)
 	}
 }

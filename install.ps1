@@ -55,6 +55,32 @@ try {
 Write-Host ""
 Write-Host "Claune installed successfully to $DEST_FILE"
 
+Write-Host "Setting up shell completions..."
+try {
+    $PROFILE_DIR = Split-Path -Parent $PROFILE
+    if (-not (Test-Path -Path $PROFILE_DIR)) {
+        New-Item -ItemType Directory -Force -Path $PROFILE_DIR | Out-Null
+    }
+    $COMPLETION_FILE = Join-Path $PROFILE_DIR "claune-completion.ps1"
+    & $DEST_FILE completion powershell | Out-File -FilePath $COMPLETION_FILE -Encoding utf8
+    Write-Host "Installed powershell completion to $COMPLETION_FILE."
+
+    if (Test-Path -Path $PROFILE) {
+        $PROFILE_CONTENT = Get-Content -Path $PROFILE -Raw
+        if ($PROFILE_CONTENT -notmatch "claune-completion.ps1") {
+            Add-Content -Path $PROFILE -Value "`n. `"$COMPLETION_FILE`""
+            Write-Host "Added completion to your PowerShell profile."
+        }
+    } else {
+        New-Item -ItemType File -Force -Path $PROFILE | Out-Null
+        Add-Content -Path $PROFILE -Value ". `"$COMPLETION_FILE`""
+        Write-Host "Created PowerShell profile and added completion."
+    }
+} catch {
+    Write-Host "Warning: Could not install powershell completion." -ForegroundColor Yellow
+}
+
+Write-Host ""
 if ($env:PATH -notmatch [regex]::Escape($INSTALL_DIR)) {
     Write-Host "Warning: $INSTALL_DIR is not in your PATH." -ForegroundColor Yellow
     Write-Host "You may need to add it to your System or User environment variables." -ForegroundColor Yellow

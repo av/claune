@@ -60,6 +60,33 @@ chmod +x "$INSTALL_DIR/claune"
 echo ""
 echo "Claune installed successfully to $INSTALL_DIR/claune"
 
+echo ""
+echo "Setting up shell completions..."
+if [ -d "$HOME/.local/share/bash-completion/completions" ]; then
+    if "$INSTALL_DIR/claune" completion bash > "$HOME/.local/share/bash-completion/completions/claune" 2>/dev/null; then
+        echo "Installed bash completion."
+    fi
+elif [ -d "$HOME/.bash_completion.d" ]; then
+    if "$INSTALL_DIR/claune" completion bash > "$HOME/.bash_completion.d/claune" 2>/dev/null; then
+        echo "Installed bash completion."
+    fi
+fi
+
+if [ -d "$HOME/.local/share/zsh/site-functions" ]; then
+    if "$INSTALL_DIR/claune" completion zsh > "$HOME/.local/share/zsh/site-functions/_claune" 2>/dev/null; then
+        echo "Installed zsh completion."
+    fi
+fi
+
+
+echo ""
+
+if [ -d "$HOME/.local/share/zsh/site-functions" ]; then
+    "$INSTALL_DIR/claune" completion zsh > "$HOME/.local/share/zsh/site-functions/_claune" 2>/dev/null || true
+    echo "Installed zsh completion."
+fi
+
+
 if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
     echo "Warning: $INSTALL_DIR is not in your PATH."
     echo "You may need to add 'export PATH=\"\$HOME/.local/bin:\$PATH\"' to your shell configuration (e.g. ~/.bashrc or ~/.zshrc)."
