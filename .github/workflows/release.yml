@@ -39,7 +39,8 @@ jobs:
         run: |
           ext=""
           if [ "${{ matrix.goos }}" = "windows" ]; then ext=".exe"; fi
-          go build -o claune-${{ matrix.goos }}-${{ matrix.goarch }}${ext} .
+          VERSION="${GITHUB_REF#refs/tags/}"
+          go build -ldflags "-X main.Version=$VERSION" -o claune-${{ matrix.goos }}-${{ matrix.goarch }}${ext} ./cmd/claune
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
