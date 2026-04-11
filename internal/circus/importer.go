@@ -1,10 +1,12 @@
 package circus
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"time"
@@ -22,8 +24,23 @@ func ImportMemeSound(url, name string) error {
 		return fmt.Errorf("invalid import name %q", name)
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
-	req, err := http.NewRequest("GET", url, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
+	defer signal.Stop(sigChan)
+
+	go func() {
+		select {
+		case <-sigChan:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+
+	client := &http.Client{}
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request for %s: %w", url, err)
 	}
@@ -42,19 +59,35 @@ func ImportMemeSound(url, name string) error {
 		return err
 	}
 
-	dest := filepath.Join(cacheDir, name)
-	out, err := os.Create(dest)
+	tmpDest, err := os.CreateTemp(cacheDir, name+".*.tmp")
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	tmpName := tmpDest.Name()
+	
+	defer func() {
+		tmpDest.Close()
+		os.Remove(tmpName)
+	}()
 
 	// Apply a 50MB limit to prevent downloading excessively large files
 	// (Denial of Service - Disk/Memory exhaustion).
-	_, err = io.Copy(out, io.LimitReader(resp.Body, 50*1024*1024))
+	_, err = io.Copy(tmpDest, io.LimitReader(resp.Body, 50*1024*1024))
 	if err != nil {
 		return fmt.Errorf("failed to save meme sound %s: %w", name, err)
 	}
+
+	if err := tmpDest.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	dest := filepath.Join(cacheDir, name)
+	if err := os.Rename(tmpName, dest); err != nil {
+		return fmt.Errorf("failed to rename temp file to %s: %w", dest, err)
+	}
+
+	// Clean up old cached files and partial temp files (50MB max, 100 files max)
+	audio.EvictCache(cacheDir, 50*1024*1024, 100)
 
 	return nil
 }

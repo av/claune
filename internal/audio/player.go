@@ -169,6 +169,10 @@ func EnsureSoundCache() error {
 			}
 		}
 	}
+
+	// Evict cache to clean up any partial temp files or enforce limits
+	EvictCache(cacheDir, 50*1024*1024, 100)
+
 	return nil
 }
 
