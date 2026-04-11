@@ -13,7 +13,7 @@ _claune_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ ${COMP_CWORD} -eq 1 ]]; then
-        opts="install uninstall init status version doctor completion update help play config automap import-circus analyze-log analyze-resp auth skins geocities hack website"
+        opts="install uninstall init setup status version doctor completion update help play config automap import-circus analyze-log analyze-resp auth skins geocities hack website"
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
@@ -48,6 +48,7 @@ _claune() {
         'install:Install sound hooks into Claude Code settings'
         'uninstall:Remove sound hooks from Claude Code settings'
         'init:Create a default configuration file'
+        'setup:Run the interactive first-run wizard'
         'status:Show whether hooks are installed'
         'version:Show claune version'
         'doctor:Show system diagnostics and configuration info'
@@ -94,7 +95,7 @@ Register-ArgumentCompleter -Native -CommandName 'claune' -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
 
     $commands = @(
-        'install', 'uninstall', 'init', 'status', 'version', 'doctor',
+        'install', 'uninstall', 'init', 'setup', 'status', 'version', 'doctor',
         'completion', 'update', 'help', 'play', 'config', 'automap',
         'import-circus', 'analyze-log', 'analyze-resp', 'auth',
         'skins', 'geocities', 'hack', 'website'

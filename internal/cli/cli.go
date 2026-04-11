@@ -43,6 +43,7 @@ var clauneSubcommands = map[string]bool{
 	"--version":     true,
 	"-v":            true,
 	"init":          true,
+	"setup":         true,
 	"doctor":        true,
 	"completion":    true,
 	"update":        true,
@@ -81,6 +82,9 @@ func Run(args []string, version string) error {
 	case "init":
 		ensureExactArgs(args, 1, "claune: init does not accept additional arguments", "Usage: claune init")
 		return createDefaultConfig()
+	case "setup":
+		ensureExactArgs(args, 1, "claune: setup does not accept additional arguments", "Usage: claune setup")
+		return runSetup()
 	case "completion":
 		ensureExactArgs(args, 2, "claune: completion requires a shell name (bash or zsh)", "Usage: claune completion <bash|zsh>")
 		runCompletion(args[1])
@@ -621,6 +625,9 @@ func printCommandUsage(cmd string) {
 	case "init":
 		fmt.Fprintln(os.Stderr, "Usage: claune init")
 		fmt.Fprintln(os.Stderr, "\nCreates a default configuration file if one does not exist.")
+	case "setup":
+		fmt.Fprintln(os.Stderr, "Usage: claune setup")
+		fmt.Fprintln(os.Stderr, "\nRuns an interactive first-run wizard to configure Claune.")
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
 		printUsage()
@@ -641,6 +648,7 @@ Core Commands:
   install       Install sound hooks into Claude Code settings
   uninstall     Remove sound hooks from Claude Code settings
   init          Create a default configuration file
+  setup         Run the interactive first-run wizard
   status        Show whether hooks are installed
   version       Show claune version
   doctor        Show system diagnostics and configuration info
