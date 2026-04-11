@@ -3,9 +3,11 @@
 package audio
 
 import (
+
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -126,14 +128,14 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 				
 				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 				cmd := exec.CommandContext(ctx, "sh", args...)
-				err := cmd.Run()
+				out, err := cmd.CombinedOutput()
 				cancel()
 
 				if err == nil {
 					played = true
 					break
 				}
-				lastErr = fmt.Errorf("%s failed: %w", b.bin, err)
+				lastErr = fmt.Errorf("%s failed: %w (output: %q)", b.bin, err, strings.TrimSpace(string(out)))
 			}
 		}
 
