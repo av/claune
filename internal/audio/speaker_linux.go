@@ -108,8 +108,24 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 					}
 				}
 
+				shScript := `
+					target_file=$1
+					ppid=$2
+					shift 2
+					"$@" &
+					pid=$!
+					trap 'kill -TERM $pid 2>/dev/null; rm -f "$target_file"; exit 1' INT TERM
+					wait $pid
+					exit_code=$?
+					if [ $exit_code -eq 0 ] || ! kill -0 $ppid 2>/dev/null; then
+						rm -f "$target_file"
+					fi
+					exit $exit_code
+				`
+				args := append([]string{"-c", shScript, "--", tmpFile.Name(), fmt.Sprint(os.Getpid()), path}, b.args...)
+				
 				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-				cmd := exec.CommandContext(ctx, path, b.args...)
+				cmd := exec.CommandContext(ctx, "sh", args...)
 				err := cmd.Run()
 				cancel()
 
