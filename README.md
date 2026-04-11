@@ -175,6 +175,9 @@ claune uninstall  # Remove hooks from Claude Code settings
 | `completion` | Generate shell completion scripts for bash/zsh |
 | `play <event>` | Play a sound for the given event type |
 | `play <event> <tool-name> <tool-input>` | Play a sound using semantic tool context |
+| `mute` | Mute all sound effects |
+| `unmute` | Unmute all sound effects |
+| `volume <0-100>` | Set the global volume level (e.g., 50 for 50%) |
 | `config <msg>` | Update configuration from a natural-language prompt |
 | `automap <dir>` | Use AI to map sound files in a directory to events |
 | `import-circus <url> <name> [event]` | Import a meme sound (name must be a short alias without slashes) |
