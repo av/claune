@@ -32,7 +32,7 @@ func initSpeaker(sampleRate beep.SampleRate) (err error) {
 	if speakerInitDone {
 		return nil
 	}
-	err := speaker.Init(sampleRate, sampleRate.N(time.Second/10))
+	err = speaker.Init(sampleRate, sampleRate.N(time.Second/10))
 	if err != nil {
 		return err
 	}
