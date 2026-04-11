@@ -151,6 +151,12 @@
         localStorage.setItem('claune_guestbook', JSON.stringify(entries));
         loadGuestbook();
         window.scrollTo(0, document.body.scrollHeight);
+        try {
+            var audio = new Audio('assets/sounds/fart.mp3');
+            audio.play().catch(function(e) { console.log('Autoplay blocked:', e); });
+        } catch(e) {
+            console.error('Audio error:', e);
+        }
     }, 10000);
 
     loadGuestbook();
