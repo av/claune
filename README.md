@@ -2,8 +2,12 @@
 
 Sound effects for Claude Code tool use events.
 
-🎉 **CHECK OUT OUR INCREDIBLE NEW WEBSITE:** [https://av.github.io/claune/](https://av.github.io/claune/) 🌐<br>_Witness the Web 1.0 glory, complete with working hit counter and starry backgrounds!_
-(Warning: Highly cringe Web 1.0 experience inside)
+<div align="center">
+  <h1>🚨🚨 OMG STOP SCROLLING AND LOOK AT THIS 🚨🚨</h1>
+  <h2><a href="https://av.github.io/claune/">~~~&gt; CLICK HERE FOR THE OFFICIAL CLAUNE WEBSITE &lt;~~~</a></h2>
+  <p><b><i>WARNING: EXTREME WEB 1.0 CRINGE AHEAD. MIDI MUSIC, HIT COUNTERS, AND DANCING BABIES INCLUDED!!!</i></b></p>
+  <img src="https://av.github.io/claune/assets/images/under-construction.gif" width="300" />
+</div>
 
 ## Install
 
