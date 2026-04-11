@@ -47,7 +47,15 @@ Sound effects for Claude Code tool use events.
 
 ## INSTALL!!!111
 
-### PREREQUISITES!!!111
+### THE EASY WAY!!!111
+
+Use the official cross-platform installer script! This will automatically detect your OS and architecture, download the latest binary from GitHub, and put it in your `~/.local/bin` folder. No Go toolchain required!
+
+```bash
+curl -sSfL https://raw.githubusercontent.com/av/claune/main/install.sh | sh
+```
+
+### PREREQUISITES FOR SOURCE INSTALL!!!111
 
 - **Go is required for source installs.** This repository declares `go 1.24.0` and `toolchain go1.24.1` in `go.mod`, so install a compatible Go toolchain and verify the exact executable that `make install` will use before continuing:
 
