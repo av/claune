@@ -75,8 +75,7 @@ func Load() (ClauneConfig, error) {
 		if os.IsNotExist(err) {
 			// Fine, file doesn't exist, use default config
 		} else if os.IsPermission(err) {
-			fmt.Fprintf(os.Stderr, "claune: warning: permission denied reading %s, using default config\n", configPath)
-			// Return default config on permission error instead of crashing/failing
+			return config, fmt.Errorf("permission denied reading %s: %w", configPath, err)
 		} else {
 			return config, fmt.Errorf("failed to read %s: %w", configPath, err)
 		}
