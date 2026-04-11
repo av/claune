@@ -3,11 +3,13 @@
 package audio
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/gopxl/beep"
 	"github.com/gopxl/beep/effects"
@@ -73,7 +75,9 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 			return fmt.Errorf("no audio backend found (checked paplay, pw-play, aplay)")
 		}
 
-		cmd := exec.Command(bin, args...)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, bin, args...)
 		err = cmd.Run()
 		os.Remove(tmpFile.Name())
 		if err != nil {
