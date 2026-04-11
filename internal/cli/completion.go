@@ -13,7 +13,7 @@ _claune_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ ${COMP_CWORD} -eq 1 ]]; then
-        opts="install uninstall init status version doctor help play config automap import-circus analyze-log analyze-resp auth skins geocities hack website"
+        opts="install uninstall init status version doctor completion update help play config automap import-circus analyze-log analyze-resp auth skins geocities hack website"
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
@@ -51,6 +51,8 @@ _claune() {
         'status:Show whether hooks are installed'
         'version:Show claune version'
         'doctor:Show system diagnostics and configuration info'
+        'completion:Generate shell completion scripts'
+        'update:Update claune to the latest version'
         'help:Show help message'
         'play:Play a sound for an event'
         'config:Natural language configuration'

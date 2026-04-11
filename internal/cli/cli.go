@@ -45,6 +45,7 @@ var clauneSubcommands = map[string]bool{
 	"init":          true,
 	"doctor":        true,
 	"completion":    true,
+	"update":        true,
 }
 
 func Run(args []string, version string) error {
@@ -87,6 +88,17 @@ func Run(args []string, version string) error {
 	case "doctor":
 		ensureExactArgs(args, 1, "claune: doctor does not accept additional arguments", "Usage: claune doctor")
 		return runDoctor(version)
+	case "update":
+		ensureExactArgs(args, 1, "claune: update does not accept additional arguments", "Usage: claune update")
+		fmt.Println("Updating claune via go install github.com/everlier/claune@latest...")
+		cmd := exec.Command("go", "install", "github.com/everlier/claune@latest")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("update failed: %w", err)
+		}
+		fmt.Println("Successfully updated claune!")
+		return nil
 	case "website":
 		ensureExactArgs(args, 1, "claune: website does not accept additional arguments", "Usage: claune website")
 		url := "https://av.github.io/claune/"
@@ -561,6 +573,9 @@ func printCommandUsage(cmd string) {
 	case "status":
 		fmt.Fprintln(os.Stderr, "Usage: claune status")
 		fmt.Fprintln(os.Stderr, "\nShows whether hooks are installed and current volume/mute status.")
+	case "update":
+		fmt.Fprintln(os.Stderr, "Usage: claune update")
+		fmt.Fprintln(os.Stderr, "\nUpdates claune to the latest version via go install.")
 	case "test-sounds":
 		fmt.Fprintln(os.Stderr, "Usage: claune test-sounds")
 		fmt.Fprintln(os.Stderr, "\nPlays all available sounds sequentially to verify audio works.")
@@ -630,6 +645,7 @@ Core Commands:
   version       Show claune version
   doctor        Show system diagnostics and configuration info
   completion    Generate shell completion scripts
+  update        Update claune to the latest version
   help          Show this help message
 
 Sound Management:
