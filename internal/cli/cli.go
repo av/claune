@@ -43,6 +43,7 @@ var clauneSubcommands = map[string]bool{
 	"--version":     true,
 	"-v":            true,
 	"init":          true,
+	"doctor":        true,
 }
 
 func Run(args []string, version string) error {
@@ -78,6 +79,9 @@ func Run(args []string, version string) error {
 	case "init":
 		ensureExactArgs(args, 1, "claune: init does not accept additional arguments", "Usage: claune init")
 		return createDefaultConfig()
+	case "doctor":
+		ensureExactArgs(args, 1, "claune: doctor does not accept additional arguments", "Usage: claune doctor")
+		return runDoctor(version)
 	case "website":
 		ensureExactArgs(args, 1, "claune: website does not accept additional arguments", "Usage: claune website")
 		url := "https://av.github.io/claune/"
@@ -541,6 +545,9 @@ func printCommandUsage(cmd string) {
 	case "uninstall":
 		fmt.Fprintln(os.Stderr, "Usage: claune uninstall")
 		fmt.Fprintln(os.Stderr, "\nRemoves sound hooks from Claude Code settings.")
+	case "doctor":
+		fmt.Fprintln(os.Stderr, "Usage: claune doctor")
+		fmt.Fprintln(os.Stderr, "\nShows system diagnostics, configuration info, and available audio dependencies.")
 	case "status":
 		fmt.Fprintln(os.Stderr, "Usage: claune status")
 		fmt.Fprintln(os.Stderr, "\nShows whether hooks are installed and current volume/mute status.")
@@ -611,6 +618,7 @@ Core Commands:
   init          Create a default configuration file
   status        Show whether hooks are installed
   version       Show claune version
+  doctor        Show system diagnostics and configuration info
   help          Show this help message
 
 Sound Management:
