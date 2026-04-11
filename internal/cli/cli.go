@@ -76,12 +76,12 @@ func Run(args []string) error {
 			bars := strings.Repeat("=", i)
 			spaces := strings.Repeat(" ", 10-i)
 			percent := i * 10
-			fmt.Printf("\rDownloading xX_Dark_Sasuke_Xx.wsz [%s%s] %d%%", bars, spaces, percent)
+			fmt.Printf("\rDownloading Matrix_Green_Theme.wsz [%s%s] %d%%", bars, spaces, percent)
 			time.Sleep(200 * time.Millisecond)
 		}
 		fmt.Println()
 		time.Sleep(300 * time.Millisecond)
-		fmt.Println("ERROR: Winamp 2.95 required")
+		fmt.Println("\033[31m[!] Winamp.exe has encountered a fatal exception 0xDEADBEEF\033[0m")
 		return nil
 	case "geocities":
 		ensureExactArgs(args, 1, "claune: geocities does not accept additional arguments", "Usage: claune geocities")
