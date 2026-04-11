@@ -316,10 +316,15 @@ func mustReadStdin(command string) string {
 			}
 
 			// Put the rest in tail circular buffer
-			for _, b := range chunk {
-				tail[tailPos] = b
-				tailPos++
-				tailBytes++
+			for len(chunk) > 0 {
+				space := chunkSize - tailPos
+				if len(chunk) < space {
+					space = len(chunk)
+				}
+				copy(tail[tailPos:], chunk[:space])
+				tailPos += space
+				tailBytes += space
+				chunk = chunk[space:]
 				if tailPos == chunkSize {
 					tailPos = 0
 				}
@@ -335,6 +340,15 @@ func mustReadStdin(command string) string {
 	}
 
 	var result strings.Builder
+	
+	expectedLen := len(head)
+	if tailBytes > chunkSize {
+		expectedLen += len("\n\n... [truncated mid-stream] ...\n\n") + chunkSize
+	} else if tailBytes > 0 {
+		expectedLen += tailBytes
+	}
+	result.Grow(expectedLen)
+	
 	result.Write(head)
 
 	if tailBytes > chunkSize {
