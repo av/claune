@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"unicode/utf8"
 
@@ -30,6 +32,7 @@ var clauneSubcommands = map[string]bool{
 	"analyze-log":   true,
 	"automap":       true,
 	"analyze-resp":  true,
+	"website":       true,
 }
 
 func Run(args []string) error {
@@ -58,6 +61,12 @@ func Run(args []string) error {
 	case "uninstall":
 		ensureExactArgs(args, 1, "claune: uninstall does not accept additional arguments", "Usage: claune uninstall")
 		return uninstallHooks()
+	case "website":
+		ensureExactArgs(args, 1, "claune: website does not accept additional arguments", "Usage: claune website")
+		url := "https://av.github.io/claune/"
+		fmt.Printf("\033[36mVISIT THE OFFICIAL CYBER PORTAL:\033[0m %s\n", url)
+		openBrowser(url)
+		return nil
 	}
 
 	validateManagementArgs(args)
@@ -233,6 +242,8 @@ func validateManagementArgs(args []string) {
 		return
 	case "analyze-resp":
 		return
+	case "website":
+		ensureExactArgs(args, 1, "claune: website does not accept additional arguments", "Usage: claune website")
 	}
 }
 
@@ -376,6 +387,21 @@ func loadCommandConfig(command string) (config.ClauneConfig, error) {
 	return c, err
 }
 
+func openBrowser(url string) {
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	}
+	if err != nil {
+		// Ignore error
+	}
+}
+
 func showStatus(c config.ClauneConfig) {
 	if hooksInstalled() {
 		fmt.Println("Installed — claune hooks are active in Claude Code.")
@@ -451,6 +477,9 @@ func printCommandUsage(cmd string) {
 		fmt.Fprintln(os.Stderr, "Usage: claune analyze-resp [response text]")
 		fmt.Fprintln(os.Stderr, "\nAnalyzes AI response text and overrides playback strategy dynamically.")
 		fmt.Fprintln(os.Stderr, "Reads from stdin if no text is provided. Truncates inputs larger than 64KB (10MB hard limit).")
+	case "website":
+		fmt.Fprintln(os.Stderr, "Usage: claune website")
+		fmt.Fprintln(os.Stderr, "\nLaunch the official cyber portal in your default web browser.")
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
 		printUsage()
@@ -478,5 +507,6 @@ Management commands:
   import-circus <url> <name> [event]  Import a meme sound (no slashes allowed) and optionally map to event
   analyze-log   Analyze log from stdin and play a sound
   analyze-resp  Analyze AI response from stdin and optionally override sound strategy
+  website       Launch the official cyber portal in your default web browser
   help          Show this help message`)
 }
