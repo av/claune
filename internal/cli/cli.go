@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -48,6 +49,9 @@ var clauneSubcommands = map[string]bool{
 	"doctor":        true,
 	"completion":    true,
 	"update":        true,
+	"mute":         true,
+	"unmute":       true,
+	"volume":       true,
 	"logs":          true,
 }
 
@@ -213,6 +217,31 @@ func Run(args []string, version string) error {
 		}
 	case "status":
 		showStatus(c)
+	case "mute":
+		b := true
+		c.Mute = &b
+		if err := config.Save(c); err != nil {
+			return fmt.Errorf("failed to save config: %w", err)
+		}
+		fmt.Println("Claune is now muted.")
+	case "unmute":
+		b := false
+		c.Mute = &b
+		if err := config.Save(c); err != nil {
+			return fmt.Errorf("failed to save config: %w", err)
+		}
+		fmt.Println("Claune is now unmuted.")
+	case "volume":
+		vol, err := strconv.ParseFloat(args[1], 64)
+		if err != nil || vol < 0 || vol > 100 {
+			exitUsageError("claune: invalid volume level, must be 0-100", "Usage: claune volume <0-100>")
+		}
+		v := vol / 100.0
+		c.Volume = &v
+		if err := config.Save(c); err != nil {
+			return fmt.Errorf("failed to save config: %w", err)
+		}
+		fmt.Printf("Volume set to %.0f%%.\n", vol)
 	case "test-sounds":
 		testSounds(c)
 	case "config":
@@ -332,6 +361,12 @@ func validateManagementArgs(args []string) {
 	switch args[0] {
 	case "status":
 		ensureExactArgs(args, 1, "claune: status does not accept additional arguments", "Usage: claune status")
+	case "mute":
+		ensureExactArgs(args, 1, "claune: mute does not accept additional arguments", "Usage: claune mute")
+	case "unmute":
+		ensureExactArgs(args, 1, "claune: unmute does not accept additional arguments", "Usage: claune unmute")
+	case "volume":
+		ensureExactArgs(args, 2, "claune: volume requires a level (0-100)", "Usage: claune volume <0-100>")
 	case "play":
 		if err := validatePlayArgs(args); err != nil {
 			exitUsageError(err.Error(), playUsage)
@@ -597,6 +632,15 @@ func printCommandUsage(cmd string) {
 	case "update":
 		fmt.Fprintln(os.Stderr, "Usage: claune update")
 		fmt.Fprintln(os.Stderr, "\nUpdates claune to the latest version via go install.")
+	case "mute":
+		fmt.Fprintln(os.Stderr, "Usage: claune mute")
+		fmt.Fprintln(os.Stderr, "\nMutes all sound effects by updating the config.")
+	case "unmute":
+		fmt.Fprintln(os.Stderr, "Usage: claune unmute")
+		fmt.Fprintln(os.Stderr, "\nUnmutes all sound effects by updating the config.")
+	case "volume":
+		fmt.Fprintln(os.Stderr, "Usage: claune volume <0-100>")
+		fmt.Fprintln(os.Stderr, "\nSets the global volume level (e.g. 50 for 50%).")
 	case "test-sounds":
 		fmt.Fprintln(os.Stderr, "Usage: claune test-sounds")
 		fmt.Fprintln(os.Stderr, "\nPlays all available sounds sequentially to verify audio works.")

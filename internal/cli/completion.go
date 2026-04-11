@@ -13,7 +13,7 @@ _claune_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ ${COMP_CWORD} -eq 1 ]]; then
-        opts="install uninstall init setup status version doctor completion update logs help play config automap import-circus analyze-log analyze-resp auth skins geocities hack website"
+        opts="install uninstall init setup status version doctor completion update logs help play config automap import-circus analyze-log analyze-resp auth skins geocities hack website mute unmute volume"
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
@@ -53,7 +53,10 @@ _claune() {
         'version:Show claune version'
         'doctor:Show system diagnostics and configuration info'
         'completion:Generate shell completion scripts'
-        'update:Update claune to the latest version'
+                'update:Update claune to the latest version'
+        'mute:Mute all sound effects'
+        'unmute:Unmute all sound effects'
+        'volume:Set the global volume level'
         'logs:View or clear application logs'
         'help:Show help message'
         'play:Play a sound for an event'
@@ -99,7 +102,7 @@ Register-ArgumentCompleter -Native -CommandName 'claune' -ScriptBlock {
         'install', 'uninstall', 'init', 'setup', 'status', 'version', 'doctor',
         'completion', 'update', 'logs', 'help', 'play', 'config', 'automap',
         'import-circus', 'analyze-log', 'analyze-resp', 'auth',
-        'skins', 'geocities', 'hack', 'website'
+        'skins', 'geocities', 'hack', 'website', 'mute', 'unmute', 'volume'
     )
 
     $events = @(
