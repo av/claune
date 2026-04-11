@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/everlier/claune/internal/audio"
 )
@@ -21,7 +22,12 @@ func ImportMemeSound(url, name string) error {
 		return fmt.Errorf("invalid import name %q", name)
 	}
 
-	resp, err := http.Get(url)
+	client := &http.Client{Timeout: 30 * time.Second}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request for %s: %w", url, err)
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to fetch meme sound from %s: %w", url, err)
 	}
