@@ -176,6 +176,34 @@
         <td class="neon">Everybody to the limit! (Requires Flash... RIP)</td>
     </tr>
 </table>
+<br><br>
+<center>
+    <h3><font color="#00FFFF"><blink>~*~ NAVIGATE THE WEBRING ~*~</blink></font></h3>
+    <font size="4">
+        <b>[</b>
+        <a href="#" onclick="alert('404: Previous Geocities server not found'); return false;">&lt; Previous</a>
+        <b>|</b>
+        <a href="#" id="random-link">Random</a>
+        <b>|</b>
+        <a href="#" onclick="alert('404: Next Geocities server moved to Angelfire'); return false;">Next &gt;</a>
+        <b>]</b>
+    </font>
+    <script>
+        document.getElementById('random-link').onclick = function(e) {
+            e.preventDefault();
+            var urls = [
+                "http://zombo.com",
+                "http://www.hampsterdance.com",
+                "http://www.spacejam.com/1996/",
+                "https://www.cameronsworld.net/",
+                "http://textfiles.com/"
+            ];
+            var r = urls[Math.floor(Math.random() * urls.length)];
+            window.location.href = r;
+        };
+    </script>
+</center>
+
 
 <br><br>
 
