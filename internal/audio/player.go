@@ -109,6 +109,24 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+func safeDecodeWav(rc io.ReadCloser) (streamer beep.StreamSeekCloser, format beep.Format, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic in wav.Decode: %v", r)
+		}
+	}()
+	return wav.Decode(rc)
+}
+
+func safeDecodeMP3(rc io.ReadCloser) (streamer beep.StreamSeekCloser, format beep.Format, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic in mp3.Decode: %v", r)
+		}
+	}()
+	return mp3.Decode(rc)
+}
+
 func playMP3File(mp3Path string, volume float64, blocking bool) error {
 	f, err := os.Open(mp3Path)
 	if err != nil {
@@ -127,9 +145,9 @@ func playMP3File(mp3Path string, volume float64, blocking bool) error {
 	}{lr, f}
 
 	if strings.HasSuffix(strings.ToLower(mp3Path), ".wav") {
-		streamer, format, err = wav.Decode(rc)
+		streamer, format, err = safeDecodeWav(rc)
 	} else {
-		streamer, format, err = mp3.Decode(rc)
+		streamer, format, err = safeDecodeMP3(rc)
 	}
 
 	if err != nil {
@@ -219,7 +237,7 @@ func playEmbeddedSound(soundFile string, volume float64, blocking bool) error {
 		return err
 	}
 
-	streamer, format, err := mp3.Decode(f)
+	streamer, format, err := safeDecodeMP3(f)
 	if err != nil {
 		f.Close()
 		return err
@@ -367,4 +385,12 @@ func ValidEventTypes() string {
 		keys = append(keys, k)
 	}
 	return strings.Join(keys, ", ")
+}
+func safeEncodeWav(w io.WriteSeeker, s beep.Streamer, format beep.Format) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic in wav.Encode: %v", r)
+		}
+	}()
+	return wav.Encode(w, s, format)
 }

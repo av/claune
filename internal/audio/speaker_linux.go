@@ -13,7 +13,6 @@ import (
 
 	"github.com/gopxl/beep"
 	"github.com/gopxl/beep/effects"
-	"github.com/gopxl/beep/wav"
 )
 
 func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume float64, blocking bool, cleanup func()) error {
@@ -43,7 +42,7 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 			return fmt.Errorf("failed to create temp file: %w", err)
 		}
 
-		err = wav.Encode(tmpFile, ctrl, format)
+		err = safeEncodeWav(tmpFile, ctrl, format)
 		syncErr := tmpFile.Sync()
 		closeErr := tmpFile.Close()
 
