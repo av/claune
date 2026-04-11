@@ -165,6 +165,18 @@ claune uninstall  # Remove hooks from Claude Code settings
 | `analyze-resp` | Analyze stdin AI response text and optionally override the sound strategy |
 | `help` | Show help message |
 
+## 💻 L33T HACKER COMMANDS 💻
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║ 🔥🔥🔥 UNLOCK THE HIDDEN MAINFRAME SECRETS !!!111 🔥🔥🔥                 ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║ 🌐 `claune website`   👉 SURF THE CYBER WEB PORTAL (BEST IN NETSCAPE!)   ║
+║ 🎨 `claune skins`     👉 DOWNLOAD SICK WINAMP SKINS (.wsz EXCLUSIVE!)    ║
+║ 💾 `claune geocities` 👉 INITIALIZE DIAL-UP WS_FTP UPLOAD TO SUNSETSTRIP ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+⚠️ WARNING: DO NOT RUN THESE COMMANDS IF YOUR MOM IS ON THE PHONE (DIAL-UP WILL DISCONNECT)!!!111 ⚠️
+
 `claune test-sounds` currently exercises these built-in events: `cli:start`, `tool:start`, `tool:success`, `tool:error`, `cli:done`, `build:success`, `test:fail`, `panic`, `warn`.
 
 `test-sounds` does not override mute state. If claune is muted — including the default smart-mute window described below — it exits silently before any playback attempt or status lines are printed.
