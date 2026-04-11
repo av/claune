@@ -186,6 +186,16 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 	return nil, fmt.Errorf("AI API returned status %d after retries: %s", lastStatus, RedactSensitiveData(string(lastRespBytes)))
 }
 
+// removeEchoedXML strips blocks the AI might mirror from our prompts, preventing false-positive string matches
+func removeEchoedXML(text string) string {
+	tags := []string{"tool_input", "response_text", "user_prompt", "error", "files", "url", "filename"}
+	for _, tag := range tags {
+		re := regexp.MustCompile("(?si)<" + tag + ">.*?</" + tag + ">")
+		text = re.ReplaceAllString(text, "")
+	}
+	return text
+}
+
 func safeTruncate(s string, limitRunes int) string {
 	if len(s) <= limitRunes {
 		return s
@@ -267,7 +277,8 @@ func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig)
 	}
 
 	if len(cr.Content) > 0 {
-		text := strings.ToLower(strings.TrimSpace(cr.Content[0].Text))
+		text := removeEchoedXML(cr.Content[0].Text)
+		text = strings.ToLower(strings.TrimSpace(text))
 		if strings.Contains(text, "destructive") {
 			return "tool:destructive", nil
 		} else if strings.Contains(text, "readonly") {
@@ -318,7 +329,8 @@ func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (strin
 	}
 
 	if len(cr.Content) > 0 {
-		text := strings.ToUpper(strings.TrimSpace(cr.Content[0].Text))
+		text := removeEchoedXML(cr.Content[0].Text)
+		text = strings.ToUpper(strings.TrimSpace(text))
 		if strings.Contains(text, "URGENT") {
 			return "panic", "random", nil // override to panic with random strategy
 		} else if strings.Contains(text, "SUCCESS") {
@@ -394,7 +406,7 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 			return err
 		}
 
-		text := strings.TrimSpace(cr.Content[0].Text)
+		text := strings.TrimSpace(removeEchoedXML(cr.Content[0].Text))
 		start := strings.Index(text, "{")
 		end := strings.LastIndex(text, "}")
 		if start != -1 && end != -1 && end >= start {
@@ -587,7 +599,7 @@ Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, a
 	}
 
 	if len(cr.Content) > 0 {
-		text := strings.TrimSpace(cr.Content[0].Text)
+		text := strings.TrimSpace(removeEchoedXML(cr.Content[0].Text))
 		
 		// Robust JSON extraction
 		start := strings.Index(text, "{")
@@ -668,7 +680,7 @@ func DiagnoseInstallFailure(err error, c config.ClauneConfig) string {
 	}
 
 	if len(cr.Content) > 0 {
-		return strings.TrimSpace(cr.Content[0].Text)
+		return strings.TrimSpace(removeEchoedXML(cr.Content[0].Text))
 	}
 
 	return "Could not diagnose the issue."
@@ -726,7 +738,8 @@ Reply with ONE WORD ONLY representing the most appropriate event for this sound 
 	}
 
 	if len(cr.Content) > 0 {
-		text := strings.ToLower(strings.TrimSpace(cr.Content[0].Text))
+		text := removeEchoedXML(cr.Content[0].Text)
+		text = strings.ToLower(strings.TrimSpace(text))
 		
 		for e := range audio.DefaultSoundMap {
 			if strings.Contains(text, e) {
