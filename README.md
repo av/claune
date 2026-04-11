@@ -200,6 +200,7 @@ claune uninstall  # Remove hooks from Claude Code settings
 | `unmute` | Unmute all sound effects |
 | `volume <0-100>` | Set the global volume level (e.g., 50 for 50%) |
 | `config <msg>` | Update configuration from a natural-language prompt |
+| `pack <name>` | Download and install a pre-configured sound pack |
 | `automap <dir>` | Use AI to map sound files in a directory to events |
 | `import-circus <url> <name> [event]` | Import a meme sound (name must be a short alias without slashes) |
 | `analyze-log` | Analyze stdin log text and play a sound |
@@ -233,6 +234,18 @@ claune play <event> <tool-name> <tool-input>
 The first form plays the requested event directly. The second preserves the existing semantic-analysis path by using `<tool-name>` and `<tool-input>` as AI context before playback.
 
 `claune play <event>` accepts the full built-in event set: `cli:start`, `tool:start`, `tool:success`, `tool:error`, `cli:done`, `tool:destructive`, `tool:readonly`, `build:success`, `build:fail`, `test:fail`, `panic`, `warn`.
+
+### SOUND PACKS (`PACK`)!!!111
+
+Easily download and install pre-configured meme sound packs without manual configuration.
+
+```bash
+# Lists available sound packs
+claune pack
+
+# Installs the Mario sound pack
+claune pack mario
+```
 
 ### IMPORTING SOUNDS (`IMPORT-CIRCUS`)!!!111
 

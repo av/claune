@@ -13,12 +13,17 @@ _claune_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ ${COMP_CWORD} -eq 1 ]]; then
-        opts="install uninstall init setup status version doctor completion update logs help play config automap import-circus analyze-log analyze-resp auth skins geocities hack website mute unmute volume"
+        opts="install uninstall init setup status version doctor completion update logs help play config automap import-circus pack analyze-log analyze-resp auth skins geocities hack website mute unmute notify volume"
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
 
     case "${prev}" in
+        pack)
+            local packs="mario metal-gear anime"
+            COMPREPLY=( $(compgen -W "${packs}" -- ${cur}) )
+            return 0
+            ;;
         play)
             local events="cli:start tool:start tool:success tool:error cli:done tool:destructive tool:readonly build:success build:fail test:fail panic warn"
             COMPREPLY=( $(compgen -W "${events}" -- ${cur}) )
@@ -63,6 +68,7 @@ _claune() {
         'config:Natural language configuration'
         'automap:Automatically map sound files in a directory to events'
         'import-circus:Import a meme sound'
+        'pack:Download and install a pre-configured sound pack'
         'analyze-log:Analyze log from stdin and play a sound'
         'analyze-resp:Analyze AI response from stdin'
         'auth:Save API key and enable AI features'
@@ -76,6 +82,11 @@ _claune() {
         _describe -t commands 'claune commands' commands
     elif (( CURRENT == 3 )); then
         case ${words[2]} in
+            pack)
+                local -a packs
+                packs=(mario metal-gear anime)
+                _describe -t packs 'packs' packs
+                ;;
             play)
                 local -a events
                 events=(cli:start tool:start tool:success tool:error cli:done tool:destructive tool:readonly build:success build:fail test:fail panic warn)
@@ -101,8 +112,8 @@ Register-ArgumentCompleter -Native -CommandName 'claune' -ScriptBlock {
     $commands = @(
         'install', 'uninstall', 'init', 'setup', 'status', 'version', 'doctor',
         'completion', 'update', 'logs', 'help', 'play', 'config', 'automap',
-        'import-circus', 'analyze-log', 'analyze-resp', 'auth',
-        'skins', 'geocities', 'hack', 'website', 'mute', 'unmute', 'volume'
+        'import-circus', 'pack', 'analyze-log', 'analyze-resp', 'auth',
+        'skins', 'geocities', 'hack', 'website', 'mute', 'unmute', 'notify', 'volume'
     )
 
     $events = @(
@@ -110,6 +121,8 @@ Register-ArgumentCompleter -Native -CommandName 'claune' -ScriptBlock {
         'tool:destructive', 'tool:readonly', 'build:success', 'build:fail',
         'test:fail', 'panic', 'warn'
     )
+    
+    $packs = @('mario', 'metal-gear', 'anime')
 
     $commandElements = $commandAst.CommandElements
     $commandLength = $commandElements.Count
@@ -127,6 +140,11 @@ Register-ArgumentCompleter -Native -CommandName 'claune' -ScriptBlock {
 
         if ($prevWord -eq 'play') {
             $events | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+                [CompletionResult]::new($_, $_, 'ParameterValue', $_)
+            }
+        }
+        elseif ($prevWord -eq 'pack') {
+            $packs | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
                 [CompletionResult]::new($_, $_, 'ParameterValue', $_)
             }
         }
