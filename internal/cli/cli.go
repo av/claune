@@ -116,6 +116,8 @@ func Run(args []string) error {
 		fmt.Println("QUIT")
 		time.Sleep(200 * time.Millisecond)
 		fmt.Println("221 Goodbye.")
+		time.Sleep(500 * time.Millisecond)
+		fmt.Println("\033[35m~*~ GEOCITIES UPLOAD COMPLETE ~*~\033[0m")
 		return nil
 	}
 
