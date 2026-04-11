@@ -23,7 +23,7 @@ func TestRunConfigUsesFullNaturalLanguagePrompt(t *testing.T) {
 	t.Setenv("ANTHROPIC_API_KEY", "")
 
 	output := captureOutput(t, func() {
-		if err := Run([]string{"config", "set", "volume", "to", "50%", "and", "unmute"}); err != nil {
+		if err := Run([]string{"config", "set", "volume", "to", "50%", "and", "unmute"}, "test-version"); err != nil {
 			t.Fatalf("Run(config) error = %v", err)
 		}
 	})
@@ -890,7 +890,7 @@ func TestRunSubprocessHelper(t *testing.T) {
 		}
 	}
 
-	if err := Run(args); err != nil {
+	if err := Run(args, "test-version"); err != nil {
 		fmt.Fprintf(os.Stderr, "Run error: %v\n", err)
 		os.Exit(1)
 	}

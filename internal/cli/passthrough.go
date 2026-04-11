@@ -336,7 +336,10 @@ func runPassthrough(args []string) {
 
 	claudeBin, err := execLookPath("claude")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "claune: claude not found in PATH\n")
+		fmt.Fprintf(os.Stderr, "claune: 'claude' command not found in PATH\n\n")
+		fmt.Fprintf(os.Stderr, "Claude Code is required to use passthrough mode.\n")
+		fmt.Fprintf(os.Stderr, "You can install it with: npm install -g @anthropic-ai/claude-code\n")
+		fmt.Fprintf(os.Stderr, "Or visit https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview for more info.\n")
 		osExit(127)
 	}
 

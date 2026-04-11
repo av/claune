@@ -14,5 +14,5 @@ func TestConfigNilSounds(t *testing.T) {
 os.MkdirAll(filepath.Dir(configPath), 0755)
 	os.WriteFile(configPath, []byte(`{"ai":{"enabled":true,"api_key":"test"}, "volume": "invalid"}`), 0644)
 	
-	Run([]string{"config", "add a test sound to cli:start event"})
+	Run([]string{"config", "add a test sound to cli:start event"}, "test-version")
 }

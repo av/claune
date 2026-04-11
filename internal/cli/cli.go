@@ -38,9 +38,12 @@ var clauneSubcommands = map[string]bool{
 	"skins":         true,
 	"geocities":     true,
 	"hack":          true,
+	"version":       true,
+	"--version":     true,
+	"-v":            true,
 }
 
-func Run(args []string) error {
+func Run(args []string, version string) error {
 	if len(args) == 0 || !clauneSubcommands[args[0]] {
 		runPassthrough(args)
 		return nil
@@ -52,6 +55,10 @@ func Run(args []string) error {
 	}
 
 	switch args[0] {
+	case "version", "--version", "-v":
+		ensureExactArgs(args, 1, "claune: version does not accept additional arguments", "Usage: claune version")
+		fmt.Printf("claune version %s\n", version)
+		return nil
 	case "help", "--help", "-h":
 		if len(args) == 2 {
 			printCommandUsage(args[1])
@@ -558,6 +565,9 @@ func printCommandUsage(cmd string) {
 	case "hack":
 		fmt.Fprintln(os.Stderr, "Usage: claune hack")
 		fmt.Fprintln(os.Stderr, "\nHack the mainframe.")
+	case "version":
+		fmt.Fprintln(os.Stderr, "Usage: claune version")
+		fmt.Fprintln(os.Stderr, "\nShow the version of claune.")
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
 		printUsage()
@@ -589,5 +599,6 @@ Management commands:
   geocities     Run a fake 90s-era WS_FTP terminal log to GeoCities
   hack          Hack the mainframe
   website       Launch the official cyber portal in your default web browser
+  version       Show claune version
   help          Show this help message`)
 }
