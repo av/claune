@@ -171,6 +171,7 @@ claune uninstall  # Remove hooks from Claude Code settings
 | `init` | Create a default configuration file |
 | `status` | Show hook and audio status |
 | `test-sounds` | Attempt to play all sounds to verify audio |
+| `completion` | Generate shell completion scripts for bash/zsh |
 | `play <event>` | Play a sound for the given event type |
 | `play <event> <tool-name> <tool-input>` | Play a sound using semantic tool context |
 | `config <msg>` | Update configuration from a natural-language prompt |

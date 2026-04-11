@@ -44,6 +44,7 @@ var clauneSubcommands = map[string]bool{
 	"-v":            true,
 	"init":          true,
 	"doctor":        true,
+	"completion":    true,
 }
 
 func Run(args []string, version string) error {
@@ -79,6 +80,10 @@ func Run(args []string, version string) error {
 	case "init":
 		ensureExactArgs(args, 1, "claune: init does not accept additional arguments", "Usage: claune init")
 		return createDefaultConfig()
+	case "completion":
+		ensureExactArgs(args, 2, "claune: completion requires a shell name (bash or zsh)", "Usage: claune completion <bash|zsh>")
+		runCompletion(args[1])
+		return nil
 	case "doctor":
 		ensureExactArgs(args, 1, "claune: doctor does not accept additional arguments", "Usage: claune doctor")
 		return runDoctor(version)
@@ -545,6 +550,11 @@ func printCommandUsage(cmd string) {
 	case "uninstall":
 		fmt.Fprintln(os.Stderr, "Usage: claune uninstall")
 		fmt.Fprintln(os.Stderr, "\nRemoves sound hooks from Claude Code settings.")
+	case "completion":
+		fmt.Fprintln(os.Stderr, "Usage: claune completion <bash|zsh>")
+		fmt.Fprintln(os.Stderr, "\nOutputs shell completion code for the specified shell.")
+		fmt.Fprintln(os.Stderr, "For bash: source <(claune completion bash)")
+		fmt.Fprintln(os.Stderr, "For zsh: source <(claune completion zsh)")
 	case "doctor":
 		fmt.Fprintln(os.Stderr, "Usage: claune doctor")
 		fmt.Fprintln(os.Stderr, "\nShows system diagnostics, configuration info, and available audio dependencies.")
@@ -619,6 +629,7 @@ Core Commands:
   status        Show whether hooks are installed
   version       Show claune version
   doctor        Show system diagnostics and configuration info
+  completion    Generate shell completion scripts
   help          Show this help message
 
 Sound Management:
