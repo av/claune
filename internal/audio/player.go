@@ -158,7 +158,15 @@ func EnsureSoundCache() error {
 				os.Remove(tmpDest)
 				return err
 			}
-			tmpFile.Close()
+			if err := tmpFile.Sync(); err != nil {
+				tmpFile.Close()
+				os.Remove(tmpDest)
+				return err
+			}
+			if err := tmpFile.Close(); err != nil {
+				os.Remove(tmpDest)
+				return err
+			}
 			if err := os.Chmod(tmpDest, 0644); err != nil {
 				os.Remove(tmpDest)
 				return err

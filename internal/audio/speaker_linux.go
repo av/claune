@@ -44,8 +44,8 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 		}
 
 		err = wav.Encode(tmpFile, ctrl, format)
-		tmpFile.Sync()
-		tmpFile.Close()
+		syncErr := tmpFile.Sync()
+		closeErr := tmpFile.Close()
 
 		if cleanup != nil {
 			cleanup()
@@ -54,6 +54,14 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 		if err != nil {
 			os.Remove(tmpFile.Name())
 			return fmt.Errorf("failed to encode stream to wav: %w", err)
+		}
+		if syncErr != nil {
+			os.Remove(tmpFile.Name())
+			return fmt.Errorf("failed to sync wav file to disk: %w", syncErr)
+		}
+		if closeErr != nil {
+			os.Remove(tmpFile.Name())
+			return fmt.Errorf("failed to close wav file: %w", closeErr)
 		}
 
 		type backend struct {

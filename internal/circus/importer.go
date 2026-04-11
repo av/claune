@@ -115,6 +115,15 @@ func ImportMemeSound(url, name string) error {
 		return fmt.Errorf("failed to save meme sound %s: %w", name, err)
 	}
 
+	// Check if the file exceeded the 50MB limit (which LimitReader silently truncated)
+	var peek [1]byte
+	if n, _ := io.ReadFull(resp.Body, peek[:]); n > 0 {
+		return fmt.Errorf("meme sound %s is too large (exceeds 50MB limit)", name)
+	}
+
+	if err := tmpDest.Sync(); err != nil {
+		return fmt.Errorf("failed to sync temp file: %w", err)
+	}
 	if err := tmpDest.Close(); err != nil {
 		return fmt.Errorf("failed to close temp file: %w", err)
 	}
