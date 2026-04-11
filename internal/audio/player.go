@@ -67,7 +67,28 @@ func loadState() {
 func saveState() {
 	path := stateFilePath()
 	data := exportJSON()
-	os.WriteFile(path, data, 0644)
+	dir := filepath.Dir(path)
+	os.MkdirAll(dir, 0755)
+	
+	tmpFile, err := os.CreateTemp(dir, "state.*.tmp")
+	if err != nil {
+		return
+	}
+	defer os.Remove(tmpFile.Name())
+
+	if _, err := tmpFile.Write(data); err != nil {
+		tmpFile.Close()
+		return
+	}
+	if err := tmpFile.Sync(); err != nil {
+		tmpFile.Close()
+		return
+	}
+	if err := tmpFile.Close(); err != nil {
+		return
+	}
+	os.Chmod(tmpFile.Name(), 0644)
+	os.Rename(tmpFile.Name(), path)
 }
 
 func importJSON(data []byte) {

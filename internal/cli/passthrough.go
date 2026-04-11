@@ -73,11 +73,34 @@ func writeSettings(settings map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	dir := filepath.Dir(settingsPath())
+	data = append(data, '\n')
+	path := settingsPath()
+	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
-	return os.WriteFile(settingsPath(), append(data, '\n'), 0644)
+
+	tmpFile, err := os.CreateTemp(dir, "settings.*.tmp")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmpFile.Name())
+
+	if _, err := tmpFile.Write(data); err != nil {
+		tmpFile.Close()
+		return err
+	}
+	if err := tmpFile.Sync(); err != nil {
+		tmpFile.Close()
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+	if err := os.Chmod(tmpFile.Name(), 0644); err != nil {
+		return err
+	}
+	return os.Rename(tmpFile.Name(), path)
 }
 
 func parseHookEntries(hooksMap map[string]interface{}, key string) []HookEntry {
