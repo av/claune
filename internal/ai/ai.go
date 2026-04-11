@@ -450,19 +450,31 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventS
 		return nil, fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	entries, err := os.ReadDir(absDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read directory: %w", err)
-	}
-
 	var files []string
-	for _, e := range entries {
-		if !e.IsDir() {
-			name := e.Name()
+	err = filepath.WalkDir(absDir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			if path == absDir {
+				return err // Fail if root is unreadable
+			}
+			return nil // Skip unreadable sub-paths
+		}
+		if !d.IsDir() {
+			if len(files) >= 500 {
+				return nil // Limit to 500 files to avoid exceeding AI context window buffer limits
+			}
+			name := d.Name()
 			if strings.HasSuffix(strings.ToLower(name), ".mp3") || strings.HasSuffix(strings.ToLower(name), ".wav") {
-				files = append(files, name)
+				// Get relative path from absDir so the AI just sees the filenames/subpaths
+				rel, err := filepath.Rel(absDir, path)
+				if err == nil {
+					files = append(files, rel)
+				}
 			}
 		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
 
 	if len(files) == 0 {
