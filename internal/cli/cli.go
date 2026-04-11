@@ -549,7 +549,7 @@ func printCommandUsage(cmd string) {
 		fmt.Fprintln(os.Stderr, "\nUses AI to update the configuration. Falls back to default limits (2048 tokens max).")
 	case "auth":
 		fmt.Fprintln(os.Stderr, "Usage: claune auth <api-key>")
-		fmt.Fprintln(os.Stderr, "\nSaves your Anthropic API key to ~/.claune.json and enables AI features.")
+		fmt.Fprintln(os.Stderr, "\nSaves your Anthropic API key to ~/.config/claune/config.json and enables AI features.")
 	case "automap":
 		fmt.Fprintln(os.Stderr, "Usage: claune automap <directory>")
 		fmt.Fprintln(os.Stderr, "\nAutomatically maps sound files in the given directory to events.")
