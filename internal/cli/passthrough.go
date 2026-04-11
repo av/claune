@@ -345,8 +345,8 @@ func runPassthrough(args []string) {
 	}
 
 	if os.Getenv("CLAUNE_ACTIVE") == "1" {
-		fmt.Fprintf(os.Stderr, "claune: nested execution detected! CLAUNE_ACTIVE is already set.\n")
-		os.Exit(1)
+		fmt.Fprintf(os.Stderr, "claune: nested execution detected! CLAUNE_ACTIVE is already set. Preventing recursive hook loop.\n")
+		os.Exit(0)
 	}
 
 	cmd := exec.Command(claudeBin, args...)
