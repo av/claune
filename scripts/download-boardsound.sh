@@ -14,7 +14,7 @@ OUTPUT=${2:-"${SLUG}.mp3"}
 URL="https://boardsounds.com/sound-effects/${SLUG}"
 
 echo "Fetching page: $URL"
-AUDIO_URL=$(curl -s "$URL" | grep -oE 'https://boardsounds.com/api/sound/play/[^"]+\.mp3' | head -n 1)
+AUDIO_URL="https://www.myinstants.com/media/sounds/${SLUG}.mp3"
 
 if [ -z "$AUDIO_URL" ]; then
     echo "Error: Could not find audio URL for $SLUG"
