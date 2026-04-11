@@ -82,10 +82,16 @@
         <blink><b>&copy; 2026<br>Claune Webmaster</b></blink>
     </center>
 
-    <div id="winamp-container" style="position: absolute; bottom: 0; left: 0; z-index: 1000;"></div>
+    <div id="winamp-container" style="position: absolute; bottom: 0; left: 0; z-index: 1000; width: 100%;"></div>
     <script src="https://unpkg.com/webamp@1.4.2/built/webamp.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.4.0"></script>
     <script>
-        if (Webamp.browserIsSupported()) {
+        let webampSupported = false;
+        try {
+            webampSupported = Webamp.browserIsSupported();
+        } catch (e) {}
+
+        if (webampSupported) {
             const webamp = new Webamp({
                 initialTracks: [
                     {
@@ -102,6 +108,23 @@
                 webamp.play();
             });
             webamp.renderWhenReady(document.getElementById('winamp-container'));
+        } else {
+            // Fallback JavaScript MIDI Synthesizer
+            const midiPlayer = document.createElement('midi-player');
+            midiPlayer.setAttribute('src', 'assets/sounds/bg.mid');
+            midiPlayer.setAttribute('autoplay', 'true');
+            // Use default magenta soundfont
+            
+            const container = document.getElementById('winamp-container');
+            container.appendChild(midiPlayer);
+            
+            const fallbackNotice = document.createElement('marquee');
+            fallbackNotice.style.color = '#00FF00';
+            fallbackNotice.style.fontSize = '12px';
+            fallbackNotice.style.fontWeight = 'bold';
+            fallbackNotice.style.backgroundColor = '#000';
+            fallbackNotice.innerText = '*** MIDI SYNTH FALLBACK ACTIVE ***';
+            container.appendChild(fallbackNotice);
         }
     </script>
 
