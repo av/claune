@@ -19,7 +19,7 @@
             text-decoration: blink; /* Old school blink! */
         }
         .container {
-            width: 80%;
+            width: 90%;
             margin: 0 auto;
             border: 5px dashed #00ffff;
             padding: 20px;
@@ -105,7 +105,7 @@
 <bgsound src="assets/sounds/bg.mid" loop="infinite">
 
 <div class="container">
-    <h1><blink>THE COMMANDZ !!</blink></h1>
+    <h1><blink>THE COMMANDZ MANUAL !!</blink></h1>
     
     <center>
         <img src="assets/images/flaming-skull.gif" alt="Flaming Skull" width="100" style="border: 3px dashed #ff00ff; background: #000;">
@@ -113,7 +113,15 @@
         <img src="assets/images/flaming-skull.gif" alt="Flaming Skull" width="100" style="border: 3px dashed #ff00ff; background: #000;">
     </center>
 
-    <center id="commands" style="margin-top: 40px;">
+    <br>
+    <center>
+        <marquee bgcolor="#ff0000" scrollamount="15" width="80%">
+            <font color="#ffff00" size="6" face="Comic Sans MS"><b><u>!!! THE ULTIMATE CLAUNE REFERENCE !!!</u></b></font>
+        </marquee>
+    </center>
+    <br>
+
+    <center id="commands" style="margin-top: 20px;">
         <h3 style="color: #ffff00; text-decoration: underline;"><blink>HOW 2 USE CLAUNE (TEH COMMANDZ)</blink></h3>
         <table border="5" bordercolor="lime" bgcolor="#000033" cellpadding="10" cellspacing="0">
             <tr>
@@ -123,6 +131,14 @@
             <tr>
                 <td><code>claune</code></td>
                 <td><font color="yellow">Starts Claude Code but with <b>AWESOME MEME SOUNDS</b>!!</font></td>
+            </tr>
+            <tr>
+                <td><code>claune add &lt;sound&gt;</code></td>
+                <td><font color="#00ff00"><b><u>ADDS A SICK NEW SOUND FX TO UR LIBRARY!!!</u></b></font></td>
+            </tr>
+            <tr>
+                <td><code>claune remove &lt;sound&gt;</code></td>
+                <td><font color="red">DELETES A SOUND U DON'T LIKE ANYMORE &gt;:(</font></td>
             </tr>
             <tr>
                 <td><code>claune [args]</code></td>
@@ -135,15 +151,74 @@
         </table>
     </center>
 
-    <div style="text-align: center; margin-top: 30px;">
-        <a href="main.html" style="font-size: 24px; color: yellow; text-decoration: underline;">&lt;-- Back to Home</a>
+    <br><hr color="cyan" size="5" width="75%"><br>
+
+    <center>
+        <h2><font color="#ff00ff">~*~ <u>ADDING CUSTOM SOUNDZ</u> ~*~</font></h2>
+        <p><font size="4" color="#00ffff"><b>Wanna add UR OWN MP3s?? IT'S EASY!! Just type `claune add &lt;name&gt;`</b></font></p>
+        
+        <table border="3" bordercolor="#ffff00" bgcolor="#220022" cellpadding="15">
+            <tr>
+                <td>
+                    <pre><font color="#00ff00" size="3">
+  .---------------------------------------------------.
+ /  .-.                                               \
+|  /   \  [xX_User_Xx@localhost ~]$ claune add fart    |
+| |\_.  |                                              |
+|\|  | /| > Downloading fart.mp3...                    |
+| `---' | > SAVED 2 ~/.claune/sounds/fart.mp3 !!!      |
+|       | > Ready 2 pwn n00bs!!!                       |
+ \     /                                              /
+  `---'----------------------------------------------'
+                    </font></pre>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <p><b><font color="yellow" size="4"><i>Pro tip:</i></font></b> <font color="white">U can download sounds from Boardsounds.com !! Just put the slug name!</font></p>
+    </center>
+
+    <br><hr color="magenta" size="5" width="75%"><br>
+
+    <center>
+        <h2><font color="#ff0000">~*~ <u>DELETING SOUNDZ</u> ~*~</font></h2>
+        <p><font size="4" color="#ffaaaa"><b>Tired of a sound? Your mom yelling at u to turn it down? :( Type `claune remove &lt;name&gt;`</b></font></p>
+
+        <table border="3" bordercolor="#ff0000" bgcolor="#330000" cellpadding="15">
+            <tr>
+                <td>
+                    <pre><font color="#ff8888" size="3">
+     _________________________________________
+    /                                         \
+   |  [xX_User_Xx@localhost ~]$ claune remove |
+   |  boom                                    |
+   |                                          |
+   |  > DELETING boom.mp3...                  |
+   |  > It's gone forever! R.I.P. boom.mp3    |
+    \_________________________________________/
+          \
+           \   \_\_    _/_/
+            \      \__/
+                   (oo)\_______
+                   (__)\       )\/\
+                       ||----w |
+                       ||     ||
+                    </font></pre>
+                </td>
+            </tr>
+        </table>
+        <p><b><font color="#ff00ff" size="4"><i>WARNING:</i></font></b> <font color="white">Once you delete it, it goes to the digital graveyard!!</font></p>
+    </center>
+
+    <div style="text-align: center; margin-top: 50px;">
+        <a href="main.html" style="font-size: 28px; color: yellow; text-decoration: underline; background-color: blue; padding: 10px; border: 3px outset #00ffff;"><blink>&lt;&lt;-- BACK 2 DA HOMEPAGE --&gt;&gt;</blink></a>
     </div>
 
 </div>
 
 <div class="footer">
     <p>Best viewed in Netscape Navigator 4.0 at 800x600 resolution.</p>
-    <marquee scrollamount="5">This site is optimized for Web 1.0</marquee>
+    <marquee scrollamount="5">This site is optimized for Web 1.0 ... if ur using AOL u might crash lol</marquee>
 </div>
 
 <script src="assets/js/cursor-trail.js"></script>
