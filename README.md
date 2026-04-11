@@ -27,6 +27,8 @@
 # WELCOME TO CLAUNE!!!111!!!111
 
 <div align="center">
+  <video src="https://github.com/everlier/claune/raw/main/claune-proof.mp4" controls="controls" muted="muted" style="max-width:100%; border: 2px solid #00FF00; border-radius: 8px; margin-bottom: 20px;"></video>
+  
   <h2>🚨🚨 <a href="https://av.github.io/claune/">~~~&gt; CLICK HERE FOR THE OFFICIAL WEB PORTAL &lt;~~~</a> 🚨🚨</h2>
   <p><b><i>WARNING: EXTREME WEB 1.0 CRINGE AHEAD. MIDI MUSIC, HIT COUNTERS, AND DANCING BABIES INCLUDED!!!111</i></b></p>
   <p>VISIT THE OFFICIAL WEB PORTAL NOW!!!111 <a href="https://av.github.io/claune/">https://av.github.io/claune/</a></p>
