@@ -36,6 +36,16 @@ echo "Testing 'unmute' command..."
 $COMMAND unmute > /dev/null
 echo "-> OK"
 
+# Test Notify
+echo "Testing 'notify on' command..."
+$COMMAND notify on > /dev/null
+echo "-> OK"
+
+echo "Testing 'notify off' command..."
+$COMMAND notify off > /dev/null
+echo "-> OK"
+
+
 # Test 7: Generate shell completions
 echo "Testing 'completion' command..."
 for shell in bash zsh powershell; do

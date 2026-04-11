@@ -18,6 +18,7 @@ import (
 	"github.com/everlier/claune/internal/circus"
 	"github.com/everlier/claune/internal/config"
 	"github.com/everlier/claune/internal/logger"
+	"github.com/everlier/claune/internal/notify"
 )
 
 const playUsage = "Usage: claune play <event>\n       claune play <event> <tool-name> <tool-input>"
@@ -49,9 +50,10 @@ var clauneSubcommands = map[string]bool{
 	"doctor":        true,
 	"completion":    true,
 	"update":        true,
-	"mute":         true,
-	"unmute":       true,
-	"volume":       true,
+	"mute":          true,
+	"unmute":        true,
+	"notify":        true,
+	"volume":        true,
 	"logs":          true,
 }
 
@@ -200,23 +202,34 @@ func Run(args []string, version string) error {
 			printCommandUsage("play")
 			return nil
 		}
+		event := args[1]
 		if len(args) == 4 {
-			event, err := ai.AnalyzeToolIntent(args[1], args[2], args[3], c)
+			analyzedEvent, err := ai.AnalyzeToolIntent(args[1], args[2], args[3], c)
 			if err != nil && c.AI.Enabled {
 				fmt.Fprintf(os.Stderr, "⚠️ AI Semantic Audio Error: %v\n", err)
 				logger.Error("AI Semantic Audio Error: %v", err)
+			} else if analyzedEvent != "" {
+				event = analyzedEvent
 			}
-			if err := audio.PlaySound(event, true, c); err != nil {
-				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
-				logger.Error("Error playing sound: %v", err)
-				os.Exit(1)
+
+			if c.NotificationsEnabled() {
+				title := "Claune: " + event
+				msg := "Tool: " + args[2]
+				if len(msg) > 60 {
+					msg = msg[:57] + "..."
+				}
+				notify.Send(title, msg)
 			}
 		} else {
-			if err := audio.PlaySound(args[1], true, c); err != nil {
-				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
-				logger.Error("Error playing sound: %v", err)
-				os.Exit(1)
+			if c.NotificationsEnabled() {
+				notify.Send("Claune Event", event)
 			}
+		}
+
+		if err := audio.PlaySound(event, true, c); err != nil {
+			fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+			logger.Error("Error playing sound: %v", err)
+			os.Exit(1)
 		}
 	case "status":
 		showStatus(c)
@@ -227,6 +240,21 @@ func Run(args []string, version string) error {
 			return fmt.Errorf("failed to save config: %w", err)
 		}
 		PrintSuccess("Claune is now muted.")
+	case "notify":
+		state := args[1]
+		if state != "on" && state != "off" {
+			exitUsageError("claune: invalid notify state, must be on or off", "Usage: claune notify <on|off>")
+		}
+		b := state == "on"
+		c.Notifications = &b
+		if err := config.Save(c); err != nil {
+			return fmt.Errorf("failed to save config: %w", err)
+		}
+		if b {
+			PrintSuccess("System notifications are now ENABLED.")
+		} else {
+			PrintSuccess("System notifications are now DISABLED.")
+		}
 	case "unmute":
 		b := false
 		c.Mute = &b
@@ -344,6 +372,13 @@ func Run(args []string, version string) error {
 			fmt.Fprintf(os.Stderr, "Analyze response sentiment failed: %v\n", err)
 			os.Exit(1)
 		} else if event != "" {
+			if c.NotificationsEnabled() {
+				msg := respText
+				if len(msg) > 60 {
+					msg = msg[:57] + "..."
+				}
+				notify.Send("Claune: "+event, msg)
+			}
 			if err := audio.PlaySoundWithStrategy(event, strategy, true, c); err != nil {
 				fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
 				logger.Error("Error playing sound: %v", err)
@@ -368,6 +403,8 @@ func validateManagementArgs(args []string) {
 		ensureExactArgs(args, 1, "claune: mute does not accept additional arguments", "Usage: claune mute")
 	case "unmute":
 		ensureExactArgs(args, 1, "claune: unmute does not accept additional arguments", "Usage: claune unmute")
+	case "notify":
+		ensureExactArgs(args, 2, "claune: notify requires on or off", "Usage: claune notify <on|off>")
 	case "volume":
 		ensureExactArgs(args, 2, "claune: volume requires a level (0-100)", "Usage: claune volume <0-100>")
 	case "play":
@@ -519,7 +556,7 @@ func mustReadStdin(command string) string {
 	}
 
 	var result strings.Builder
-	
+
 	expectedLen := len(head)
 	if tailBytes > chunkSize {
 		expectedLen += len("\n\n... [truncated mid-stream] ...\n\n") + chunkSize
@@ -527,7 +564,7 @@ func mustReadStdin(command string) string {
 		expectedLen += tailBytes
 	}
 	result.Grow(expectedLen)
-	
+
 	result.Write(head)
 
 	if tailBytes > chunkSize {
@@ -577,6 +614,10 @@ func showStatus(c config.ClauneConfig) {
 		PrintWarning("Not installed — run 'claune install' to add sound hooks.")
 	}
 
+	if c.NotificationsEnabled() {
+		PrintInfo("Notifications: enabled")
+	}
+
 	if c.ShouldMute() {
 		PrintInfo("Sound: muted")
 	} else {
@@ -585,6 +626,10 @@ func showStatus(c config.ClauneConfig) {
 }
 
 func testSounds(c config.ClauneConfig) {
+	if c.NotificationsEnabled() {
+		PrintInfo("Notifications: enabled")
+	}
+
 	if c.ShouldMute() {
 		return
 	}
@@ -639,6 +684,9 @@ func printCommandUsage(cmd string) {
 	case "mute":
 		fmt.Fprintln(os.Stderr, "Usage: claune mute")
 		fmt.Fprintln(os.Stderr, "\nMutes all sound effects by updating the config.")
+	case "notify":
+		fmt.Fprintln(os.Stderr, "Usage: claune notify <on|off>")
+		fmt.Fprintln(os.Stderr, "\nEnables or disables desktop system notifications.")
 	case "unmute":
 		fmt.Fprintln(os.Stderr, "Usage: claune unmute")
 		fmt.Fprintln(os.Stderr, "\nUnmutes all sound effects by updating the config.")
@@ -702,10 +750,10 @@ func printCommandUsage(cmd string) {
 
 func printUsage() {
 	fmt.Fprintf(os.Stderr, "%sClaune - Cyberpunk Sound Effects for Claude Code%s\n\n", ColorCyan+ColorBold, ColorReset)
-	
+
 	fmt.Fprintf(os.Stderr, "%sUsage:%s claune [claude-args...]    %sRun Claude Code with sound effects%s\n", ColorYellow, ColorReset, ColorDim, ColorReset)
 	fmt.Fprintf(os.Stderr, "       claune <command>            %sRun a claune management command%s\n\n", ColorDim, ColorReset)
-	
+
 	fmt.Fprintf(os.Stderr, "%sPassthrough mode (default):%s\n", ColorYellow, ColorReset)
 	fmt.Fprintf(os.Stderr, "  claune                     %sStart Claude Code interactively with sounds%s\n\n", ColorDim, ColorReset)
 
@@ -715,6 +763,7 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, "  init          %sCreate a default configuration file%s\n", ColorDim, ColorReset)
 	fmt.Fprintf(os.Stderr, "  setup         %sRun the interactive first-run wizard%s\n", ColorDim, ColorReset)
 	fmt.Fprintf(os.Stderr, "  status        %sShow whether hooks are installed%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  notify <on|off> %sEnable or disable system desktop notifications%s\n", ColorDim, ColorReset)
 	fmt.Fprintf(os.Stderr, "  version       %sShow claune version%s\n", ColorDim, ColorReset)
 	fmt.Fprintf(os.Stderr, "  doctor        %sShow system diagnostics and configuration info%s\n", ColorDim, ColorReset)
 	fmt.Fprintf(os.Stderr, "  completion    %sGenerate shell completion scripts%s\n", ColorDim, ColorReset)

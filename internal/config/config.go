@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/everlier/claune/internal/xdg"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-	"github.com/everlier/claune/internal/xdg"
 )
 
 type EventSoundConfig struct {
@@ -17,12 +17,13 @@ type EventSoundConfig struct {
 }
 
 type ClauneConfig struct {
-	Mute      *bool                       `json:"mute,omitempty"`
-	MuteUntil *time.Time                  `json:"mute_until,omitempty"`
-	Volume    *float64                    `json:"volume,omitempty"`
-	Strategy  string                      `json:"strategy,omitempty"`
-	Sounds    map[string]EventSoundConfig `json:"sounds,omitempty"`
-	AI        AIConfig                    `json:"ai,omitempty"`
+	Mute          *bool                       `json:"mute,omitempty"`
+	MuteUntil     *time.Time                  `json:"mute_until,omitempty"`
+	Volume        *float64                    `json:"volume,omitempty"`
+	Notifications *bool                       `json:"notifications,omitempty"`
+	Strategy      string                      `json:"strategy,omitempty"`
+	Sounds        map[string]EventSoundConfig `json:"sounds,omitempty"`
+	AI            AIConfig                    `json:"ai,omitempty"`
 }
 
 type AIConfig struct {
@@ -191,4 +192,11 @@ func (c ClauneConfig) GetVolume() float64 {
 		return *c.Volume
 	}
 	return 1.0
+}
+
+func (c ClauneConfig) NotificationsEnabled() bool {
+	if c.Notifications != nil {
+		return *c.Notifications
+	}
+	return false // Opt-in
 }
