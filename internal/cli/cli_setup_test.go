@@ -8,13 +8,13 @@ import (
 func TestSetupCmd(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	
+
 	// Create a mock stdin with inputs: "n" (mute), "y" (enable AI), "test-key" (API key), "0.5" (volume)
 	r, w, err := os.Pipe()
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	_, err = w.Write([]byte("n\ny\ntest-key\n0.5\n"))
 	if err != nil {
 		t.Fatal(err)

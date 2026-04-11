@@ -23,7 +23,7 @@ func createDefaultConfig() error {
 			Model:   "claude-3-7-sonnet-latest",
 		},
 	}
-	
+
 	f := false
 	c.Mute = &f
 	v := 1.0

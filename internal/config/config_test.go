@@ -1,10 +1,10 @@
 package config
 
 import (
-	"sync"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -33,7 +33,7 @@ func TestLoadValidConfig(t *testing.T) {
 	t.Setenv("HOME", home)
 
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	contents := `{
 		"mute": true,
 		"volume": 0.35,
@@ -91,7 +91,7 @@ func TestLoadMalformedConfigFails(t *testing.T) {
 	t.Setenv("HOME", home)
 
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -100,7 +100,7 @@ os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err == nil {
 		t.Fatal("Load() error = nil, want malformed config failure")
 	}
-	if !strings.Contains(err.Error(), "invalid configuration format in " + configPath + "") {
+	if !strings.Contains(err.Error(), "invalid configuration format in "+configPath+"") {
 		t.Fatalf("Load() error = %q, want invalid configuration format context", err)
 	}
 }
@@ -110,7 +110,7 @@ func TestLoadLegacySchemaRejected(t *testing.T) {
 	t.Setenv("HOME", home)
 
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{
 		"sounds": {
 			"success": "test1.mp3"
@@ -133,7 +133,7 @@ func TestLoadUnreadableConfigPathFails(t *testing.T) {
 	t.Setenv("HOME", home)
 
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.Mkdir(configPath, 0755); err != nil {
 		t.Fatalf("Mkdir(%q) error = %v", configPath, err)
 	}
@@ -142,7 +142,7 @@ os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err == nil {
 		t.Fatal("Load() error = nil, want unreadable config path failure")
 	}
-	if !strings.Contains(err.Error(), "failed to read " + configPath + "") {
+	if !strings.Contains(err.Error(), "failed to read "+configPath+"") {
 		t.Fatalf("Load() error = %q, want read failure context", err)
 	}
 }
@@ -213,14 +213,14 @@ func TestSaveConcurrentModifications(t *testing.T) {
 	t.Setenv("HOME", home)
 
 	c := ClauneConfig{Strategy: "concurrent"}
-	
+
 	errCh := make(chan error, 10)
 	for i := 0; i < 10; i++ {
 		go func() {
 			errCh <- Save(c)
 		}()
 	}
-	
+
 	for i := 0; i < 10; i++ {
 		if err := <-errCh; err != nil {
 			t.Errorf("Concurrent Save failed: %v", err)
@@ -233,7 +233,7 @@ func TestSaveAutoRecoverStaleLock(t *testing.T) {
 	t.Setenv("HOME", home)
 
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	lockPath := configPath + ".lock"
 
 	// Create a "stale" lock file (older than 2 seconds)
@@ -259,9 +259,9 @@ os.MkdirAll(filepath.Dir(configPath), 0755)
 func TestConcurrentSaveLoad(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	
+
 	c := ClauneConfig{Strategy: "concurrent"}
-	
+
 	var wg sync.WaitGroup
 	for i := 0; i < 20; i++ {
 		wg.Add(1)
@@ -276,7 +276,7 @@ func TestConcurrentSaveLoad(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	
+
 	loaded, err := Load()
 	if err != nil {
 		t.Fatalf("Failed to load final config: %v", err)

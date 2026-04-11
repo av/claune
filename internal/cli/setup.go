@@ -15,7 +15,7 @@ func runSetup() error {
 	fmt.Println()
 
 	reader := bufio.NewReader(os.Stdin)
-	
+
 	c, _ := config.Load()
 	if c.Sounds == nil {
 		c.Sounds = make(map[string]config.EventSoundConfig)
@@ -23,12 +23,12 @@ func runSetup() error {
 	if c.AI.Model == "" {
 		c.AI.Model = "claude-3-7-sonnet-latest"
 	}
-	
+
 	// 1. Mute status
 	fmt.Print("Do you want to start with sounds enabled? [Y/n]: ")
 	muteResp, _ := reader.ReadString('\n')
 	muteResp = strings.TrimSpace(strings.ToLower(muteResp))
-	
+
 	f := false
 	t := true
 	if muteResp == "n" || muteResp == "no" {
@@ -44,7 +44,7 @@ func runSetup() error {
 	fmt.Print("Do you have an Anthropic API key to enable AI-driven sound mappings? [y/N]: ")
 	aiResp, _ := reader.ReadString('\n')
 	aiResp = strings.TrimSpace(strings.ToLower(aiResp))
-	
+
 	if aiResp == "y" || aiResp == "yes" {
 		fmt.Print("Please enter your Anthropic API key (sk-ant-...): ")
 		keyResp, _ := reader.ReadString('\n')
@@ -81,7 +81,7 @@ func runSetup() error {
 		PrintError("Failed to save configuration: %v", err)
 		return err
 	}
-	
+
 	PrintSuccess("Configuration saved to %s", config.ConfigFilePath())
 	fmt.Println(Style("You're all set! Try running: claune test-sounds", ColorCyan))
 	return nil

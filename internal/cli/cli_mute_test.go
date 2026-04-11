@@ -11,7 +11,7 @@ func TestMuteUnmuteVolume(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-	
+
 	// Create config dir
 	os.MkdirAll(filepath.Dir(configPath), 0755)
 
@@ -22,7 +22,7 @@ func TestMuteUnmuteVolume(t *testing.T) {
 		}
 	})
 	assertContains(t, output.stdout, "Claune is now muted.")
-	
+
 	configBytes, _ := os.ReadFile(configPath)
 	var config map[string]interface{}
 	json.Unmarshal(configBytes, &config)
@@ -58,4 +58,3 @@ func TestMuteUnmuteVolume(t *testing.T) {
 		t.Errorf("Expected volume to be 0.75, got %v", config["volume"])
 	}
 }
-

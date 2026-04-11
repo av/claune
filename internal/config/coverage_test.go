@@ -35,7 +35,7 @@ func TestLoadPermissionDenied(t *testing.T) {
 
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
 	os.MkdirAll(filepath.Dir(configPath), 0755)
-	
+
 	// Create a file with no read permissions
 	if err := os.WriteFile(configPath, []byte("{}"), 0000); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
@@ -58,7 +58,7 @@ func TestSaveMkdirAllFails(t *testing.T) {
 	t.Setenv("HOME", home)
 
 	configDir := filepath.Join(home, ".config", "claune")
-	
+
 	// Make a file where the directory should be
 	os.MkdirAll(filepath.Join(home, ".config"), 0755)
 	if err := os.WriteFile(configDir, []byte("file"), 0644); err != nil {
@@ -91,7 +91,7 @@ func TestSaveCreateTempFails(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected Save() to fail due to CreateTemp error")
 	}
-	
+
 	os.Chmod(configDir, 0755) // restore for cleanup
 }
 
@@ -129,14 +129,13 @@ func TestSavePermissionDeniedWritingLock(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected Save() to fail due to lock permission denied")
 	}
-	
+
 	os.Chmod(configDir, 0755) // restore for cleanup
 }
 
-
 func TestLoadEmptyHomeFails(t *testing.T) {
 	t.Setenv("HOME", "")
-	
+
 	// Ensure UserHomeDir will fail or return empty
 	config, err := Load()
 	if err != nil {
@@ -166,7 +165,7 @@ func TestLoadNullSounds(t *testing.T) {
 
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
 	os.MkdirAll(filepath.Dir(configPath), 0755)
-	
+
 	if err := os.WriteFile(configPath, []byte(`{"sounds": null}`), 0644); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}

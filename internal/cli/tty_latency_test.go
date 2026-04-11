@@ -47,12 +47,12 @@ func TestTTYLatency(t *testing.T) {
 	// Mimic what directHookCmd does:
 	// bash -c 'mockBinPath play "event" >/dev/null 2>&1 </dev/null &'
 	cmdLine := []string{"bash", "-c", "claune play test >/dev/null 2>&1 </dev/null &"}
-	
+
 	cmd := exec.Command(cmdLine[0], cmdLine[1:]...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	
+
 	err = cmd.Run()
 	if err != nil {
 		t.Fatalf("Command failed: %v, stderr: %s", err, stderr.String())

@@ -183,7 +183,11 @@ func TestRunPassthrough(t *testing.T) {
 			return "/fake/claude", nil
 		}
 		var exitCode int = -1
-		defer func() { if r := recover(); r != nil { exitCode = r.(int) } }()
+		defer func() {
+			if r := recover(); r != nil {
+				exitCode = r.(int)
+			}
+		}()
 		osExit = func(code int) {
 			panic(code)
 		}
@@ -202,7 +206,11 @@ func TestRunPassthrough(t *testing.T) {
 			return "/fake/claude", nil
 		}
 		var exitCode int = -1
-		defer func() { if r := recover(); r != nil { exitCode = r.(int) } }()
+		defer func() {
+			if r := recover(); r != nil {
+				exitCode = r.(int)
+			}
+		}()
 		osExit = func(code int) {
 			panic(code)
 		}
@@ -224,7 +232,11 @@ func TestRunPassthrough(t *testing.T) {
 			return "", os.ErrNotExist
 		}
 		var exitCode int = -1
-		defer func() { if r := recover(); r != nil { exitCode = r.(int) } }()
+		defer func() {
+			if r := recover(); r != nil {
+				exitCode = r.(int)
+			}
+		}()
 		osExit = func(code int) {
 			panic(code)
 		}
@@ -242,7 +254,11 @@ func TestRunPassthrough(t *testing.T) {
 			return exe, nil
 		}
 		var exitCode int = -1
-		defer func() { if r := recover(); r != nil { exitCode = r.(int) } }()
+		defer func() {
+			if r := recover(); r != nil {
+				exitCode = r.(int)
+			}
+		}()
 		osExit = func(code int) {
 			panic(code)
 		}
@@ -261,7 +277,11 @@ func TestRunPassthrough(t *testing.T) {
 			return "/fake/claude", nil
 		}
 		var exitCode int = -1
-		defer func() { if r := recover(); r != nil { exitCode = r.(int) } }()
+		defer func() {
+			if r := recover(); r != nil {
+				exitCode = r.(int)
+			}
+		}()
 		osExit = func(code int) {
 			panic(code)
 		}
@@ -278,7 +298,11 @@ func TestRunPassthrough(t *testing.T) {
 			return "/fake/claude", nil
 		}
 		var exitCode int = -1
-		defer func() { if r := recover(); r != nil { exitCode = r.(int) } }()
+		defer func() {
+			if r := recover(); r != nil {
+				exitCode = r.(int)
+			}
+		}()
 		osExit = func(code int) {
 			panic(code)
 		}
@@ -297,7 +321,11 @@ func TestRunPassthrough(t *testing.T) {
 			return "/fake/claude", nil
 		}
 		var exitCode int = -1
-		defer func() { if r := recover(); r != nil { exitCode = r.(int) } }()
+		defer func() {
+			if r := recover(); r != nil {
+				exitCode = r.(int)
+			}
+		}()
 		osExit = func(code int) {
 			panic(code)
 		}

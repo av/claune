@@ -243,8 +243,8 @@ Easily download and install pre-configured meme sound packs without manual confi
 # Lists available sound packs
 claune pack
 
-# Installs the Mario sound pack
-claune pack mario
+# Installs the Retro Games sound pack
+claune pack retro-games
 ```
 
 ### IMPORTING SOUNDS (`IMPORT-CIRCUS`)!!!111

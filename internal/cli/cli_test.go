@@ -34,7 +34,7 @@ func TestRunConfigUsesFullNaturalLanguagePrompt(t *testing.T) {
 	assertContains(t, output.stdout, "Config updated successfully via AI")
 
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	configBytes, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", configPath, err)
@@ -58,7 +58,7 @@ func TestRunHelpWorksWithMalformedConfig(t *testing.T) {
 	t.Setenv("HOME", home)
 
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
 		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
 	}
@@ -79,7 +79,7 @@ func TestRunConfigRepairsMalformedConfigUsingDefaults(t *testing.T) {
 	t.Setenv("ANTHROPIC_API_KEY", "")
 
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
 		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
 	}
@@ -112,7 +112,7 @@ os.MkdirAll(filepath.Dir(configPath), 0755)
 func TestRunConfigFailsWhenConfigPathUnreadable(t *testing.T) {
 	home := t.TempDir()
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.Mkdir(configPath, 0755); err != nil {
 		t.Fatalf("Mkdir(%q) error = %v", configPath, err)
 	}
@@ -127,7 +127,7 @@ os.MkdirAll(filepath.Dir(configPath), 0755)
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	assertContains(t, stderr, "claune: error loading config: failed to read " + configPath)
+	assertContains(t, stderr, "claune: error loading config: failed to read "+configPath)
 	if strings.Contains(stderr, "warning: invalid config") {
 		t.Fatalf("stderr = %q, should not contain malformed-config recovery warning", stderr)
 	}
@@ -136,7 +136,7 @@ os.MkdirAll(filepath.Dir(configPath), 0755)
 func TestRunStatusFailsWhenConfigPathUnreadable(t *testing.T) {
 	home := t.TempDir()
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.Mkdir(configPath, 0755); err != nil {
 		t.Fatalf("Mkdir(%q) error = %v", configPath, err)
 	}
@@ -151,7 +151,7 @@ os.MkdirAll(filepath.Dir(configPath), 0755)
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	assertContains(t, stderr, "claune: error loading config: failed to read " + configPath)
+	assertContains(t, stderr, "claune: error loading config: failed to read "+configPath)
 }
 
 func TestRunManagementCommandsRejectBadUsage(t *testing.T) {
@@ -338,7 +338,7 @@ func TestRunManagementCommandsBadUsageWinsOverMalformedConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			home := t.TempDir()
 			configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+			os.MkdirAll(filepath.Dir(configPath), 0755)
 			if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
 				t.Fatalf("WriteFile(%q) error = %v", configPath, err)
 			}
@@ -427,7 +427,7 @@ func TestRunPlayRejectsBadUsage(t *testing.T) {
 func TestRunPlayBadUsageWinsOverMalformedConfig(t *testing.T) {
 	home := t.TempDir()
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"sounds":`), 0644); err != nil {
 		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
 	}
@@ -530,7 +530,7 @@ func TestRunAnalyzeRespExitsNonZeroOnRuntimeAIFailure(t *testing.T) {
 
 	home := t.TempDir()
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(fmt.Sprintf(`{"ai":{"enabled":true,"api_key":"test-key","api_url":%q}}`, failingServer.URL)), 0o644); err != nil {
 		t.Fatalf("os.WriteFile(%q) error = %v", configPath, err)
 	}
@@ -647,7 +647,7 @@ func TestRunImportCircusFailsLoudlyOnConfigSaveErrorAfterSuccessfulImport(t *tes
 
 	home := t.TempDir()
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"sounds":{}, "mute":false, "volume":1.0}`), 0o444); err != nil {
 		t.Fatalf("os.WriteFile(%q) error = %v", configPath, err)
 	}
@@ -718,7 +718,7 @@ func TestRunImportCircusReportsPartialSuccessWhenAIMappingFails(t *testing.T) {
 	home := t.TempDir()
 	cacheDir := t.TempDir()
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
-os.MkdirAll(filepath.Dir(configPath), 0755)
+	os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err := os.WriteFile(configPath, []byte(`{"ai":{"enabled":true,"api_key":"dummy-key"}}`), 0o644); err != nil {
 		t.Fatalf("os.WriteFile(%q) error = %v", configPath, err)
 	}

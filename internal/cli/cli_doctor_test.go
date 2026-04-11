@@ -7,7 +7,7 @@ import (
 func TestDoctorCmd(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	
+
 	output := captureOutput(t, func() {
 		if err := Run([]string{"doctor"}, "test-version"); err != nil {
 			t.Fatalf("Run(doctor) error = %v", err)
