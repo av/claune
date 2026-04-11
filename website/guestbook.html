@@ -111,12 +111,15 @@
     const defaultEntries = [
         { name: "xX_DarkSasuke_Xx", msg: "this app pwns!! rawr xD" },
         { name: "AngelGirl99", msg: "omg i luv the sounds!! <3 <3" },
-        { name: "1337h4x0r", msg: "first!!1!" }
+        { name: "1337h4x0r", msg: "first!!1!" },
+        { name: "FreeRingtones", msg: "Get FREE polyphonic ringtones for your Nokia at www.totally-not-a-virus.com!!! CLICK HERE!" },
+        { name: "DialUpSucks", msg: "My dial-up keeps dropping when I try to download this, can you mail me a floppy disk? ASL?" },
+        { name: "NeoMatrixfan", msg: "Has anyone seen my cursor? It turned into stars and I cant find it. Also matrix reload is the best movie ever made." }
     ];
 
     function loadGuestbook() {
         let entries = JSON.parse(localStorage.getItem('claune_guestbook'));
-        if (!entries) {
+        if (!entries || entries.length < defaultEntries.length) {
             entries = defaultEntries;
             localStorage.setItem('claune_guestbook', JSON.stringify(entries));
         }
