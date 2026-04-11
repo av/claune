@@ -96,6 +96,9 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 			if retryAfterStr != "" {
 				if parsed, err := strconv.Atoi(retryAfterStr); err == nil && parsed > 0 {
 					sleepDuration = time.Duration(parsed) * time.Second
+					if sleepDuration > 30*time.Second {
+						sleepDuration = 30 * time.Second
+					}
 				}
 			}
 			time.Sleep(sleepDuration)
@@ -121,7 +124,8 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 			}
 			defer resp.Body.Close()
 
-			respBytes, err := io.ReadAll(resp.Body)
+			// Limit response body to 10MB to prevent DoS from runaway proxies or misconfigured custom AI APIs
+			respBytes, err := io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024))
 			if err != nil {
 				lastErr = err
 				shouldRetry = true
@@ -181,6 +185,50 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 	}
 	return nil, fmt.Errorf("AI API returned status %d after retries: %s", lastStatus, RedactSensitiveData(string(lastRespBytes)))
 }
+
+func safeTruncate(s string, limitRunes int) string {
+	if len(s) <= limitRunes {
+		return s
+	}
+	maxBytes := limitRunes * 4
+	if maxBytes > len(s) {
+		maxBytes = len(s)
+	}
+	prefixRunes := []rune(s[:maxBytes])
+	if len(prefixRunes) > limitRunes {
+		prefixRunes = prefixRunes[:limitRunes]
+	}
+	return string(prefixRunes) + "... (truncated)"
+}
+
+func safeTruncateMiddle(s string, limitRunes int) string {
+	if len(s) <= limitRunes*2 {
+		return s
+	}
+	maxBytes := limitRunes * 4
+	prefixStr := s
+	if maxBytes < len(s) {
+		prefixStr = s[:maxBytes]
+	}
+	prefixRunes := []rune(prefixStr)
+	if len(prefixRunes) > limitRunes {
+		prefixRunes = prefixRunes[:limitRunes]
+	}
+
+	suffixStr := s
+	if maxBytes < len(s) {
+		suffixStr = s[len(s)-maxBytes:]
+	}
+	suffixRunes := []rune(suffixStr)
+	if len(suffixRunes) > limitRunes {
+		suffixRunes = suffixRunes[len(suffixRunes)-limitRunes:]
+	}
+	if len(suffixRunes) > 0 && suffixRunes[0] == '\ufffd' {
+		suffixRunes = suffixRunes[1:]
+	}
+	return string(prefixRunes) + "... (truncated middle) ..." + string(suffixRunes)
+}
+
 func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig) (string, error) {
 	if !c.AI.Enabled {
 		return baseEvent, nil
@@ -199,9 +247,7 @@ func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig)
 	}
 
 	// Truncate huge inputs to avoid context limit errors and save tokens
-	if len(input) > 2000 {
-		input = input[:2000] + "... (truncated)"
-	}
+	input = safeTruncate(input, 2000)
 	
 	// Sanitize PII and API keys from input before sending to Anthropic
 	input = RedactSensitiveData(input)
@@ -252,9 +298,7 @@ func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (strin
 	}
 
 	// Truncate huge inputs to avoid context limit errors and save tokens
-	if len(responseText) > 4000 {
-		responseText = responseText[:2000] + "... (truncated middle) ..." + responseText[len(responseText)-2000:]
-	}
+	responseText = safeTruncateMiddle(responseText, 2000)
 
 	// Sanitize PII and API keys from response text before sending to Anthropic
 	responseText = RedactSensitiveData(responseText)
@@ -294,9 +338,7 @@ type ConfigPatch struct {
 
 func HandleNaturalLanguageConfig(prompt string, c *config.ClauneConfig) error {
 	// Truncate massive CLI inputs to prevent OOM/DoS or hitting Anthropic API limits
-	if len(prompt) > 2000 {
-		prompt = prompt[:2000] + "... (truncated)"
-	}
+	prompt = safeTruncate(prompt, 2000)
 
 	var updates ConfigPatch
 	// Mock logic for tests when API key is missing
