@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/gopxl/beep"
@@ -43,6 +44,7 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 		}
 
 		err = wav.Encode(tmpFile, ctrl, format)
+		tmpFile.Sync()
 		tmpFile.Close()
 
 		if cleanup != nil {
@@ -70,6 +72,29 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 
 		for _, b := range backends {
 			if path, err := exec.LookPath(b.bin); err == nil {
+				if b.bin == "aplay" {
+					lockPath := filepath.Join(cacheDir, ".aplay.lock")
+					locked := false
+					for j := 0; j < 500; j++ {
+						f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
+						if err == nil {
+							f.Close()
+							locked = true
+							defer os.Remove(lockPath)
+							break
+						}
+						if info, err := os.Stat(lockPath); err == nil && time.Since(info.ModTime()) > 30*time.Second {
+							os.Remove(lockPath)
+							continue
+						}
+						time.Sleep(10 * time.Millisecond)
+					}
+					if !locked {
+						lastErr = fmt.Errorf("aplay lock timeout")
+						continue
+					}
+				}
+
 				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 				cmd := exec.CommandContext(ctx, path, b.args...)
 				err := cmd.Run()
