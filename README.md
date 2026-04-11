@@ -61,6 +61,25 @@ curl -sSfL https://raw.githubusercontent.com/everlier/claune/main/install.sh | s
 Invoke-RestMethod -Uri https://raw.githubusercontent.com/everlier/claune/main/install.ps1 | Invoke-Expression
 ```
 
+### PACKAGE MANAGERS!!!111
+
+**Homebrew (macOS / Linux):**
+```bash
+brew install everlier/tap/claune
+```
+
+**Debian / Ubuntu (.deb):**
+Download the latest `.deb` from the [Releases](https://github.com/everlier/claune/releases) page and run:
+```bash
+sudo dpkg -i claune_*_linux_amd64.deb
+```
+
+**Fedora / RHEL / CentOS (.rpm):**
+Download the latest `.rpm` from the [Releases](https://github.com/everlier/claune/releases) page and run:
+```bash
+sudo rpm -i claune_*_linux_amd64.rpm
+```
+
 ### PREREQUISITES FOR SOURCE INSTALL!!!111
 
 - **Go is required for source installs.** This repository declares `go 1.24.0` and `toolchain go1.24.1` in `go.mod`, so install a compatible Go toolchain and verify the exact executable that `make install` will use before continuing:

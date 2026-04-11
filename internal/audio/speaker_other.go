@@ -19,7 +19,13 @@ var (
 	speakerMutex     sync.Mutex
 )
 
-func initSpeaker(sampleRate beep.SampleRate) error {
+func initSpeaker(sampleRate beep.SampleRate) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic in speaker.Init (audio device unavailable or permissions issue): %v", r)
+		}
+	}()
+
 	speakerMutex.Lock()
 	defer speakerMutex.Unlock()
 

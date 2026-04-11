@@ -19,7 +19,10 @@ import (
 
 func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume float64, blocking bool, cleanup func()) error {
 	cacheDir := SoundCacheDir()
-	os.MkdirAll(cacheDir, 0755)
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		if cleanup != nil { cleanup() }
+		return fmt.Errorf("failed to create sound cache directory (permission denied?): %w", err)
+	}
 
 	var ctrl beep.Streamer = streamer
 
