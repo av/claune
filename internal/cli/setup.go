@@ -10,7 +10,7 @@ import (
 )
 
 func runSetup() error {
-	fmt.Println("Welcome to the Claune interactive setup!")
+	fmt.Println(Style("Welcome to the Claune interactive setup!", ColorCyan+ColorBold))
 	fmt.Println("Let's configure your sound experience.")
 	fmt.Println()
 
@@ -33,10 +33,10 @@ func runSetup() error {
 	t := true
 	if muteResp == "n" || muteResp == "no" {
 		c.Mute = &t
-		fmt.Println("Sounds will be muted initially.")
+		PrintInfo("Sounds will be muted initially.")
 	} else {
 		c.Mute = &f
-		fmt.Println("Sounds enabled!")
+		PrintSuccess("Sounds enabled!")
 	}
 	fmt.Println()
 
@@ -52,12 +52,12 @@ func runSetup() error {
 		if keyResp != "" {
 			c.AI.Enabled = true
 			c.AI.APIKey = keyResp
-			fmt.Println("AI features enabled!")
+			PrintSuccess("AI features enabled!")
 		} else {
-			fmt.Println("No key provided. AI features will remain disabled.")
+			PrintWarning("No key provided. AI features will remain disabled.")
 		}
 	} else {
-		fmt.Println("Skipping AI setup. You can always run 'claune auth <key>' later.")
+		PrintInfo("Skipping AI setup. You can always run 'claune auth <key>' later.")
 	}
 	fmt.Println()
 
@@ -70,19 +70,19 @@ func runSetup() error {
 		_, err := fmt.Sscanf(volResp, "%f", &vol)
 		if err == nil && vol >= 0.0 && vol <= 1.0 {
 			c.Volume = &vol
-			fmt.Printf("Volume set to %.1f.\n", vol)
+			PrintSuccess("Volume set to %.1f.", vol)
 		} else {
-			fmt.Println("Invalid volume, keeping default.")
+			PrintWarning("Invalid volume, keeping default.")
 		}
 	}
 
 	fmt.Println()
 	if err := config.Save(c); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to save configuration: %v\n", err)
+		PrintError("Failed to save configuration: %v", err)
 		return err
 	}
 	
-	fmt.Printf("Configuration saved to %s\n", config.ConfigFilePath())
-	fmt.Println("You're all set! Try running: claune test-sounds")
+	PrintSuccess("Configuration saved to %s", config.ConfigFilePath())
+	fmt.Println(Style("You're all set! Try running: claune test-sounds", ColorCyan))
 	return nil
 }

@@ -111,14 +111,14 @@ func Run(args []string, version string) error {
 		return logger.ShowLogs(50)
 	case "update":
 		ensureExactArgs(args, 1, "claune: update does not accept additional arguments", "Usage: claune update")
-		fmt.Println("Updating claune via go install github.com/everlier/claune@latest...")
+		PrintInfo("Updating claune via go install github.com/everlier/claune@latest...")
 		cmd := exec.Command("go", "install", "github.com/everlier/claune@latest")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("update failed: %w", err)
 		}
-		fmt.Println("Successfully updated claune!")
+		PrintSuccess("Successfully updated claune!")
 		return nil
 	case "website":
 		ensureExactArgs(args, 1, "claune: website does not accept additional arguments", "Usage: claune website")
@@ -226,14 +226,14 @@ func Run(args []string, version string) error {
 		if err := config.Save(c); err != nil {
 			return fmt.Errorf("failed to save config: %w", err)
 		}
-		fmt.Println("Claune is now muted.")
+		PrintSuccess("Claune is now muted.")
 	case "unmute":
 		b := false
 		c.Mute = &b
 		if err := config.Save(c); err != nil {
 			return fmt.Errorf("failed to save config: %w", err)
 		}
-		fmt.Println("Claune is now unmuted.")
+		PrintSuccess("Claune is now unmuted.")
 	case "volume":
 		vol, err := strconv.ParseFloat(args[1], 64)
 		if err != nil || vol < 0 || vol > 100 {
@@ -244,7 +244,7 @@ func Run(args []string, version string) error {
 		if err := config.Save(c); err != nil {
 			return fmt.Errorf("failed to save config: %w", err)
 		}
-		fmt.Printf("Volume set to %.0f%%.\n", vol)
+		PrintSuccess("Volume set to %.0f%%.", vol)
 	case "test-sounds":
 		testSounds(c)
 	case "config":
@@ -252,7 +252,7 @@ func Run(args []string, version string) error {
 		if err := ai.HandleNaturalLanguageConfig(prompt, &c); err != nil {
 			return fmt.Errorf("AI config failed: %w", err)
 		}
-		fmt.Println("Config updated successfully via AI")
+		PrintSuccess("Config updated successfully via AI")
 	case "auth":
 		c.AI.Enabled = true
 		c.AI.APIKey = args[1]
@@ -260,7 +260,7 @@ func Run(args []string, version string) error {
 			fmt.Fprintf(os.Stderr, "Failed to save config: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println("API key saved. AI features are now enabled.")
+		PrintSuccess("API key saved. AI features are now enabled.")
 	case "import-circus":
 		url := args[1]
 		if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
@@ -572,15 +572,15 @@ func openBrowser(url string) {
 
 func showStatus(c config.ClauneConfig) {
 	if hooksInstalled() {
-		fmt.Println("Installed — claune hooks are active in Claude Code.")
+		PrintSuccess("Installed — claune hooks are active in Claude Code.")
 	} else {
-		fmt.Println("Not installed — run 'claune install' to add sound hooks.")
+		PrintWarning("Not installed — run 'claune install' to add sound hooks.")
 	}
 
 	if c.ShouldMute() {
-		fmt.Println("Sound: muted")
+		PrintInfo("Sound: muted")
 	} else {
-		fmt.Printf("Volume: %.0f%%\n", c.GetVolume()*100)
+		PrintInfo("Volume: %.0f%%", c.GetVolume()*100)
 	}
 }
 
@@ -588,15 +588,15 @@ func testSounds(c config.ClauneConfig) {
 	if c.ShouldMute() {
 		return
 	}
-	fmt.Println("Testing all sounds...")
+	fmt.Println(Style("Testing all sounds...", ColorCyan+ColorBold))
 	hasError := false
 	for _, event := range []string{"cli:start", "tool:start", "tool:success", "tool:error", "cli:done", "build:success", "test:fail", "panic", "warn"} {
 		fmt.Printf("  %s ", event)
 		if err := audio.PlaySound(event, true, c); err != nil {
-			fmt.Printf("FAILED: %v\n", err)
+			fmt.Printf("%sFAILED: %v%s\n", ColorRed, err, ColorReset)
 			hasError = true
 		} else {
-			fmt.Println("OK")
+			fmt.Printf("%sOK%s\n", ColorGreen, ColorReset)
 		}
 	}
 	if hasError {

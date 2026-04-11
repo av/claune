@@ -12,7 +12,7 @@ func createDefaultConfig() error {
 
 	// Check if config already exists
 	if _, err := os.Stat(configPath); err == nil {
-		fmt.Printf("Configuration file already exists at: %s\n", configPath)
+		PrintInfo("Configuration file already exists at: %s", configPath)
 		return nil
 	}
 
@@ -31,10 +31,10 @@ func createDefaultConfig() error {
 	c.Volume = &v
 
 	if err := config.Save(c); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create default configuration: %v\n", err)
+		PrintError("Failed to create default configuration: %v", err)
 		return err
 	}
 
-	fmt.Printf("Default configuration file created at: %s\n", configPath)
+	PrintSuccess("Default configuration file created at: %s", configPath)
 	return nil
 }
