@@ -39,6 +39,49 @@ func ImportMemeSound(url, name string) error {
 		}
 	}()
 
+	cacheDir := audio.SoundCacheDir()
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return err
+	}
+
+	dest := filepath.Join(cacheDir, name)
+	lockPath := dest + ".lock"
+
+	// Wait if another process is downloading this file
+	var locked bool
+	for i := 0; i < 300; i++ { // wait up to 30s
+		lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
+		if err == nil {
+			locked = true
+			defer func() {
+				lockFile.Close()
+				os.Remove(lockPath)
+			}()
+			break
+		}
+		
+		if info, err := os.Stat(lockPath); err == nil && time.Since(info.ModTime()) > 60*time.Second {
+			os.Remove(lockPath)
+		}
+		
+		time.Sleep(100 * time.Millisecond)
+		
+		if _, err := os.Stat(lockPath); os.IsNotExist(err) {
+			if _, err := os.Stat(dest); err == nil {
+				return nil // Downloaded successfully by another process
+			}
+		}
+	}
+
+	if !locked {
+		return fmt.Errorf("timeout waiting to acquire download lock for %s", name)
+	}
+
+	// Check again if it was downloaded while we were acquiring the lock
+	if _, err := os.Stat(dest); err == nil {
+		return nil
+	}
+
 	client := &http.Client{}
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -52,11 +95,6 @@ func ImportMemeSound(url, name string) error {
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("bad status fetching %s: %s", url, resp.Status)
-	}
-
-	cacheDir := audio.SoundCacheDir()
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
-		return err
 	}
 
 	tmpDest, err := os.CreateTemp(cacheDir, name+".*.tmp")
@@ -81,7 +119,6 @@ func ImportMemeSound(url, name string) error {
 		return fmt.Errorf("failed to close temp file: %w", err)
 	}
 
-	dest := filepath.Join(cacheDir, name)
 	if err := os.Rename(tmpName, dest); err != nil {
 		return fmt.Errorf("failed to rename temp file to %s: %w", dest, err)
 	}

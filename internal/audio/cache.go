@@ -11,6 +11,21 @@ import (
 // EvictCache removes leftover temporary files and enforces a maximum cache size.
 // It uses a simple oldest-first cleanup strategy.
 func EvictCache(cacheDir string, maxBytes int64, maxFiles int) error {
+	lockPath := filepath.Join(cacheDir, ".evict.lock")
+	
+	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
+	if err != nil {
+		if info, err := os.Stat(lockPath); err == nil && time.Since(info.ModTime()) > 5*time.Second {
+			os.Remove(lockPath)
+		}
+		// Another process is evicting, we can safely return
+		return nil
+	}
+	defer func() {
+		lockFile.Close()
+		os.Remove(lockPath)
+	}()
+
 	entries, err := os.ReadDir(cacheDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -42,6 +57,10 @@ func EvictCache(cacheDir string, maxBytes int64, maxFiles int) error {
 			if now.Sub(info.ModTime()) > time.Hour {
 				os.Remove(path)
 			}
+			continue
+		}
+
+		if strings.HasPrefix(entry.Name(), ".evict.lock") {
 			continue
 		}
 
