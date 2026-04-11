@@ -149,7 +149,27 @@ func handlePack() {
 
 		var customPack SoundPack
 		if err := json.NewDecoder(resp.Body).Decode(&customPack); err != nil {
-			PrintError("Failed to parse custom pack JSON: %v", err)
+			PrintError("Failed to parse custom pack JSON from URL: %v", err)
+			os.Exit(1)
+		}
+		selectedPack = &customPack
+	} else if fileInfo, err := os.Stat(packName); err == nil && !fileInfo.IsDir() && filepath.Ext(packName) == ".json" {
+		importSpinner := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+		importSpinner.Prefix = " "
+		importSpinner.Suffix = fmt.Sprintf(" Reading custom pack from %s... ", Style(packName, ColorCyan))
+		importSpinner.Start()
+
+		file, err := os.Open(packName)
+		importSpinner.Stop()
+		if err != nil {
+			PrintError("Failed to read custom pack file: %v", err)
+			os.Exit(1)
+		}
+		defer file.Close()
+
+		var customPack SoundPack
+		if err := json.NewDecoder(file).Decode(&customPack); err != nil {
+			PrintError("Failed to parse custom pack JSON from file: %v\nEnsure it matches the correct format: {\"name\": \"...\", \"description\": \"...\", \"sounds\": {\"event\": \"slug\"}}", err)
 			os.Exit(1)
 		}
 		selectedPack = &customPack
