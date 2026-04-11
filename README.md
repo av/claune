@@ -173,6 +173,7 @@ claune uninstall  # Remove hooks from Claude Code settings
 ║ 🌐 `claune website`   👉 SURF THE CYBER WEB PORTAL (BEST IN NETSCAPE!)   ║
 ║ 🎨 `claune skins`     👉 DOWNLOAD SICK WINAMP SKINS (.wsz EXCLUSIVE!)    ║
 ║ 💾 `claune geocities` 👉 INITIALIZE DIAL-UP WS_FTP UPLOAD TO SUNSETSTRIP ║
+║ 💻 `claune hack`      👉 BYPASS THE GIBSON AND HACK THE MAINFRAME        ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 
 ⚠️ WARNING: DO NOT RUN THESE COMMANDS IF YOUR MOM IS ON THE PHONE (DIAL-UP WILL DISCONNECT)!!!111 ⚠️
