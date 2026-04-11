@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/everlier/claune/internal/audio"
 	"github.com/everlier/claune/internal/circus"
 	"github.com/everlier/claune/internal/config"
@@ -56,16 +57,36 @@ var AvailablePacks = []SoundPack{
 }
 
 func handlePack() {
+	var packName string
+
 	if len(os.Args) < 3 {
-		fmt.Println(Style("Available Sound Packs:", ColorCyan+ColorBold))
+		var options []string
 		for _, pack := range AvailablePacks {
-			fmt.Printf("  %s - %s\n", Style(fmt.Sprintf("%-12s", pack.Name), ColorGreen), pack.Description)
+			options = append(options, fmt.Sprintf("%s - %s", pack.Name, pack.Description))
 		}
-		fmt.Println("\nUsage: claune pack <name>")
-		os.Exit(1)
+
+		prompt := &survey.Select{
+			Message: "Choose a sound pack to install:",
+			Options: options,
+		}
+
+		var selectedOption string
+		err := survey.AskOne(prompt, &selectedOption)
+		if err != nil {
+			fmt.Println("Selection canceled.")
+			os.Exit(0)
+		}
+
+		for _, pack := range AvailablePacks {
+			if fmt.Sprintf("%s - %s", pack.Name, pack.Description) == selectedOption {
+				packName = pack.Name
+				break
+			}
+		}
+	} else {
+		packName = os.Args[2]
 	}
 
-	packName := os.Args[2]
 	var selectedPack *SoundPack
 	for _, p := range AvailablePacks {
 		if p.Name == packName {
