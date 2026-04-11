@@ -190,5 +190,35 @@
 </center>
 <script src="assets/js/status-scroller.js"></script>
 <script src="assets/js/blink.js"></script>
+
+<center style="margin-top: 20px;">
+    <p style="font-size: 1.5em; color: magenta;"><blink>~*~ YOU ARE VISITOR NUMBER ~*~</blink></p>
+    <center class="hit-counter-container" style="display: inline-block; border: 3px inset #888; background: #000; padding: 3px; box-shadow: 2px 2px 0px #fff;">
+        <!-- Digits will be injected here by JS -->
+    </center>
+    
+    <script>
+        (function() {
+            let countStr = localStorage.getItem('claune_visits') || "0001337";
+            let count = parseInt(countStr, 10);
+            count += Math.floor(Math.random() * 5) + 1; // Increment randomly between 1 and 5
+            let newStr = count.toString().padStart(7, '0');
+            localStorage.setItem('claune_visits', newStr);
+            
+            // Find the last added hit-counter-container (since we might have multiple scripts or just want the local one)
+            const containers = document.querySelectorAll('.hit-counter-container');
+            const container = containers[containers.length - 1];
+            for (let i = 0; i < newStr.length; i++) {
+                let img = document.createElement('img');
+                img.src = `assets/images/digits/${newStr[i]}.svg`;
+                img.alt = newStr[i];
+                img.style.margin = "0 1px";
+                img.style.border = "1px solid #222";
+                container.appendChild(img);
+            }
+        })();
+    </script>
+</center>
+
 </body>
 </html>
