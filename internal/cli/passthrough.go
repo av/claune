@@ -331,7 +331,7 @@ func runPassthrough(args []string) {
 	claudeBin, err := exec.LookPath("claude")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "claune: claude not found in PATH\n")
-		os.Exit(1)
+		os.Exit(127)
 	}
 
 	myExe, err := os.Executable()
@@ -357,7 +357,7 @@ func runPassthrough(args []string) {
 
 	if err := cmd.Start(); err != nil {
 		fmt.Fprintf(os.Stderr, "claune: failed to start claude: %v\n", err)
-		os.Exit(1)
+		os.Exit(126)
 	}
 
 	sigChan := make(chan os.Signal, 1)
@@ -372,6 +372,11 @@ func runPassthrough(args []string) {
 
 	if err := cmd.Wait(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
+			if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
+				if status.Signaled() {
+					os.Exit(128 + int(status.Signal()))
+				}
+			}
 			os.Exit(exitError.ExitCode())
 		}
 		fmt.Fprintf(os.Stderr, "claune: %v\n", err)
