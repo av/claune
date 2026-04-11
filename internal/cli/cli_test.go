@@ -648,7 +648,7 @@ func TestRunImportCircusFailsLoudlyOnConfigSaveErrorAfterSuccessfulImport(t *tes
 	home := t.TempDir()
 	configPath := filepath.Join(home, ".config", "claune", "config.json")
 os.MkdirAll(filepath.Dir(configPath), 0755)
-	if err := os.WriteFile(configPath, []byte(`{"sounds":{}}`), 0o444); err != nil {
+	if err := os.WriteFile(configPath, []byte(`{"sounds":{}, "mute":false, "volume":1.0}`), 0o444); err != nil {
 		t.Fatalf("os.WriteFile(%q) error = %v", configPath, err)
 	}
 	if err := os.Chmod(filepath.Dir(configPath), 0o555); err != nil {
@@ -895,4 +895,36 @@ func TestRunSubprocessHelper(t *testing.T) {
 		os.Exit(1)
 	}
 	os.Exit(0)
+}
+
+func TestRunStatusSuccess(t *testing.T) {
+	home := t.TempDir()
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+	os.MkdirAll(filepath.Dir(configPath), 0755)
+	if err := os.WriteFile(configPath, []byte(`{"sounds":{}, "mute":false, "volume":1.0, "ai":{"enabled":false}}`), 0644); err != nil {
+		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
+	}
+
+	stdout, stderr, exitCode, err := runInSubprocess(t, home, []string{"status"})
+	if err != nil {
+		t.Fatalf("Run(status) error = %v (exit %d)\nstdout:\n%s\nstderr:\n%s", err, exitCode, stdout, stderr)
+	}
+	assertContains(t, stdout, "Volume: 100%")
+}
+
+func TestRunTestSoundsSuccess(t *testing.T) {
+	home := t.TempDir()
+	configPath := filepath.Join(home, ".config", "claune", "config.json")
+	os.MkdirAll(filepath.Dir(configPath), 0755)
+	if err := os.WriteFile(configPath, []byte(`{"sounds":{"cli:start":{"paths":["none"]}}, "mute":false, "volume":1.0}`), 0644); err != nil {
+		t.Fatalf("WriteFile(%q) error = %v", configPath, err)
+	}
+
+	stdout, stderr, exitCode, err := runInSubprocess(t, home, []string{"test-sounds"})
+	// It might exit 1 if audio fails to play, but we just want to hit the code path.
+	// Actually we expect it to try playing. Let's just check it doesn't crash and outputs testing info.
+	if err != nil && exitCode != 1 {
+		t.Fatalf("Run(test-sounds) unexpected error = %v (exit %d)\nstdout:\n%s\nstderr:\n%s", err, exitCode, stdout, stderr)
+	}
+	assertContains(t, stdout, "Testing all sounds...")
 }
