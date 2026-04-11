@@ -5,6 +5,7 @@ package audio
 import (
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/gopxl/beep"
@@ -15,9 +16,13 @@ import (
 var (
 	speakerInitDone  bool
 	globalSampleRate beep.SampleRate
+	speakerMutex     sync.Mutex
 )
 
 func initSpeaker(sampleRate beep.SampleRate) error {
+	speakerMutex.Lock()
+	defer speakerMutex.Unlock()
+
 	if speakerInitDone {
 		return nil
 	}

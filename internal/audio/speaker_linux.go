@@ -37,7 +37,7 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 	}
 
 	doPlay := func() error {
-		tmpFile, err := os.CreateTemp(cacheDir, "play-*.wav")
+		tmpFile, err := os.CreateTemp(cacheDir, "play-*.tmp.wav")
 		if err != nil {
 			if cleanup != nil {
 				cleanup()
