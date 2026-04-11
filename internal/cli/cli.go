@@ -597,31 +597,39 @@ func printCommandUsage(cmd string) {
 }
 
 func printUsage() {
-	fmt.Fprintln(os.Stderr, `Usage: claune [claude-args...]    Run Claude Code with sound effects
+	fmt.Fprintln(os.Stderr, `Claune - Cyberpunk Sound Effects for Claude Code
+
+Usage: claune [claude-args...]    Run Claude Code with sound effects
        claune <command>            Run a claune management command
 
 Passthrough mode (default):
   claune                     Start Claude Code interactively with sounds
 
-Management commands:
+Core Commands:
   install       Install sound hooks into Claude Code settings
   uninstall     Remove sound hooks from Claude Code settings
   init          Create a default configuration file
   status        Show whether hooks are installed
+  version       Show claune version
+  help          Show this help message
+
+Sound Management:
   play <event>  Play a sound for an event
   play <event> <tool-name> <tool-input>
                  Play a sound using semantic tool context
   test-sounds   Play all sounds to verify audio works
-  config <msg>  Natural language configuration (e.g., "mute sound")
-  auth <key>    Save API key and enable AI features
-  automap <dir> Automatically map sound files in a directory to events using AI
   import-circus <url> <name> [event]  Import a meme sound (no slashes allowed) and optionally map to event
+
+AI Features:
+  auth <key>    Save API key and enable AI features
+  config <msg>  Natural language configuration (e.g., "mute sound")
+  automap <dir> Automatically map sound files in a directory to events using AI
   analyze-log   Analyze log from stdin and play a sound
   analyze-resp  Analyze AI response from stdin and optionally override sound strategy
+
+Easter Eggs / Cyber:
   skins         Download custom Winamp 2.95 skins for Claune
   geocities     Run a fake 90s-era WS_FTP terminal log to GeoCities
   hack          Hack the mainframe
-  website       Launch the official cyber portal in your default web browser
-  version       Show claune version
-  help          Show this help message`)
+  website       Launch the official cyber portal in your default web browser`)
 }
