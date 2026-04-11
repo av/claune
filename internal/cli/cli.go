@@ -98,8 +98,7 @@ func Run(args []string, version string) error {
 		ensureExactArgs(args, 1, "claune: setup does not accept additional arguments", "Usage: claune setup")
 		return runSetup()
 	case "pack":
-		handlePack()
-		return nil
+		return handlePack(args)
 	case "completion":
 		ensureExactArgs(args, 2, "claune: completion requires a shell name (bash or zsh)", "Usage: claune completion <bash|zsh>")
 		runCompletion(args[1])

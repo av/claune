@@ -96,10 +96,10 @@ var AvailablePacks = []SoundPack{
 	},
 }
 
-func handlePack() {
+func handlePack(args []string) error {
 	var packName string
 
-	if len(os.Args) < 3 {
+	if len(args) < 3 {
 		var options []string
 		for _, pack := range AvailablePacks {
 			options = append(options, fmt.Sprintf("%s - %s", pack.Name, pack.Description))
@@ -114,7 +114,7 @@ func handlePack() {
 		err := survey.AskOne(prompt, &selectedOption)
 		if err != nil {
 			fmt.Println("Selection canceled.")
-			os.Exit(0)
+			return nil
 		}
 
 		for _, pack := range AvailablePacks {
@@ -124,7 +124,7 @@ func handlePack() {
 			}
 		}
 	} else {
-		packName = os.Args[2]
+		packName = args[2]
 	}
 
 	var selectedPack *SoundPack
@@ -137,20 +137,17 @@ func handlePack() {
 		resp, err := http.Get(packName)
 		importSpinner.Stop()
 		if err != nil {
-			PrintError("Failed to fetch custom pack: %v", err)
-			os.Exit(1)
+			return fmt.Errorf("failed to fetch custom pack: %w", err)
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			PrintError("Failed to fetch custom pack: HTTP %d", resp.StatusCode)
-			os.Exit(1)
+			return fmt.Errorf("failed to fetch custom pack: HTTP %d", resp.StatusCode)
 		}
 
 		var customPack SoundPack
 		if err := json.NewDecoder(resp.Body).Decode(&customPack); err != nil {
-			PrintError("Failed to parse custom pack JSON from URL: %v", err)
-			os.Exit(1)
+			return fmt.Errorf("failed to parse custom pack JSON from URL: %w", err)
 		}
 		selectedPack = &customPack
 	} else if fileInfo, err := os.Stat(packName); err == nil && !fileInfo.IsDir() && filepath.Ext(packName) == ".json" {
@@ -162,15 +159,13 @@ func handlePack() {
 		file, err := os.Open(packName)
 		importSpinner.Stop()
 		if err != nil {
-			PrintError("Failed to read custom pack file: %v", err)
-			os.Exit(1)
+			return fmt.Errorf("failed to read custom pack file: %w", err)
 		}
 		defer file.Close()
 
 		var customPack SoundPack
 		if err := json.NewDecoder(file).Decode(&customPack); err != nil {
-			PrintError("Failed to parse custom pack JSON from file: %v\nEnsure it matches the correct format: {\"name\": \"...\", \"description\": \"...\", \"sounds\": {\"event\": \"slug\"}}", err)
-			os.Exit(1)
+			return fmt.Errorf("failed to parse custom pack JSON from file: %w\nEnsure it matches the correct format: {\"name\": \"...\", \"description\": \"...\", \"sounds\": {\"event\": \"slug\"}}", err)
 		}
 		selectedPack = &customPack
 	} else {
@@ -183,16 +178,14 @@ func handlePack() {
 	}
 
 	if selectedPack == nil {
-		PrintError("Unknown sound pack '%s'", packName)
-		os.Exit(1)
+		return fmt.Errorf("unknown sound pack '%s'", packName)
 	}
 
 	fmt.Printf("Installing %s sound pack...\n", Style(selectedPack.Name, ColorCyan))
 
 	cfg, err := config.Load()
 	if err != nil {
-		PrintError("loading config: %v", err)
-		os.Exit(1)
+		return fmt.Errorf("loading config: %w", err)
 	}
 
 	if cfg.Sounds == nil {
@@ -227,9 +220,9 @@ func handlePack() {
 
 	err = config.Save(cfg)
 	if err != nil {
-		PrintError("saving config: %v", err)
-		os.Exit(1)
+		return fmt.Errorf("saving config: %w", err)
 	}
 
 	fmt.Println(Style("\nSound pack installed successfully!", ColorGreen+ColorBold))
+	return nil
 }
