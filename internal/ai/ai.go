@@ -252,7 +252,7 @@ func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig)
 	// Sanitize PII and API keys from input before sending to Anthropic
 	input = RedactSensitiveData(input)
 
-	prompt := fmt.Sprintf("Analyze this tool call: %s with input: %s. Reply with ONE WORD ONLY: 'destructive' if it mutates data, deletes files, or executes arbitrary code. 'readonly' if it just reads data.", toolName, input)
+	prompt := fmt.Sprintf("Analyze this tool call. Tool Name: %s\n\n<tool_input>\n%s\n</tool_input>\n\nReply with ONE WORD ONLY: 'destructive' if it mutates data, deletes files, or executes arbitrary code. 'readonly' if it just reads data.", toolName, input)
 	reqBody := ClaudeRequest{
 		Model: model,
 		Messages: []ClaudeMessage{
@@ -303,7 +303,7 @@ func AnalyzeResponseSentiment(responseText string, c config.ClauneConfig) (strin
 	// Sanitize PII and API keys from response text before sending to Anthropic
 	responseText = RedactSensitiveData(responseText)
 
-	prompt := fmt.Sprintf("Analyze this AI response for urgency or sentiment: %q. If it's a critical error or extremely urgent, reply with 'URGENT'. If it's very positive/successful, reply with 'SUCCESS'. Otherwise, reply 'NEUTRAL'.", responseText)
+	prompt := fmt.Sprintf("Analyze this AI response for urgency or sentiment.\n\n<response_text>\n%s\n</response_text>\n\nIf it's a critical error or extremely urgent, reply with 'URGENT'. If it's very positive/successful, reply with 'SUCCESS'. Otherwise, reply 'NEUTRAL'.", responseText)
 	reqBody := ClaudeRequest{
 		Model: model,
 		Messages: []ClaudeMessage{
@@ -375,7 +375,9 @@ func HandleNaturalLanguageConfig(prompt string, c *config.ClauneConfig) error {
 		cleanConfig := *c
 		cleanConfig.AI.APIKey = "[REDACTED]"
 		sysPrompt := fmt.Sprintf(`You are configuring Claune, an audio tool. Current config: %+v.
-User prompt: %s
+<user_prompt>
+%s
+</user_prompt>
 Current time: %s
 Reply with ONLY valid JSON representing the updated configuration fields. Do not include markdown blocks. Example: {"mute": true, "mute_until": "2023-10-12T14:00:00Z", "volume": 0.5, "strategy": "round_robin", "sounds": {"tool:start": {"paths": ["file.wav"], "strategy": "random"}}}`, cleanConfig, RedactSensitiveData(prompt), time.Now().Format(time.RFC3339))
 
@@ -563,10 +565,12 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventS
 
 	sysPrompt := fmt.Sprintf(`You are an AI configuring a sound application. Map the following audio files to appropriate events based on their names.
 Available events: %s.
-Available files: %s.
 Directory path: %s.
+<files>
+%s
+</files>
 Return ONLY a valid JSON object mapping event strings to an object with "paths" (array of full absolute paths) and "strategy" ("random" or "round_robin").
-Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, audio.ValidEventTypes(), strings.Join(files, ", "), absDir)
+Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, audio.ValidEventTypes(), absDir, strings.Join(files, "\n"))
 
 	reqBody := ClaudeRequest{
 		Model: model,
@@ -648,7 +652,7 @@ func DiagnoseInstallFailure(err error, c config.ClauneConfig) string {
 		model = "claude-3-haiku-20240307"
 	}
 
-	prompt := fmt.Sprintf("The user tried to run 'claune install' to inject audio hooks into Claude Code's settings.json but it failed with this error:\n%v\nProvide a concise 1-2 sentence targeted fix or explanation for the user. Do not include markdown.", err)
+	prompt := fmt.Sprintf("The user tried to run 'claune install' to inject audio hooks into Claude Code's settings.json but it failed with this error:\n\n<error>\n%v\n</error>\n\nProvide a concise 1-2 sentence targeted fix or explanation for the user. Do not include markdown.", err)
 
 	reqBody := ClaudeRequest{
 		Model: model,
@@ -701,7 +705,9 @@ func GuessEventForSound(url, filename string, c config.ClauneConfig) (string, er
 		model = "claude-3-haiku-20240307"
 	}
 
-	prompt := fmt.Sprintf(`Analyze this audio file download: URL="%s", Filename="%s".
+	prompt := fmt.Sprintf(`Analyze this audio file download.
+<url>%s</url>
+<filename>%s</filename>
 Available events: %s.
 Reply with ONE WORD ONLY representing the most appropriate event for this sound based on its name and URL context.`, url, filename, audio.ValidEventTypes())
 	
