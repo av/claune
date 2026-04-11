@@ -148,10 +148,17 @@ func EnsureSoundCache() error {
 			if info, err := os.Stat(dest); err == nil && info.Size() == int64(len(data)) {
 				continue
 			}
-			tmpDest := dest + ".tmp"
-			if err := os.WriteFile(tmpDest, data, 0644); err != nil {
+			tmpFile, err := os.CreateTemp(cacheDir, file+".tmp.*")
+			if err != nil {
 				return err
 			}
+			tmpDest := tmpFile.Name()
+			if _, err := tmpFile.Write(data); err != nil {
+				tmpFile.Close()
+				os.Remove(tmpDest)
+				return err
+			}
+			tmpFile.Close()
 			if err := os.Rename(tmpDest, dest); err != nil {
 				os.Remove(tmpDest)
 				return err

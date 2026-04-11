@@ -1,6 +1,7 @@
 package config
 
 import (
+	"sync"
 	"os"
 	"path/filepath"
 	"strings"
@@ -252,5 +253,35 @@ os.MkdirAll(filepath.Dir(configPath), 0755)
 	// Lock file should be removed
 	if _, err := os.Stat(lockPath); !os.IsNotExist(err) {
 		t.Errorf("Lock file was not removed: %v", err)
+	}
+}
+
+func TestConcurrentSaveLoad(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	
+	c := ClauneConfig{Strategy: "concurrent"}
+	
+	var wg sync.WaitGroup
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			Save(c)
+		}()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			Load()
+		}()
+	}
+	wg.Wait()
+	
+	loaded, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load final config: %v", err)
+	}
+	if loaded.Strategy != "concurrent" {
+		t.Errorf("Expected strategy 'concurrent', got %q", loaded.Strategy)
 	}
 }

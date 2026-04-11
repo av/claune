@@ -1,6 +1,7 @@
 package audio
 
 import (
+	"sync"
 	"os"
 	"testing"
 )
@@ -38,4 +39,21 @@ func TestPickSoundRandom(t *testing.T) {
 	if got != "1.mp3" {
 		t.Errorf("Expected 1.mp3, got %s", got)
 	}
+}
+
+func TestConcurrentEnsureSoundCache(t *testing.T) {
+	os.Setenv("XDG_CACHE_HOME", t.TempDir())
+	
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := EnsureSoundCache()
+			if err != nil {
+				t.Errorf("EnsureSoundCache failed: %v", err)
+			}
+		}()
+	}
+	wg.Wait()
 }
