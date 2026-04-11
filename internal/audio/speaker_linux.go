@@ -32,7 +32,7 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 			volLog = math.Log2(volume)
 		}
 		ctrl = &effects.Volume{
-			Streamer: streamer,
+			Streamer: ctrl,
 			Base:     2,
 			Volume:   volLog,
 			Silent:   volume <= 0.001,
