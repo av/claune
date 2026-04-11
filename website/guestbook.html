@@ -87,23 +87,23 @@
 
 <marquee class="marquee" scrollamount="15">~*~ LEAVE YOUR MARK ON THE WEB! ~*~ PLEASE SIGN! ~*~ NO FLAMING PLZ! ~*~</marquee>
 
-<div class="container">
+<center class="container">
     <center id="guestbook" style="margin-top: 20px;">
         <img src="assets/images/dancing-baby.gif" alt="Dancing baby" width="100" style="border: 2px dotted red;">
         <h1 style="color: #ff00ff; text-decoration: underline;"><blink>~*~ THE GUESTBOOK ~*~</blink></h1>
-        <div style="background-color: #000033; border: 4px ridge #00ffff; padding: 15px; width: 80%;">
+        <center style="background-color: #000033; border: 4px ridge #00ffff; padding: 15px; width: 80%;">
             <form id="guestbook-form" onsubmit="addGuestbookEntry(event)">
                 <b style="color: yellow; font-size: 1.2em;">Name:</b> <input type="text" id="gb-name" required style="background: black; color: lime; border: 2px solid #ff00ff; font-family: 'Comic Sans MS';"><br><br>
                 <b style="color: yellow; font-size: 1.2em;">Message:</b> <input type="text" id="gb-msg" required style="background: black; color: lime; border: 2px solid #ff00ff; font-family: 'Comic Sans MS'; width: 60%;"><br><br>
                 <input type="submit" value="Sign My Guestbook!!" style="background: yellow; color: red; font-size: 1.5em; font-weight: bold; cursor: pointer; border: 3px outset red; font-family: 'Comic Sans MS';">
             </form>
             <hr style="border: 1px dashed cyan; margin-top: 20px; margin-bottom: 20px;">
-            <div id="guestbook-entries" style="text-align: left; max-height: 400px; overflow-y: scroll; padding: 15px; border: 4px inset yellow; background: #000; font-size: 1.2em;">
+            <center id="guestbook-entries" style="text-align: left; max-height: 400px; overflow-y: scroll; padding: 15px; border: 4px inset yellow; background: #000; font-size: 1.2em;">
                 <!-- Entries will load here -->
-            </div>
-        </div>
+            </center>
+        </center>
     </center>
-</div>
+</center>
 
 <script>
     const defaultEntries = [
