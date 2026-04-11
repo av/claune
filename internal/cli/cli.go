@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,6 +37,7 @@ var clauneSubcommands = map[string]bool{
 	"website":       true,
 	"skins":         true,
 	"geocities":     true,
+	"hack":          true,
 }
 
 func Run(args []string) error {
@@ -118,6 +120,15 @@ func Run(args []string) error {
 		fmt.Println("221 Goodbye.")
 		time.Sleep(500 * time.Millisecond)
 		fmt.Println("\033[35m~*~ GEOCITIES UPLOAD COMPLETE ~*~\033[0m")
+		return nil
+	case "hack":
+		ensureExactArgs(args, 1, "claune: hack does not accept additional arguments", "Usage: claune hack")
+		endTime := time.Now().Add(3 * time.Second)
+		for time.Now().Before(endTime) {
+			fmt.Printf("\033[32m%c\033[0m", rune(33+rand.Intn(94)))
+			time.Sleep(2 * time.Millisecond)
+		}
+		fmt.Println("\n\033[32m[+] MAINFRAME BYPASSED\033[0m")
 		return nil
 	}
 
@@ -300,6 +311,8 @@ func validateManagementArgs(args []string) {
 		ensureExactArgs(args, 1, "claune: skins does not accept additional arguments", "Usage: claune skins")
 	case "geocities":
 		ensureExactArgs(args, 1, "claune: geocities does not accept additional arguments", "Usage: claune geocities")
+	case "hack":
+		ensureExactArgs(args, 1, "claune: hack does not accept additional arguments", "Usage: claune hack")
 	}
 }
 
@@ -542,6 +555,9 @@ func printCommandUsage(cmd string) {
 	case "geocities":
 		fmt.Fprintln(os.Stderr, "Usage: claune geocities")
 		fmt.Fprintln(os.Stderr, "\nRun a fake 90s-era WS_FTP terminal log to GeoCities.")
+	case "hack":
+		fmt.Fprintln(os.Stderr, "Usage: claune hack")
+		fmt.Fprintln(os.Stderr, "\nHack the mainframe.")
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
 		printUsage()
@@ -571,6 +587,7 @@ Management commands:
   analyze-resp  Analyze AI response from stdin and optionally override sound strategy
   skins         Download custom Winamp 2.95 skins for Claune
   geocities     Run a fake 90s-era WS_FTP terminal log to GeoCities
+  hack          Hack the mainframe
   website       Launch the official cyber portal in your default web browser
   help          Show this help message`)
 }
