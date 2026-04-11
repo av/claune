@@ -1,0 +1,36 @@
+# ==========================================
+# ~*~ CLAUNE OFFICIAL SERVER CONFIG ~*~
+# ==========================================
+# DO NOT TOUCH THIS FILE EVERLIER!!
+# I spent 4 hours on the phone with GeoCities support for this
+# ==========================================
+
+# Ban Netscape 3 users (they don't support our advanced DHTML)
+BrowserMatchNoCase "Mozilla/3" bad_browser
+Order Deny,Allow
+Deny from env=bad_browser
+
+# Custom error pages (designed in MS FrontPage)
+ErrorDocument 404 /404.html
+ErrorDocument 500 "<h1>SERVER ON FIRE!!! CALL THE WEBMASTER AT xX_Everlier_Xx@hotmail.com</h1>"
+
+# Enable advanced multimedia (Midi > MP3)
+AddType audio/midi .mid
+AddType audio/midi .midi
+AddType audio/x-pn-realaudio .ra
+AddType audio/x-pn-realaudio .ram
+AddType video/x-msvideo .avi
+AddType application/x-shockwave-flash .swf
+
+# Prevent hotlinking of our precious animated GIFs!
+# (Looking at you, Dave's Cool Links page...)
+RewriteEngine on
+RewriteCond %{HTTP_REFERER} !^$
+RewriteCond %{HTTP_REFERER} !^http://(www\.)?geocities\.com/claune(/)?.*$     [NC]
+RewriteRule .*\.(gif|jpg|jpeg|bmp|mid)$ http://www.geocities.com/claune/stealing_is_wrong.gif [R,NC]
+
+# Disable directory browsing so hackers can't see our secret stash
+Options -Indexes
+
+# Make sure index.html loads FIRST, not index.htm or default.htm
+DirectoryIndex splash.html index.html index.htm
