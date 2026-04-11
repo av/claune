@@ -35,6 +35,7 @@ var clauneSubcommands = map[string]bool{
 	"analyze-resp":  true,
 	"website":       true,
 	"skins":         true,
+	"geocities":     true,
 }
 
 func Run(args []string) error {
@@ -81,6 +82,40 @@ func Run(args []string) error {
 		fmt.Println()
 		time.Sleep(300 * time.Millisecond)
 		fmt.Println("ERROR: Winamp 2.95 required")
+		return nil
+	case "geocities":
+		ensureExactArgs(args, 1, "claune: geocities does not accept additional arguments", "Usage: claune geocities")
+		fmt.Println("Connecting to ftp.geocities.com on port 21...")
+		time.Sleep(800 * time.Millisecond)
+		fmt.Println("Connected. Waiting for welcome message...")
+		time.Sleep(600 * time.Millisecond)
+		fmt.Println("220 ftp.geocities.com FTP server ready.")
+		time.Sleep(400 * time.Millisecond)
+		fmt.Println("USER xX_Everlier_Xx")
+		time.Sleep(500 * time.Millisecond)
+		fmt.Println("331 Password required for xX_Everlier_Xx.")
+		time.Sleep(400 * time.Millisecond)
+		fmt.Println("PASS ********")
+		time.Sleep(1200 * time.Millisecond)
+		fmt.Println("230 User xX_Everlier_Xx logged in.")
+		time.Sleep(300 * time.Millisecond)
+		fmt.Println("TYPE I")
+		time.Sleep(200 * time.Millisecond)
+		fmt.Println("200 Type set to I.")
+		time.Sleep(300 * time.Millisecond)
+		fmt.Println("PASV")
+		time.Sleep(400 * time.Millisecond)
+		fmt.Println("227 Entering Passive Mode (209,1,224,42,14,17).")
+		time.Sleep(500 * time.Millisecond)
+		fmt.Println("STOR index.html")
+		time.Sleep(600 * time.Millisecond)
+		fmt.Println("150 Opening BINARY mode data connection for index.html.")
+		time.Sleep(1500 * time.Millisecond)
+		fmt.Println("226 Transfer complete.")
+		time.Sleep(300 * time.Millisecond)
+		fmt.Println("QUIT")
+		time.Sleep(200 * time.Millisecond)
+		fmt.Println("221 Goodbye.")
 		return nil
 	}
 
@@ -261,6 +296,8 @@ func validateManagementArgs(args []string) {
 		ensureExactArgs(args, 1, "claune: website does not accept additional arguments", "Usage: claune website")
 	case "skins":
 		ensureExactArgs(args, 1, "claune: skins does not accept additional arguments", "Usage: claune skins")
+	case "geocities":
+		ensureExactArgs(args, 1, "claune: geocities does not accept additional arguments", "Usage: claune geocities")
 	}
 }
 
@@ -500,6 +537,9 @@ func printCommandUsage(cmd string) {
 	case "skins":
 		fmt.Fprintln(os.Stderr, "Usage: claune skins")
 		fmt.Fprintln(os.Stderr, "\nDownload custom Winamp 2.95 skins for Claune.")
+	case "geocities":
+		fmt.Fprintln(os.Stderr, "Usage: claune geocities")
+		fmt.Fprintln(os.Stderr, "\nRun a fake 90s-era WS_FTP terminal log to GeoCities.")
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
 		printUsage()
@@ -528,6 +568,7 @@ Management commands:
   analyze-log   Analyze log from stdin and play a sound
   analyze-resp  Analyze AI response from stdin and optionally override sound strategy
   skins         Download custom Winamp 2.95 skins for Claune
+  geocities     Run a fake 90s-era WS_FTP terminal log to GeoCities
   website       Launch the official cyber portal in your default web browser
   help          Show this help message`)
 }
