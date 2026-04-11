@@ -135,8 +135,36 @@
         </table>
     </center>
 
+    <script>
+    function loadDHTMLGame(el) {
+        alert('MISSING FLASH.OCX - RUNNING DHTML FALLBACK');
+        var html = '<table border="5" bgcolor="white" width="400" height="300" style="color:black; font-family:\'Comic Sans MS\'; font-size: 48px; text-align: center;">';
+        for(var i=0; i<3; i++) {
+            html += '<tr>';
+            for(var j=0; j<3; j++) {
+                html += '<td width="33%" height="33%" class="ttt-cell" style="cursor:pointer;" onclick="playTTT(this)"></td>';
+            }
+            html += '</tr>';
+        }
+        html += '</table>';
+        el.outerHTML = html;
+    }
+    function playTTT(cell) {
+        if(cell.innerHTML !== '') return;
+        cell.innerHTML = 'X';
+        var cells = document.getElementsByClassName('ttt-cell');
+        var empty = [];
+        for(var i=0; i<cells.length; i++) {
+            if(cells[i].innerHTML === '') empty.push(cells[i]);
+        }
+        if(empty.length > 0) {
+            empty[Math.floor(Math.random()*empty.length)].innerHTML = 'O';
+        }
+        setTimeout(function(){ alert('X WINS!'); }, 50);
+    }
+    </script>
     <center style="margin-top: 30px;">
-        <table border="1" style="border: 2px inset gray; background-color: white; width: 400px; height: 300px; color: black; font-family: Arial, sans-serif; font-size: 12px; cursor: pointer;" onclick="alert('MISSING FLASH.OCX - RUNNING DHTML FALLBACK'); this.outerHTML = '<marquee behavior=\'alternate\' scrollamount=\'50\' style=\'font-size:72px\'>💩</marquee>';">
+        <table border="1" style="border: 2px inset gray; background-color: white; width: 400px; height: 300px; color: black; font-family: Arial, sans-serif; font-size: 12px; cursor: pointer;" onclick="loadDHTMLGame(this)">
             <tr>
                 <td align="center" valign="middle">
                     <object width="400" height="300" type="application/x-shockwave-flash" data="missing.swf">
