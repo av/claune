@@ -51,8 +51,14 @@ Sound effects for Claude Code tool use events.
 
 Use the official cross-platform installer script! This will automatically detect your OS and architecture, download the latest binary from GitHub, and put it in your `~/.local/bin` folder. No Go toolchain required!
 
+**Linux / macOS:**
 ```bash
 curl -sSfL https://raw.githubusercontent.com/av/claune/main/install.sh | sh
+```
+
+**Windows (PowerShell):**
+```powershell
+Invoke-RestMethod -Uri https://raw.githubusercontent.com/av/claune/main/install.ps1 | Invoke-Expression
 ```
 
 ### PREREQUISITES FOR SOURCE INSTALL!!!111
