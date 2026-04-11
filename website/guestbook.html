@@ -150,6 +150,7 @@
         entries.push({ name: "SpamBot2000", msg: "VIAGRA PILLS CHEAP!!! http://virus.com" });
         localStorage.setItem('claune_guestbook', JSON.stringify(entries));
         loadGuestbook();
+        window.scrollTo(0, document.body.scrollHeight);
     }, 10000);
 
     loadGuestbook();
