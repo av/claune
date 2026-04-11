@@ -70,6 +70,15 @@ func Load() (ClauneConfig, error) {
 		return config, nil
 	}
 	configPath := configFilePath()
+
+	lockPath := configPath + ".lock"
+	for i := 0; i < 50; i++ {
+		if _, err := os.Stat(lockPath); os.IsNotExist(err) {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -145,7 +154,14 @@ func Save(c ClauneConfig) error {
 		tmpFile.Close()
 		return err
 	}
+	if err := tmpFile.Sync(); err != nil {
+		tmpFile.Close()
+		return err
+	}
 	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+	if err := os.Chmod(tmpFile.Name(), 0644); err != nil {
 		return err
 	}
 
