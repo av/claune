@@ -1,17 +1,46 @@
-# claune
+```text
+   _________________________________________________
+  /                                                 \
+ |    /\    UNDER CONSTRUCTION!!!111    /\           |
+ |   /  \                              /  \          |
+ |  /____\                            /____\         |
+  \_________________________________________________/
+```
+
+```text
+      _   _ _   _  ____  _____ ____     ____ ___  _   _ ____ _____ ____  _   _  ____ _____ ___  ___  _   _ 
+     | | | | \ | |/  _ \| ____|  _ \   / ___/ _ \| \ | / ___|_   _|  _ \| | | |/ ___|_   _|_ _|/ _ \| \ | |
+     | | | |  \| | | | ||  _| | |_) | | |  | | | |  \| \___ \ | | | |_) | | | | |     | |  | || | | |  \| |
+     | |_| | |\  | |_| || |___|  _ <  | |__| |_| | |\  |___) || | |  _ <| |_| | |___  | |  | || |_| | |\  |
+      \___/|_| \_|\____/|_____|_| \_\  \____\___/|_| \_|____/ |_| |_| \_\___/ \____| |_| |___|\___/|_| \_|
+                                                                                                           
+```
+
+```text
+   ____ _      _    _   _ _   _ _____ !!!111
+  / ___| |    / \  | | | | \ | | ____|
+ | |   | |   / _ \ | | | |  \| |  _|  
+ | |___| |___/ ___ \| |_| | |\  | |___ 
+  \____|_____/_/   \_\___/|_| \_|_____|
+```
+
+# WELCOME TO CLAUNE!!!111!!!111
+
+<div align="center">
+  <h2>🚨🚨 <a href="https://av.github.io/claune/">~~~&gt; CLICK HERE FOR THE OFFICIAL WEB PORTAL &lt;~~~</a> 🚨🚨</h2>
+  <p><b><i>WARNING: EXTREME WEB 1.0 CRINGE AHEAD. MIDI MUSIC, HIT COUNTERS, AND DANCING BABIES INCLUDED!!!111</i></b></p>
+  <p>VISIT THE OFFICIAL WEB PORTAL NOW!!!111 <a href="https://av.github.io/claune/">https://av.github.io/claune/</a></p>
+</div>
+
+
 
 Sound effects for Claude Code tool use events.
 
-<div align="center">
-  <h1>🚨🚨 OMG STOP SCROLLING AND LOOK AT THIS 🚨🚨</h1>
-  <h2><a href="https://av.github.io/claune/">~~~&gt; CLICK HERE FOR THE OFFICIAL CLAUNE WEBSITE &lt;~~~</a></h2>
-  <p><b><i>WARNING: EXTREME WEB 1.0 CRINGE AHEAD. MIDI MUSIC, HIT COUNTERS, AND DANCING BABIES INCLUDED!!!</i></b></p>
-  <img src="https://av.github.io/claune/assets/images/under-construction.gif" width="300" />
-</div>
 
-## Install
 
-### Prerequisites
+## INSTALL!!!111
+
+### PREREQUISITES!!!111
 
 - **Go is required for source installs.** This repository declares `go 1.24.0` and `toolchain go1.24.1` in `go.mod`, so install a compatible Go toolchain and verify the exact executable that `make install` will use before continuing:
 
@@ -45,7 +74,7 @@ Sound effects for Claude Code tool use events.
 
   If the CLI is installed but passthrough still does not work, you may also need to authenticate/login with Claude Code separately; installation alone may not be sufficient.
 
-### Pre-built binary
+### PRE-BUILT BINARY!!!111
 
 Download the binary for your platform from [Releases](https://github.com/av/claune/releases).
 
@@ -54,7 +83,7 @@ chmod +x claune-linux-amd64
 sudo mv claune-linux-amd64 /usr/local/bin/claune
 ```
 
-### From source
+### FROM SOURCE!!!111
 
 ```
 git clone git@github.com:av/claune.git
@@ -80,9 +109,9 @@ command -v claune
 
 If that command does not print `~/.local/bin/claune` (or your overridden `PREFIX` location), update your `PATH` before continuing.
 
-## Usage
+## USAGE!!!111
 
-### Passthrough mode (recommended)
+### PASSTHROUGH MODE (RECOMMENDED)!!!111
 
 Use `claune` as a drop-in replacement for `claude`:
 
@@ -94,14 +123,14 @@ claune --model sonnet      # All claude flags work transparently
 
 Hooks are auto-installed on first run. Sound effects only play in sessions started via `claune` — running `claude` directly is unaffected.
 
-### Manual hook management
+### MANUAL HOOK MANAGEMENT!!!111
 
 ```
 claune install    # Add hooks to Claude Code settings
 claune uninstall  # Remove hooks from Claude Code settings
 ```
 
-## Commands
+## COMMANDS!!!111
 
 | Command | Description |
 |---|---|
@@ -134,20 +163,20 @@ The first form plays the requested event directly. The second preserves the exis
 
 `claune play <event>` accepts the full built-in event set: `cli:start`, `tool:start`, `tool:success`, `tool:error`, `cli:done`, `tool:destructive`, `tool:readonly`, `build:success`, `build:fail`, `test:fail`, `panic`, `warn`.
 
-### Importing Sounds (`import-circus`)
+### IMPORTING SOUNDS (`IMPORT-CIRCUS`)!!!111
 
 The `import-circus` command downloads a sound file from a URL, caches it locally, and maps it to an event. The name must be a short alias without slashes.
 
 ```bash
-# Explicitly map the downloaded sound to the "tool:success" event
+# EXPLICITLY MAP THE DOWNLOADED SOUND TO THE "TOOL:SUCCESS" EVENT!!!111
 claune import-circus "https://example.com/sound.mp3" my-sound tool:success
 
-# Let AI guess the appropriate event based on the URL and name
-# (Requires AI to be enabled and an Anthropic API key)
+# LET AI GUESS THE APPROPRIATE EVENT BASED ON THE URL AND NAME!!!111
+# (REQUIRES AI TO BE ENABLED AND AN ANTHROPIC API KEY)!!!111
 claune import-circus "https://example.com/alert.wav" alert-sound
 ```
 
-## Configuration
+## CONFIGURATION!!!111
 
 Config file: `~/.config/claune/config.json` (or `~/.claune.json` as legacy fallback)
 
@@ -167,7 +196,7 @@ Config file: `~/.config/claune/config.json` (or `~/.claune.json` as legacy fallb
 | `volume` | float | 1.0 | Playback volume (0.0 to 1.0) |
 | `sounds` | object | {} | Override default sounds per event type |
 
-### AI Configuration
+### AI CONFIGURATION!!!111
 
 To use AI-powered commands like `claune config`, `automap`, `analyze-log`, and `analyze-resp`, or the automatic event guessing in `import-circus`, you must explicitly enable AI and provide an Anthropic API key.
 
@@ -195,7 +224,7 @@ Alternatively, you can place the API key directly in the configuration file:
 }
 ```
 
-### Smart mute
+### SMART MUTE!!!111
 
 When `mute` is not set in the config, claune auto-mutes between 23:00 and 07:00 local time.
 Set `"mute": false` to disable this behavior.
@@ -211,7 +240,7 @@ claune play tool:success
 
 Use `claune status` if you want to confirm the effective mute state first: a muted fresh config reports `Sound: muted`, while an explicit `{"mute":false}` config reports a volume line instead (for example, `Volume: 100%`).
 
-## Audio backends
+## AUDIO BACKENDS!!!111
 
 claune uses the first available backend in this order:
 
