@@ -169,6 +169,7 @@ claune uninstall  # Remove hooks from Claude Code settings
 | `install` | Add sound hooks to Claude Code settings |
 | `uninstall` | Remove sound hooks from Claude Code settings |
 | `init` | Create a default configuration file |
+| `setup` | Run the interactive first-run wizard |
 | `status` | Show hook and audio status |
 | `test-sounds` | Attempt to play all sounds to verify audio |
 | `completion` | Generate shell completion scripts for bash/zsh |
