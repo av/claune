@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -87,10 +88,17 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 	var lastErr error
 	var lastStatus int
 	var lastRespBytes []byte
+	var retryAfterStr string
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
-			time.Sleep(time.Duration(attempt) * 500 * time.Millisecond)
+			sleepDuration := time.Duration(1<<attempt) * time.Second
+			if retryAfterStr != "" {
+				if parsed, err := strconv.Atoi(retryAfterStr); err == nil && parsed > 0 {
+					sleepDuration = time.Duration(parsed) * time.Second
+				}
+			}
+			time.Sleep(sleepDuration)
 		}
 
 		var cr *ClaudeResponse
@@ -123,6 +131,10 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 			if resp.StatusCode == 429 || resp.StatusCode >= 500 {
 				lastStatus = resp.StatusCode
 				lastRespBytes = respBytes
+				retryAfterStr = resp.Header.Get("retry-after")
+				if retryAfterStr == "" {
+					retryAfterStr = resp.Header.Get("Retry-After")
+				}
 				shouldRetry = true
 				return fmt.Errorf("retryable status: %d", resp.StatusCode)
 			}
@@ -161,12 +173,14 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 		}
 	}
 
-	if lastErr != nil {
+	if lastStatus == 429 {
+		return nil, fmt.Errorf("AI API rate limit exceeded (429 Too Many Requests) after retries. Consider increasing your API rate limits or reducing concurrency.")
+	}
+	if lastErr != nil && lastStatus == 0 {
 		return nil, fmt.Errorf("AI request failed after retries: %w", lastErr)
 	}
 	return nil, fmt.Errorf("AI API returned status %d after retries: %s", lastStatus, RedactSensitiveData(string(lastRespBytes)))
 }
-
 func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig) (string, error) {
 	if !c.AI.Enabled {
 		return baseEvent, nil
