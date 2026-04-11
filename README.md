@@ -2,6 +2,9 @@
 
 Sound effects for Claude Code tool use events.
 
+🎉 **CHECK OUT OUR INCREDIBLE NEW WEBSITE:** [https://av.github.io/claune/](https://av.github.io/claune/) 🎉
+(Warning: Highly cringe Web 1.0 experience inside)
+
 ## Install
 
 ### Prerequisites
@@ -127,6 +130,19 @@ The first form plays the requested event directly. The second preserves the exis
 
 `claune play <event>` accepts the full built-in event set: `cli:start`, `tool:start`, `tool:success`, `tool:error`, `cli:done`, `tool:destructive`, `tool:readonly`, `build:success`, `build:fail`, `test:fail`, `panic`, `warn`.
 
+### Importing Sounds (`import-circus`)
+
+The `import-circus` command downloads a sound file from a URL, caches it locally, and maps it to an event. The name must be a short alias without slashes.
+
+```bash
+# Explicitly map the downloaded sound to the "tool:success" event
+claune import-circus "https://example.com/sound.mp3" my-sound tool:success
+
+# Let AI guess the appropriate event based on the URL and name
+# (Requires AI to be enabled and an Anthropic API key)
+claune import-circus "https://example.com/alert.wav" alert-sound
+```
+
 ## Configuration
 
 Config file: `~/.config/claune/config.json` (or `~/.claune.json` as legacy fallback)
@@ -146,6 +162,34 @@ Config file: `~/.config/claune/config.json` (or `~/.claune.json` as legacy fallb
 | `mute` | bool | unset | Force mute or unmute |
 | `volume` | float | 1.0 | Playback volume (0.0 to 1.0) |
 | `sounds` | object | {} | Override default sounds per event type |
+
+### AI Configuration
+
+To use AI-powered commands like `claune config`, `automap`, `analyze-log`, and `analyze-resp`, or the automatic event guessing in `import-circus`, you must explicitly enable AI and provide an Anthropic API key.
+
+1. Set `ANTHROPIC_API_KEY` in your environment (e.g., in your `~/.bashrc` or `~/.zshrc`):
+   ```bash
+   export ANTHROPIC_API_KEY="sk-ant-..."
+   ```
+
+2. Enable AI in your `~/.config/claune/config.json`:
+   ```json
+   {
+     "ai": {
+       "enabled": true
+     }
+   }
+   ```
+
+Alternatively, you can place the API key directly in the configuration file:
+```json
+{
+  "ai": {
+    "enabled": true,
+    "api_key": "sk-ant-..."
+  }
+}
+```
 
 ### Smart mute
 
