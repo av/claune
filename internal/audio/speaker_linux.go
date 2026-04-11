@@ -8,17 +8,12 @@ import (
 	"math"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	"github.com/gopxl/beep"
 	"github.com/gopxl/beep/effects"
 	"github.com/gopxl/beep/wav"
 )
-
-func initSpeaker(sampleRate beep.SampleRate) error {
-	return nil
-}
 
 func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume float64, blocking bool, cleanup func()) error {
 	cacheDir := SoundCacheDir()
@@ -59,30 +54,44 @@ func playMP3Stream(streamer beep.StreamSeekCloser, format beep.Format, volume fl
 			return fmt.Errorf("failed to encode stream to wav: %w", err)
 		}
 
-		var bin string
-		var args []string
-		if path, err := exec.LookPath("paplay"); err == nil {
-			bin = path
-			args = []string{tmpFile.Name()}
-		} else if path, err := exec.LookPath("pw-play"); err == nil {
-			bin = path
-			args = []string{tmpFile.Name()}
-		} else if path, err := exec.LookPath("aplay"); err == nil {
-			bin = path
-			args = []string{"-q", tmpFile.Name()}
-		} else {
-			os.Remove(tmpFile.Name())
+		type backend struct {
+			bin  string
+			args []string
+		}
+
+		backends := []backend{
+			{"paplay", []string{tmpFile.Name()}},
+			{"pw-play", []string{tmpFile.Name()}},
+			{"aplay", []string{"-q", tmpFile.Name()}},
+		}
+
+		var lastErr error
+		played := false
+
+		for _, b := range backends {
+			if path, err := exec.LookPath(b.bin); err == nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				cmd := exec.CommandContext(ctx, path, b.args...)
+				err := cmd.Run()
+				cancel()
+
+				if err == nil {
+					played = true
+					break
+				}
+				lastErr = fmt.Errorf("%s failed: %w", b.bin, err)
+			}
+		}
+
+		os.Remove(tmpFile.Name())
+
+		if !played {
+			if lastErr != nil {
+				return fmt.Errorf("all audio backends failed, last error: %w", lastErr)
+			}
 			return fmt.Errorf("no audio backend found (checked paplay, pw-play, aplay)")
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		cmd := exec.CommandContext(ctx, bin, args...)
-		err = cmd.Run()
-		os.Remove(tmpFile.Name())
-		if err != nil {
-			return fmt.Errorf("%s failed: %w", filepath.Base(bin), err)
-		}
 		return nil
 	}
 
