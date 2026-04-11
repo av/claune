@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/everlier/claune/internal/ai"
@@ -33,6 +34,7 @@ var clauneSubcommands = map[string]bool{
 	"automap":       true,
 	"analyze-resp":  true,
 	"website":       true,
+	"skins":         true,
 }
 
 func Run(args []string) error {
@@ -66,6 +68,19 @@ func Run(args []string) error {
 		url := "https://av.github.io/claune/"
 		fmt.Printf("\033[36mVISIT THE OFFICIAL CYBER PORTAL:\033[0m %s\n", url)
 		openBrowser(url)
+		return nil
+	case "skins":
+		ensureExactArgs(args, 1, "claune: skins does not accept additional arguments", "Usage: claune skins")
+		for i := 0; i <= 10; i++ {
+			bars := strings.Repeat("=", i)
+			spaces := strings.Repeat(" ", 10-i)
+			percent := i * 10
+			fmt.Printf("\rDownloading xX_Dark_Sasuke_Xx.wsz [%s%s] %d%%", bars, spaces, percent)
+			time.Sleep(200 * time.Millisecond)
+		}
+		fmt.Println()
+		time.Sleep(300 * time.Millisecond)
+		fmt.Println("ERROR: Winamp 2.95 required")
 		return nil
 	}
 
@@ -244,6 +259,8 @@ func validateManagementArgs(args []string) {
 		return
 	case "website":
 		ensureExactArgs(args, 1, "claune: website does not accept additional arguments", "Usage: claune website")
+	case "skins":
+		ensureExactArgs(args, 1, "claune: skins does not accept additional arguments", "Usage: claune skins")
 	}
 }
 
@@ -480,6 +497,9 @@ func printCommandUsage(cmd string) {
 	case "website":
 		fmt.Fprintln(os.Stderr, "Usage: claune website")
 		fmt.Fprintln(os.Stderr, "\nLaunch the official cyber portal in your default web browser.")
+	case "skins":
+		fmt.Fprintln(os.Stderr, "Usage: claune skins")
+		fmt.Fprintln(os.Stderr, "\nDownload custom Winamp 2.95 skins for Claune.")
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
 		printUsage()
@@ -507,6 +527,7 @@ Management commands:
   import-circus <url> <name> [event]  Import a meme sound (no slashes allowed) and optionally map to event
   analyze-log   Analyze log from stdin and play a sound
   analyze-resp  Analyze AI response from stdin and optionally override sound strategy
+  skins         Download custom Winamp 2.95 skins for Claune
   website       Launch the official cyber portal in your default web browser
   help          Show this help message`)
 }
