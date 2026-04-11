@@ -38,6 +38,26 @@ else
     exit 1
 fi
 
+# Check downloads.html
+echo "Testing downloads.html..."
+if curl -s -f http://localhost:8080/downloads.html > /dev/null; then
+    echo "downloads.html loaded successfully."
+else
+    echo "Error: downloads.html failed to load."
+    kill $SERVER_PID
+    exit 1
+fi
+
+# Check claune-setup.exe
+echo "Testing claune-setup.exe..."
+if curl -s -f http://localhost:8080/assets/downloads/claune-setup.exe > /dev/null; then
+    echo "claune-setup.exe loaded successfully."
+else
+    echo "Error: claune-setup.exe failed to load."
+    kill $SERVER_PID
+    exit 1
+fi
+
 echo "All tests passed!"
 kill $SERVER_PID
 wait $SERVER_PID 2>/dev/null
