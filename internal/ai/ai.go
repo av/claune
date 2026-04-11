@@ -144,7 +144,20 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 			}
 
 			if resp.StatusCode != 200 {
-				return fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, RedactSensitiveData(string(respBytes)))
+				var msg string
+				switch resp.StatusCode {
+				case 400:
+					msg = "AI API bad request (400). The request format may be invalid."
+				case 401:
+					msg = "AI API unauthorized (401). Please check your Anthropic API key with 'claune auth'."
+				case 403:
+					msg = "AI API forbidden (403). Your API key may not have access to this model or your account lacks funds."
+				case 404:
+					msg = "AI API not found (404). Check your custom API URL or model name."
+				default:
+					msg = fmt.Sprintf("AI API returned status %d", resp.StatusCode)
+				}
+				return fmt.Errorf("%s: %s", msg, RedactSensitiveData(string(respBytes)))
 			}
 
 			cr = &ClaudeResponse{}
