@@ -67,7 +67,7 @@ os.MkdirAll(filepath.Dir(configPath), 0755)
 	if err != nil {
 		t.Fatalf("Run(help) error = %v (exit %d)\nstdout:\n%s\nstderr:\n%s", err, exitCode, stdout, stderr)
 	}
-	assertContains(t, stderr, "Usage: claune")
+	assertContains(t, stderr, "\x1b[33mUsage:\x1b[0m claune")
 	if strings.Contains(stderr, "error loading config") {
 		t.Fatalf("stderr = %q, should not contain config load error", stderr)
 	}
@@ -201,7 +201,7 @@ func TestRunManagementCommandsRejectBadUsage(t *testing.T) {
 			name:         "help rejects extra args",
 			args:         []string{"help", "extra"},
 			wantExitCode: 1,
-			wantStderr:   []string{"Unknown command: extra", "Usage: claune [claude-args...]"},
+			wantStderr:   []string{"Unknown command: extra", "\x1b[33mUsage:\x1b[0m claune [claude-args...]"},
 			wantNoStdout: true,
 		},
 		{

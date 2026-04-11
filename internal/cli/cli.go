@@ -701,43 +701,42 @@ func printCommandUsage(cmd string) {
 }
 
 func printUsage() {
-	fmt.Fprintln(os.Stderr, `Claune - Cyberpunk Sound Effects for Claude Code
+	fmt.Fprintf(os.Stderr, "%sClaune - Cyberpunk Sound Effects for Claude Code%s\n\n", ColorCyan+ColorBold, ColorReset)
+	
+	fmt.Fprintf(os.Stderr, "%sUsage:%s claune [claude-args...]    %sRun Claude Code with sound effects%s\n", ColorYellow, ColorReset, ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "       claune <command>            %sRun a claune management command%s\n\n", ColorDim, ColorReset)
+	
+	fmt.Fprintf(os.Stderr, "%sPassthrough mode (default):%s\n", ColorYellow, ColorReset)
+	fmt.Fprintf(os.Stderr, "  claune                     %sStart Claude Code interactively with sounds%s\n\n", ColorDim, ColorReset)
 
-Usage: claune [claude-args...]    Run Claude Code with sound effects
-       claune <command>            Run a claune management command
+	fmt.Fprintf(os.Stderr, "%sCore Commands:%s\n", ColorGreen, ColorReset)
+	fmt.Fprintf(os.Stderr, "  install       %sInstall sound hooks into Claude Code settings%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  uninstall     %sRemove sound hooks (use --all to completely remove claune)%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  init          %sCreate a default configuration file%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  setup         %sRun the interactive first-run wizard%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  status        %sShow whether hooks are installed%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  version       %sShow claune version%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  doctor        %sShow system diagnostics and configuration info%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  completion    %sGenerate shell completion scripts%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  update        %sUpdate claune to the latest version%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  help          %sShow this help message%s\n\n", ColorDim, ColorReset)
 
-Passthrough mode (default):
-  claune                     Start Claude Code interactively with sounds
+	fmt.Fprintf(os.Stderr, "%sSound Management:%s\n", ColorGreen, ColorReset)
+	fmt.Fprintf(os.Stderr, "  play <event>  %sPlay a sound for an event%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  play <event> <tool-name> <tool-input>\n                 %sPlay a sound using semantic tool context%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  test-sounds   %sPlay all sounds to verify audio works%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  import-circus <url> <name> [event]  %sImport a meme sound (no slashes allowed) and optionally map to event%s\n\n", ColorDim, ColorReset)
 
-Core Commands:
-  install       Install sound hooks into Claude Code settings
-  uninstall     Remove sound hooks (use --all to completely remove claune)
-  init          Create a default configuration file
-  setup         Run the interactive first-run wizard
-  status        Show whether hooks are installed
-  version       Show claune version
-  doctor        Show system diagnostics and configuration info
-  completion    Generate shell completion scripts
-  update        Update claune to the latest version
-  help          Show this help message
+	fmt.Fprintf(os.Stderr, "%sAI Features:%s\n", ColorGreen, ColorReset)
+	fmt.Fprintf(os.Stderr, "  auth <key>    %sSave API key and enable AI features%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  config <msg>  %sNatural language configuration (e.g., \"mute sound\")%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  automap <dir> %sAutomatically map sound files in a directory to events using AI%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  analyze-log   %sAnalyze log from stdin and play a sound%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  analyze-resp  %sAnalyze AI response from stdin and optionally override sound strategy%s\n\n", ColorDim, ColorReset)
 
-Sound Management:
-  play <event>  Play a sound for an event
-  play <event> <tool-name> <tool-input>
-                 Play a sound using semantic tool context
-  test-sounds   Play all sounds to verify audio works
-  import-circus <url> <name> [event]  Import a meme sound (no slashes allowed) and optionally map to event
-
-AI Features:
-  auth <key>    Save API key and enable AI features
-  config <msg>  Natural language configuration (e.g., "mute sound")
-  automap <dir> Automatically map sound files in a directory to events using AI
-  analyze-log   Analyze log from stdin and play a sound
-  analyze-resp  Analyze AI response from stdin and optionally override sound strategy
-
-Easter Eggs / Cyber:
-  skins         Download custom Winamp 2.95 skins for Claune
-  geocities     Run a fake 90s-era WS_FTP terminal log to GeoCities
-  hack          Hack the mainframe
-  website       Launch the official cyber portal in your default web browser`)
+	fmt.Fprintf(os.Stderr, "%sEaster Eggs / Cyber:%s\n", ColorPurple, ColorReset)
+	fmt.Fprintf(os.Stderr, "  skins         %sDownload custom Winamp 2.95 skins for Claune%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  geocities     %sRun a fake 90s-era WS_FTP terminal log to GeoCities%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  hack          %sHack the mainframe%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(os.Stderr, "  website       %sLaunch the official cyber portal in your default web browser%s\n", ColorDim, ColorReset)
 }
