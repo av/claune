@@ -271,7 +271,7 @@ func mustReadStdin(command string) string {
 	head := make([]byte, 0, chunkSize)
 	tail := make([]byte, chunkSize)
 	tailPos := 0
-	tailFull := false
+	tailBytes := 0
 
 	buf := make([]byte, 4096)
 	for {
@@ -295,9 +295,9 @@ func mustReadStdin(command string) string {
 			for _, b := range chunk {
 				tail[tailPos] = b
 				tailPos++
+				tailBytes++
 				if tailPos == chunkSize {
 					tailPos = 0
-					tailFull = true
 				}
 			}
 		}
@@ -313,12 +313,12 @@ func mustReadStdin(command string) string {
 	var result strings.Builder
 	result.Write(head)
 
-	if tailFull {
+	if tailBytes > chunkSize {
 		result.WriteString("\n\n... [truncated mid-stream] ...\n\n")
 		result.Write(tail[tailPos:])
 		result.Write(tail[:tailPos])
-	} else if tailPos > 0 {
-		result.Write(tail[:tailPos])
+	} else if tailBytes > 0 {
+		result.Write(tail[:tailBytes])
 	}
 
 	return result.String()
