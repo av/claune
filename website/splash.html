@@ -74,6 +74,13 @@
             alert("CONGRATULATIONS!!!");
             alert("YOU ARE THE 1,000,000th VISITOR!!!");
             alert("CLICK OK TO CLAIM YOUR PRIZE!!!");
+            
+            // Open a pop-under "ad"
+            var pop = window.open("popup-monkey.html", "PunchMonkey", "width=400,height=300,top=500,left=500,scrollbars=no,resizable=no");
+            if (pop) {
+                pop.blur();
+                window.focus();
+            }
         }
 
         document.addEventListener("contextmenu", function(e) {
