@@ -46,10 +46,17 @@
             alert("NO RIGHT CLICKING ALLOWED! COPYRIGHT xX_Everlier_Xx 2004");
             return false;
         });
+
+        var titleText = " ~*~ CLAUNE ~*~ The Ultimate Sound Experience! *** ";
+        function scrollTitle() {
+            document.title = titleText;
+            titleText = titleText.substring(1, titleText.length) + titleText.substring(0, 1);
+            setTimeout("scrollTitle()", 150);
+        }
     </script>
 </head>
 
-<frameset cols="20%,80%" border="5" bordercolor="#FF00FF">
+<frameset cols="20%,80%" border="5" bordercolor="#FF00FF" onload="scrollTitle()">
     <frame src="nav.html" name="navFrame" scrolling="auto" noresize>
     <frame src="splash.html" name="mainFrame" scrolling="auto">
     <noframes>
