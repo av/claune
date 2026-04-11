@@ -25,14 +25,14 @@
             font-size: 20px;
         }
         .likes-dislikes {
-            display: flex;
-            justify-content: space-around;
+            text-align: center;
             margin-top: 20px;
+            width: 100%;
         }
         .likes, .dislikes {
             border: 3px double #FFFF00;
             padding: 15px;
-            width: 40%;
+            width: 45%;
             background-color: #111111;
         }
         h2 {
@@ -119,7 +119,10 @@
         <p><b>Bio:</b> What's up... if u are reading this, u found my secret lair. I built Claune because I was tired of noobs not having cool sounds when they code. If u steal my HTML I will hack ur IP address!!!1!</p>
         
         <div class="likes-dislikes">
-            <div class="likes">
+            <center>
+            <table width="100%" border="0" cellpadding="10" cellspacing="10">
+            <tr>
+            <td valign="top" class="likes">
                 <h2><font color="#00FF00">~ LIKES ~</font></h2>
                 <ul>
                     <li>Dial-up Modems (56k 4 lyfe)</li>
@@ -129,8 +132,8 @@
                     <li>Matrix Revolutions</li>
                     <li>Notepad HTML editing</li>
                 </ul>
-            </div>
-            <div class="dislikes">
+            </td>
+            <td valign="top" class="dislikes">
                 <h2><font color="#FF0000">~ DISLIKES ~</font></h2>
                 <ul>
                     <li>Broadband (2 fast 4 real hackers)</li>
@@ -140,7 +143,10 @@
                     <li>Sunlight</li>
                     <li>My stepdad Steve</li>
                 </ul>
-            </div>
+            </td>
+            </tr>
+            </table>
+            </center>
         </div>
 
         <center>
