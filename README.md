@@ -162,6 +162,7 @@ claune uninstall  # Remove hooks from Claude Code settings
 | `claune [args...]` | Run Claude Code with sound effects (passthrough) |
 | `install` | Add sound hooks to Claude Code settings |
 | `uninstall` | Remove sound hooks from Claude Code settings |
+| `init` | Create a default configuration file |
 | `status` | Show hook and audio status |
 | `test-sounds` | Attempt to play all sounds to verify audio |
 | `play <event>` | Play a sound for the given event type |
@@ -267,11 +268,10 @@ Alternatively, you can place the API key directly in the configuration file:
 When `mute` is not set in the config, claune auto-mutes between 23:00 and 07:00 local time.
 Set `"mute": false` to disable this behavior.
 
-For a zero-improvisation cold-start audio check, create `~/.config/claune/config.json` with mute explicitly disabled, then run the sound commands:
+For a zero-improvisation cold-start audio check, generate a default configuration file with mute explicitly disabled, then run the sound commands:
 
 ```bash
-mkdir -p "$HOME/.config/claune"
-printf '{"mute":false}\n' > "$HOME/.config/claune/config.json"
+claune init
 claune test-sounds
 claune play tool:success
 ```

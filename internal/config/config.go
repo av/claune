@@ -49,7 +49,7 @@ func IsInvalidConfigError(err error) bool {
 	return errors.As(err, &invalidConfigError)
 }
 
-func configFilePath() string {
+func ConfigFilePath() string {
 	home, err := os.UserHomeDir()
 	if err == nil && home != "" {
 		legacyPath := filepath.Join(home, ".claune.json")
@@ -69,7 +69,7 @@ func Load() (ClauneConfig, error) {
 		fmt.Fprintf(os.Stderr, "claune: warning: home directory not found or inaccessible, using default config\n")
 		return config, nil
 	}
-	configPath := configFilePath()
+	configPath := ConfigFilePath()
 
 	lockPath := configPath + ".lock"
 	for i := 0; i < 500; i++ {
@@ -105,7 +105,7 @@ func Save(c ClauneConfig) error {
 	if err != nil || home == "" {
 		return fmt.Errorf("home directory not found or inaccessible")
 	}
-	configPath := configFilePath()
+	configPath := ConfigFilePath()
 
 	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)

@@ -42,6 +42,7 @@ var clauneSubcommands = map[string]bool{
 	"version":       true,
 	"--version":     true,
 	"-v":            true,
+	"init":          true,
 }
 
 func Run(args []string, version string) error {
@@ -74,6 +75,9 @@ func Run(args []string, version string) error {
 	case "uninstall":
 		ensureExactArgs(args, 1, "claune: uninstall does not accept additional arguments", "Usage: claune uninstall")
 		return uninstallHooks()
+	case "init":
+		ensureExactArgs(args, 1, "claune: init does not accept additional arguments", "Usage: claune init")
+		return createDefaultConfig()
 	case "website":
 		ensureExactArgs(args, 1, "claune: website does not accept additional arguments", "Usage: claune website")
 		url := "https://av.github.io/claune/"
@@ -582,6 +586,9 @@ func printCommandUsage(cmd string) {
 	case "version":
 		fmt.Fprintln(os.Stderr, "Usage: claune version")
 		fmt.Fprintln(os.Stderr, "\nShow the version of claune.")
+	case "init":
+		fmt.Fprintln(os.Stderr, "Usage: claune init")
+		fmt.Fprintln(os.Stderr, "\nCreates a default configuration file if one does not exist.")
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
 		printUsage()
@@ -599,6 +606,7 @@ Passthrough mode (default):
 Management commands:
   install       Install sound hooks into Claude Code settings
   uninstall     Remove sound hooks from Claude Code settings
+  init          Create a default configuration file
   status        Show whether hooks are installed
   play <event>  Play a sound for an event
   play <event> <tool-name> <tool-input>
