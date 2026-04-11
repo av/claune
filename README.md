@@ -30,6 +30,13 @@
   <h2>🚨🚨 <a href="https://av.github.io/claune/">~~~&gt; CLICK HERE FOR THE OFFICIAL WEB PORTAL &lt;~~~</a> 🚨🚨</h2>
   <p><b><i>WARNING: EXTREME WEB 1.0 CRINGE AHEAD. MIDI MUSIC, HIT COUNTERS, AND DANCING BABIES INCLUDED!!!111</i></b></p>
   <p>VISIT THE OFFICIAL WEB PORTAL NOW!!!111 <a href="https://av.github.io/claune/">https://av.github.io/claune/</a></p>
+  <pre>
+    ____ _      _    _   _ _   _ _____ !!!111
+   / ___| |    / \  | | | | \ | | ____|
+  | |   | |   / _ \ | | | |  \| |  _|  
+  | |___| |___/ ___ \| |_| | |\  | |___ 
+   \____|_____/_/   \_\___/|_| \_|_____|
+  </pre>
 </div>
 
 
