@@ -72,7 +72,7 @@ func Load() (ClauneConfig, error) {
 	configPath := configFilePath()
 
 	lockPath := configPath + ".lock"
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 500; i++ {
 		if _, err := os.Stat(lockPath); os.IsNotExist(err) {
 			break
 		}
@@ -112,7 +112,7 @@ func Save(c ClauneConfig) error {
 	}
 	lockPath := configPath + ".lock"
 	locked := false
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 500; i++ {
 		f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
 		if err == nil {
 			f.Close()
@@ -132,7 +132,7 @@ func Save(c ClauneConfig) error {
 	if locked {
 		defer os.Remove(lockPath)
 	} else {
-		return fmt.Errorf("failed to acquire config lock %s after 500ms", lockPath)
+		return fmt.Errorf("failed to acquire config lock %s after 5s", lockPath)
 	}
 
 	data, err := json.MarshalIndent(c, "", "  ")
