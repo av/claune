@@ -1,0 +1,71 @@
+version: 2
+project_name: claune
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: claune
+    main: ./cmd/claune
+    binary: claune
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.Version={{.Version}}
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+brews:
+  - name: claune
+    repository:
+      owner: everlier
+      name: homebrew-tap
+    commit_author:
+      name: GitHub Actions
+      email: actions@github.com
+    description: "Sound effects for Claude Code tool use events."
+    homepage: "https://github.com/everlier/claune"
+
+nfpms:
+  - id: claune
+    vendor: "everlier"
+    homepage: "https://github.com/everlier/claune"
+    maintainer: "av <everlier@everlier.com>"
+    description: "Sound effects for Claude Code tool use events."
+    license: "MIT"
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
