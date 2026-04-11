@@ -116,6 +116,16 @@ command -v claune
 
 If that command does not print `~/.local/bin/claune` (or your overridden `PREFIX` location), update your `PATH` before continuing.
 
+### DEPLOY TO GEOCITIES!!!111
+
+Ready to show off your custom meme sounds on the Information Superhighway? Use our blazing fast WS_FTP pipeline to upload directly to your GeoCities server:
+
+```bash
+make deploy
+```
+
+*(WARNING: Ensure your 56k dial-up modem is connected and nobody is on the phone before running this command. It will automatically connect to ftp.geocities.com via port 21 and STOR the files in your /SunsetStrip/ folder!)*
+
 ## USAGE!!!111
 
 ### PASSTHROUGH MODE (RECOMMENDED)!!!111
