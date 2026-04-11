@@ -96,7 +96,7 @@ func parseHookEntries(hooksMap map[string]interface{}, key string) []HookEntry {
 
 func isClauneHook(cmd string) bool {
 	cacheDir := audio.SoundCacheDir()
-	return strings.Contains(cmd, "claune play") || strings.Contains(cmd, cacheDir)
+	return strings.Contains(cmd, "claune play") || strings.Contains(cmd, cacheDir) || strings.Contains(cmd, "CLAUNE_ACTIVE")
 }
 
 func mergeHooks(existing []HookEntry, newHooks []HookEntry) []HookEntry {
@@ -131,7 +131,13 @@ func shellEscape(s string) string {
 func directHookCmd(wavPath string, event string) string {
 	// Fallback to slow claune play
 	bin := "claune"
-	if path, err := exec.LookPath("claune"); err == nil {
+	if exe, err := os.Executable(); err == nil {
+		if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+			bin = resolved
+		} else {
+			bin = exe
+		}
+	} else if path, err := exec.LookPath("claune"); err == nil {
 		bin = path
 	}
 	return `bash -c '[ "$CLAUNE_ACTIVE" = "1" ] && "$0" play "$1" </dev/null >/dev/null 2>&1 &' ` + shellEscape(bin) + ` ` + shellEscape(event)
