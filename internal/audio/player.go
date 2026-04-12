@@ -332,12 +332,12 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 				}
 				customPath = filepath.Join(home, customPath[2:])
 			}
-			if info, err := os.Stat(customPath); err == nil && info.Size() > 0 && info.Mode().IsRegular() {
+				if info, err := os.Stat(customPath); err == nil && info.Size() > 0 && info.Mode().IsRegular() {
 				err = playMP3File(customPath, volume, blocking)
 				if err == nil {
 					return nil
 				}
-				return fmt.Errorf("failed to play custom sound %q for event %q: %w", customPath, eventType, err)
+				fmt.Fprintf(os.Stderr, "Warning: failed to play custom sound %q for event %q: %v\n", customPath, eventType, err)
 			} else {
 				if err == nil {
 					if info.Mode().IsDir() {
@@ -348,7 +348,7 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 						err = fmt.Errorf("file is empty")
 					}
 				}
-				return fmt.Errorf("invalid custom sound path %q for event %q: %w", customPath, eventType, err)
+				fmt.Fprintf(os.Stderr, "Warning: invalid custom sound path %q for event %q: %v\n", customPath, eventType, err)
 			}
 		}
 	}
