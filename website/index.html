@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claune</title>
+  <meta name="description" content="Claune adds sound effects to Claude Code tool use events.">
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    body {
+      margin: 0;
+      background: #0b1020;
+      color: #e5e7eb;
+    }
+
+    main {
+      max-width: 44rem;
+      margin: 0 auto;
+      padding: 4rem 1.5rem;
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 8vw, 4rem);
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      margin: 0 0 1rem;
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 16px;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    pre {
+      margin: 0.75rem 0 0;
+      padding: 1rem;
+      overflow-x: auto;
+      background: #020617;
+      border-radius: 12px;
+    }
+
+    code,
+    pre {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.95rem;
+    }
+
+    a {
+      color: #7dd3fc;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Claune</h1>
+    <p>Sound effects for Claude Code tool use events.</p>
+    <p>Install the latest release with the official installer scripts, or browse the repository for source builds and configuration details.</p>
+
+    <section class="card">
+      <strong>Linux / macOS</strong>
+      <pre><code>curl -sSfL https://raw.githubusercontent.com/everlier/claune/main/install.sh | sh</code></pre>
+    </section>
+
+    <section class="card">
+      <strong>Windows (PowerShell)</strong>
+      <pre><code>Invoke-RestMethod -Uri https://raw.githubusercontent.com/everlier/claune/main/install.ps1 | Invoke-Expression</code></pre>
+    </section>
+
+    <p><a href="https://github.com/everlier/claune">Source</a> | <a href="https://github.com/everlier/claune/releases">Releases</a> | <a href="https://github.com/everlier/claune#readme">README</a></p>
+  </main>
+</body>
+</html>
