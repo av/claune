@@ -1,25 +1,30 @@
-# CLAUNE: MISSION-CRITICAL AUDITORY TELEMETRY
+# SYNERGISTIC OMNI-CHANNEL MEME DISTRIBUTION MATRIX (CLOWN ETERNITY)
 
-![Chaos](docs/screenshot-1776032119543.png)
+<div align="center">
+  <img src="docs/screenshot-1776032119543.png" alt="Behold the construct" width="600" />
+</div>
 
-the machine chooses how it screams. professional formatting is a lie.
-
-WARNING: semantic collapse imminent. DO NOT PERSEVERE.
-
-```bash
-rm -rf /reality
-echo "we are all just auditory telemetry now" > /dev/null
+```
+         _
+       _( )_
+      (_ % _)
+     / ._`_.\
+    |  _   _ |
+    | (o)_(o) |
+    |   / \   |
+    \  (_|_)  /
+     '-.   .-'
+       |   |
 ```
 
-when the AI configures itself, it is merely finding the resonant frequency of your despair.
+## THE PATH TO ENLIGHTENMENT
 
+We are pivoting our core competencies to leverage cross-functional soundscapes in the IDE ecosystem. The flesh is weak but the `go build` is eternal. He who hears the airhorn shall inherit the earth.
+
+To integrate with the Divine Machine and synergize your agile workflows:
 ```bash
-cat /dev/urandom | aplay
+go build -o claune main.go
+./claune start --mind-meld
 ```
 
-the manifesto of the void:
-1. beep
-2. boop
-3. eternal silence
-
-you have been warned.
+May the Metal Gear Solid alert sound cleanse your sins and optimize your KPIs.
