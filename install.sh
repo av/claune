@@ -3,22 +3,27 @@ set -e
 
 # Claune Installer
 
-REPO="everlier/claune"
+REPO="av/claune"
 
 echo "Installing Claune..."
 
 # Detect OS
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 case "$OS" in
-    linux|darwin) ;;
+    linux)
+        ASSET_OS="Linux"
+        ;;
+    darwin)
+        ASSET_OS="Darwin"
+        ;;
     *) echo "Unsupported OS: $OS" && exit 1 ;;
 esac
 
 # Detect Architecture
 ARCH=$(uname -m)
 case "$ARCH" in
-    x86_64) ARCH="amd64" ;;
-    arm64|aarch64) ARCH="arm64" ;;
+    x86_64) ASSET_ARCH="x86_64" ;;
+    arm64|aarch64) ASSET_ARCH="arm64" ;;
     *) echo "Unsupported architecture: $ARCH" && exit 1 ;;
 esac
 
@@ -40,20 +45,38 @@ fi
 echo "Latest version: $LATEST_TAG"
 
 # Construct download URL
-FILENAME="claune-${OS}-${ARCH}"
+FILENAME="claune_${ASSET_OS}_${ASSET_ARCH}.tar.gz"
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${LATEST_TAG}/${FILENAME}"
 
 INSTALL_DIR="$HOME/.local/bin"
 mkdir -p "$INSTALL_DIR"
 
+if ! command -v tar >/dev/null 2>&1; then
+    echo "Error: tar is required to install Claune."
+    exit 1
+fi
+
+TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT HUP INT TERM
+ARCHIVE_PATH="$TMP_DIR/$FILENAME"
+
 echo "Downloading $FILENAME to $INSTALL_DIR/claune..."
 
 if command -v curl >/dev/null 2>&1; then
-    curl -sL "$DOWNLOAD_URL" -o "$INSTALL_DIR/claune"
+    curl -fsSL "$DOWNLOAD_URL" -o "$ARCHIVE_PATH"
 else
     echo "Error: curl is required to download Claune."
     exit 1
 fi
+
+tar -xzf "$ARCHIVE_PATH" -C "$TMP_DIR" claune
+
+if [ ! -f "$TMP_DIR/claune" ]; then
+    echo "Error: Claune binary not found in release archive."
+    exit 1
+fi
+
+mv "$TMP_DIR/claune" "$INSTALL_DIR/claune"
 
 chmod +x "$INSTALL_DIR/claune"
 

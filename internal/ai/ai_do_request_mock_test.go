@@ -1,125 +1,192 @@
 package ai
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
-
 )
 
 func TestDoAIRequest_Success(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		resp := ClaudeResponse{
-			Content: []struct {
-				Text string `json:"text"`
-			}{
-				{Text: "success"},
-			},
+	_ = setupHermeticAITest(t)
+	server, capture := createMockAnthropicServer(t, 200, nil, func(_ *http.Request, req ClaudeRequest, _ *anthropicRequestCapture) any {
+		if req.MaxTokens != 100 {
+			t.Fatalf("request max tokens = %d, want 100", req.MaxTokens)
 		}
-		json.NewEncoder(w).Encode(resp)
-	}))
+		return ClaudeResponse{Content: []struct {
+			Text string `json:"text"`
+		}{{Text: "success"}}}
+	})
 	defer server.Close()
 
-	c := mockConfig(server.URL, t)
-	req := ClaudeRequest{MaxTokens: 100}
-	resp, err := doAIRequest(c, req)
+	resp, err := doAIRequest(mockConfig(server.URL), ClaudeRequest{MaxTokens: 100})
 	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
+		t.Fatalf("doAIRequest error = %v", err)
 	}
-	if len(resp.Content) == 0 || resp.Content[0].Text != "success" {
-		t.Fatalf("Unexpected response: %+v", resp)
+	if len(resp.Content) != 1 || resp.Content[0].Text != "success" {
+		t.Fatalf("response = %+v", resp)
+	}
+	if capture.Calls != 1 {
+		t.Fatalf("calls = %d, want 1", capture.Calls)
 	}
 }
 
 func TestDoAIRequest_401(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"error": "unauthorized"}`))
-	}))
+	_ = setupHermeticAITest(t)
+	server, _ := createMockAnthropicServer(t, 401, nil, func(_ *http.Request, _ ClaudeRequest, _ *anthropicRequestCapture) any {
+		return map[string]string{"error": "unauthorized"}
+	})
 	defer server.Close()
 
-	c := mockConfig(server.URL, t)
-	req := ClaudeRequest{MaxTokens: 100}
-	_, err := doAIRequest(c, req)
+	_, err := doAIRequest(mockConfig(server.URL), ClaudeRequest{MaxTokens: 100})
 	if err == nil {
-		t.Fatal("Expected error, got none")
+		t.Fatal("expected error, got nil")
 	}
-	if !strings.Contains(err.Error(), "401") {
-		t.Fatalf("Expected 401 error message, got: %v", err)
+	if got := err.Error(); got != "AI API unauthorized (401). Please check your Anthropic API key with 'claune auth'.: {\"error\":\"unauthorized\"}\n" {
+		t.Fatalf("error = %q", got)
 	}
 }
 
-func TestDoAIRequest_429_Retry(t *testing.T) {
-	attempts := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		attempts++
-		w.Header().Set("Retry-After", "1")
-		w.WriteHeader(http.StatusTooManyRequests)
-		w.Write([]byte(`{"error": "rate limit"}`))
-	}))
+func TestDoAIRequest_429_RetryHonorsRetryAfterWithoutSleeping(t *testing.T) {
+	env := setupHermeticAITest(t)
+	server, capture := createMockAnthropicServer(t, 429, map[string]string{"Retry-After": "1"}, func(_ *http.Request, _ ClaudeRequest, _ *anthropicRequestCapture) any {
+		return map[string]string{"error": "rate limit"}
+	})
 	defer server.Close()
 
-	c := mockConfig(server.URL, t)
-	req := ClaudeRequest{MaxTokens: 100}
-
-	start := time.Now()
-	_, err := doAIRequest(c, req)
-	duration := time.Since(start)
-
+	_, err := doAIRequest(mockConfig(server.URL), ClaudeRequest{MaxTokens: 100})
 	if err == nil {
-		t.Fatal("Expected error, got none")
+		t.Fatal("expected error, got nil")
 	}
-	if !strings.Contains(err.Error(), "429") {
-		t.Fatalf("Expected 429 error message, got: %v", err)
+	if got := err.Error(); got != "AI API rate limit exceeded (429 Too Many Requests) after retries. Consider increasing your API rate limits or reducing concurrency." {
+		t.Fatalf("error = %q", got)
 	}
-	// should retry twice (total 3 attempts)
-	if attempts != 3 {
-		t.Fatalf("Expected 3 attempts, got %d", attempts)
+	if capture.Calls != 3 {
+		t.Fatalf("calls = %d, want 3", capture.Calls)
 	}
-	// sleep duration logic is 1<<1 = 2s for attempt 1, 1<<2 = 4s for attempt 2 if Retry-After is missing, but with Retry-After=1, it sleeps 1s each time.
-	// total sleep >= 2s.
-	if duration < 2*time.Second {
-		t.Fatalf("Expected duration >= 2s, got %v", duration)
+	if len(env.sleeps) != 2 || env.sleeps[0] != time.Second || env.sleeps[1] != time.Second {
+		t.Fatalf("sleep durations = %+v, want [1s 1s]", env.sleeps)
 	}
 }
 
-func TestDoAIRequest_EmptyResponse(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		// valid json but empty content array
-		w.Write([]byte(`{"content": []}`))
-	}))
+func TestDoAIRequest_EmptyResponse_RetriesThenFails(t *testing.T) {
+	env := setupHermeticAITest(t)
+	server, capture := createMockAnthropicServer(t, 200, nil, func(_ *http.Request, _ ClaudeRequest, _ *anthropicRequestCapture) any {
+		return map[string]any{"content": []any{}}
+	})
 	defer server.Close()
 
-	c := mockConfig(server.URL, t)
-	req := ClaudeRequest{MaxTokens: 100}
-	_, err := doAIRequest(c, req)
+	_, err := doAIRequest(mockConfig(server.URL), ClaudeRequest{MaxTokens: 100})
 	if err == nil {
-		t.Fatal("Expected error, got none")
+		t.Fatal("expected error, got nil")
 	}
-	if !strings.Contains(err.Error(), "empty AI response") && !strings.Contains(err.Error(), "failed after retries") {
-		t.Fatalf("Expected empty AI response error, got: %v", err)
+	if got := err.Error(); got != "AI request failed after retries: empty AI response" {
+		t.Fatalf("error = %q", got)
+	}
+	if capture.Calls != 3 {
+		t.Fatalf("calls = %d, want 3", capture.Calls)
+	}
+	if want := []time.Duration{2 * time.Second, 4 * time.Second}; fmt.Sprint(env.sleeps) != fmt.Sprint(want) {
+		t.Fatalf("sleep durations = %+v, want %+v", env.sleeps, want)
 	}
 }
 
 func TestDoAIRequest_InvalidJSON(t *testing.T) {
+	_ = setupHermeticAITest(t)
+	capture := &anthropicRequestCapture{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capture.Calls++
+		capture.Path = r.URL.Path
+		capture.Method = r.Method
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"content": [`)) // broken JSON
+		_, _ = w.Write([]byte(`{"content": [`))
 	}))
 	defer server.Close()
 
-	c := mockConfig(server.URL, t)
-	req := ClaudeRequest{MaxTokens: 100}
-	_, err := doAIRequest(c, req)
+	_, err := doAIRequest(mockConfig(server.URL), ClaudeRequest{MaxTokens: 100})
 	if err == nil {
-		t.Fatal("Expected error, got none")
+		t.Fatal("expected error, got nil")
 	}
-	if !strings.Contains(err.Error(), "AI response parse failed") {
-		t.Fatalf("Expected parse error, got: %v", err)
+	if got := err.Error(); got != "AI response parse failed: unexpected end of JSON input" {
+		t.Fatalf("error = %q", got)
+	}
+	if capture.Calls != 1 {
+		t.Fatalf("calls = %d, want 1", capture.Calls)
+	}
+}
+
+func TestDoAIRequest_MaxTokensRetriesWithExpandedBudget(t *testing.T) {
+	env := setupHermeticAITest(t)
+	call := 0
+	server, capture := createMockAnthropicServer(t, 200, nil, func(_ *http.Request, req ClaudeRequest, _ *anthropicRequestCapture) any {
+		call++
+		if call == 1 {
+			if req.MaxTokens != 10 {
+				t.Fatalf("first attempt max tokens = %d, want 10", req.MaxTokens)
+			}
+			return map[string]any{"content": []map[string]string{{"text": "partial"}}, "stop_reason": "max_tokens"}
+		}
+		if req.MaxTokens != 20 {
+			t.Fatalf("second attempt max tokens = %d, want 20", req.MaxTokens)
+		}
+		return ClaudeResponse{Content: []struct {
+			Text string `json:"text"`
+		}{{Text: "done"}}}
+	})
+	defer server.Close()
+
+	resp, err := doAIRequest(mockConfig(server.URL), ClaudeRequest{MaxTokens: 10})
+	if err != nil {
+		t.Fatalf("doAIRequest error = %v", err)
+	}
+	if len(resp.Content) != 1 || resp.Content[0].Text != "done" {
+		t.Fatalf("response = %+v", resp)
+	}
+	if capture.Calls != 2 {
+		t.Fatalf("calls = %d, want 2", capture.Calls)
+	}
+	if len(env.sleeps) != 1 || env.sleeps[0] != 2*time.Second {
+		t.Fatalf("sleep durations = %+v, want [2s]", env.sleeps)
+	}
+}
+
+func TestDoAIRequest_UsesEnvironmentAPIKeyWhenConfigKeyMissing(t *testing.T) {
+	_ = setupHermeticAITest(t)
+	t.Setenv("ANTHROPIC_API_KEY", "env-test-key")
+	server, capture := createMockAnthropicServer(t, 200, nil, func(_ *http.Request, _ ClaudeRequest, _ *anthropicRequestCapture) any {
+		return ClaudeResponse{Content: []struct {
+			Text string `json:"text"`
+		}{{Text: "success"}}}
+	})
+	defer server.Close()
+
+	c := mockConfig(server.URL)
+	c.AI.APIKey = ""
+	if _, err := doAIRequest(c, ClaudeRequest{MaxTokens: 1}); err != nil {
+		t.Fatalf("doAIRequest error = %v", err)
+	}
+	if capture.APIKey != "env-test-key" {
+		t.Fatalf("x-api-key = %q, want env-test-key", capture.APIKey)
+	}
+}
+
+func TestDoAIRequest_RedactsSecretsInNonRetryableErrors(t *testing.T) {
+	_ = setupHermeticAITest(t)
+	secret := `{"api_key":"sk-ant-api03-secretvalue1234567890"}`
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(403)
+		_, _ = w.Write([]byte(secret))
+	}))
+	defer server.Close()
+
+	_, err := doAIRequest(mockConfig(server.URL), ClaudeRequest{MaxTokens: 1})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if got := err.Error(); got == "" || strings.Contains(got, "secretvalue1234567890") || !containsAll(got, "403", "[REDACTED_ANTHROPIC_KEY]") {
+		t.Fatalf("error = %q", got)
 	}
 }

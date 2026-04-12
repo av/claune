@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$REPO = "everlier/claune"
+$REPO = "av/claune"
 
 Write-Host "Installing Claune..."
 
@@ -34,7 +34,17 @@ if (-not $LATEST_TAG) {
 Write-Host "Latest version: $LATEST_TAG"
 
 # Construct download URL
-$FILENAME = "claune-windows-${ARCH}.exe"
+$ASSET_MAP = @{
+    "amd64" = "claune_Windows_x86_64.zip"
+    "arm64" = "claune_Windows_arm64.zip"
+}
+
+$FILENAME = $ASSET_MAP[$ARCH]
+if (-not $FILENAME) {
+    Write-Error "Unsupported architecture: $ARCH"
+    exit 1
+}
+
 $DOWNLOAD_URL = "https://github.com/$REPO/releases/download/${LATEST_TAG}/${FILENAME}"
 
 $INSTALL_DIR = "$HOME\.local\bin"
@@ -44,12 +54,33 @@ if (-not (Test-Path -Path $INSTALL_DIR)) {
 
 $DEST_FILE = "$INSTALL_DIR\claune.exe"
 
+$TEMP_DIR = Join-Path ([System.IO.Path]::GetTempPath()) ("claune-install-" + [System.Guid]::NewGuid().ToString())
+$ARCHIVE_PATH = Join-Path $TEMP_DIR $FILENAME
+$EXTRACT_DIR = Join-Path $TEMP_DIR "extract"
+
+New-Item -ItemType Directory -Force -Path $TEMP_DIR | Out-Null
+
 Write-Host "Downloading $FILENAME to $DEST_FILE..."
 try {
-    Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile $DEST_FILE
+    Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile $ARCHIVE_PATH
+
+    New-Item -ItemType Directory -Force -Path $EXTRACT_DIR | Out-Null
+    Expand-Archive -Path $ARCHIVE_PATH -DestinationPath $EXTRACT_DIR -Force
+
+    $EXTRACTED_EXE = Get-ChildItem -Path $EXTRACT_DIR -Filter "claune.exe" -Recurse | Select-Object -First 1
+    if (-not $EXTRACTED_EXE) {
+        Write-Error "Downloaded archive did not contain claune.exe."
+        exit 1
+    }
+
+    Copy-Item -Path $EXTRACTED_EXE.FullName -Destination $DEST_FILE -Force
 } catch {
     Write-Error "Failed to download $FILENAME. Ensure the URL is correct."
     exit 1
+} finally {
+    if (Test-Path -Path $TEMP_DIR) {
+        Remove-Item -Path $TEMP_DIR -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 Write-Host ""

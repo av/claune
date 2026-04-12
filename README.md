@@ -75,10 +75,16 @@ sudo rpm -i claune_*_linux_amd64.rpm
 
 Download the binary for your platform from [Releases](https://github.com/everlier/claune/releases).
 
-```
+```bash
 chmod +x claune-linux-amd64
-sudo mv claune-linux-amd64 /usr/local/bin/claune
+mkdir -p ~/.local/bin
+mv claune-linux-amd64 ~/.local/bin/claune
+export PATH="$HOME/.local/bin:$PATH"
 ```
+
+If `claune help` works after the `export PATH=...` step, add `export PATH="$HOME/.local/bin:$PATH"` to your shell profile (for example, `~/.bashrc` or `~/.zshrc`) so `claune` stays available in new shells.
+
+`/usr/local/bin` can still be used if you intentionally want a system-wide, admin-managed install, but it is optional and not the default path.
 
 ### FROM SOURCE
 

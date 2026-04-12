@@ -1,39 +1,32 @@
 package ai
 
 import (
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
+
 	"github.com/everlier/claune/internal/config"
 )
 
-func TestHandleNaturalLanguageConfigPanic(t *testing.T) {
-	// Setup mock AI server
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"content": []map[string]interface{}{
-				{
-					"type": "text",
-					"text": `{"sounds": {"cli:start": {"paths": ["/tmp/a.mp3"]}}}`,
-				},
-			},
-		})
-	}))
+func TestHandleNaturalLanguageConfig_InitializesNilSoundsWithoutPanic(t *testing.T) {
+	env := setupHermeticAITest(t)
+	server, _ := createMockAnthropicServer(t, 200, nil, func(_ *http.Request, _ ClaudeRequest, _ *anthropicRequestCapture) any {
+		return map[string]any{"content": []map[string]string{{"text": `{"sounds":{"cli:start":{"paths":["/tmp/a.mp3"]}}}`}}}
+	})
 	defer server.Close()
 
-	// c.Sounds is nil !
-	c := &config.ClauneConfig{
-		AI: config.AIConfig{
-			Enabled: true,
-			APIKey:  "test",
-			APIURL:  server.URL,
-		},
+	c := &config.ClauneConfig{AI: config.AIConfig{Enabled: true, APIKey: "test", APIURL: server.URL}}
+	if err := HandleNaturalLanguageConfig("add a sound", c); err != nil {
+		t.Fatalf("HandleNaturalLanguageConfig error = %v", err)
 	}
-
-	err := HandleNaturalLanguageConfig("add a sound", c)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
+	if c.Sounds == nil {
+		t.Fatal("sounds map is nil")
 	}
+	if got := c.Sounds["cli:start"]; len(got.Paths) != 1 || got.Paths[0] != "/tmp/a.mp3" {
+		t.Fatalf("cli:start sound = %+v", got)
+	}
+	saved := env.loadSavedConfig(t)
+	if got := saved.Sounds["cli:start"]; len(got.Paths) != 1 || got.Paths[0] != "/tmp/a.mp3" {
+		t.Fatalf("saved cli:start sound = %+v", got)
+	}
+	env.assertNoHostSideEffects(t)
 }

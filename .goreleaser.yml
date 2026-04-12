@@ -56,12 +56,12 @@ brews:
       name: GitHub Actions
       email: actions@github.com
     description: "Sound effects for Claude Code tool use events."
-    homepage: "https://github.com/everlier/claune"
+    homepage: "https://github.com/av/claune"
 
 nfpms:
   - id: claune
     vendor: "everlier"
-    homepage: "https://github.com/everlier/claune"
+    homepage: "https://github.com/av/claune"
     maintainer: "av <everlier@everlier.com>"
     description: "Sound effects for Claude Code tool use events."
     license: "MIT"

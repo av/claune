@@ -6,6 +6,16 @@ import (
 	"strings"
 )
 
+type command interface {
+	Start() error
+}
+
+var currentGOOS = runtime.GOOS
+
+var commandFactory = func(name string, args ...string) command {
+	return exec.Command(name, args...)
+}
+
 // Send sends a desktop notification with the given title and message.
 // It spawns a background process so it doesn't block audio playback.
 func Send(title, message string) error {
@@ -13,13 +23,20 @@ func Send(title, message string) error {
 	title = strings.ReplaceAll(title, `"`, `\"`)
 	message = strings.ReplaceAll(message, `"`, `\"`)
 
-	switch runtime.GOOS {
+	cmd, ok := notificationCommand(currentGOOS, title, message)
+	if !ok {
+		return nil
+	}
+
+	return cmd.Start()
+}
+
+func notificationCommand(goos, title, message string) (command, bool) {
+	switch goos {
 	case "darwin":
-		cmd := exec.Command("osascript", "-e", `display notification "`+message+`" with title "`+title+`"`)
-		return cmd.Start()
+		return commandFactory("osascript", "-e", `display notification "`+message+`" with title "`+title+`"`), true
 	case "linux":
-		cmd := exec.Command("notify-send", title, message)
-		return cmd.Start()
+		return commandFactory("notify-send", title, message), true
 	case "windows":
 		// A simple way to trigger a toast in Windows 10/11 using PowerShell
 		psCmd := `[reflection.assembly]::loadwithpartialname("System.Windows.Forms") | Out-Null;` +
@@ -28,8 +45,8 @@ func Send(title, message string) error {
 			`$notify.visible = $true;` +
 			`$notify.showballoontip(10, "` + title + `", "` + message + `", [system.windows.forms.tooltipicon]::None);` +
 			`Start-Sleep -Seconds 3` // sleep so the script doesn't exit immediately before the balloon shows
-		cmd := exec.Command("powershell", "-WindowStyle", "Hidden", "-Command", psCmd)
-		return cmd.Start()
+		return commandFactory("powershell", "-WindowStyle", "Hidden", "-Command", psCmd), true
 	}
-	return nil
+
+	return nil, false
 }

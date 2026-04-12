@@ -4,14 +4,15 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"github.com/everlier/claune/internal/xdg"
 	"io"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
-	"github.com/everlier/claune/internal/xdg"
 
 	"github.com/everlier/claune/internal/config"
 	"github.com/gopxl/beep"
@@ -36,6 +37,13 @@ var DefaultSoundMap = map[string][]string{
 	"panic":            {"boom.mp3"},
 	"warn":             {"oof.mp3"},
 }
+
+var (
+	customSoundPlayer             = playMP3File
+	embeddedSoundPlayer           = playEmbeddedSound
+	stderrWriter        io.Writer = os.Stderr
+	userHomeDir                   = os.UserHomeDir
+)
 
 var (
 	rrMutex sync.Mutex
@@ -69,7 +77,7 @@ func saveState() {
 	data := exportJSON()
 	dir := filepath.Dir(path)
 	os.MkdirAll(dir, 0755)
-	
+
 	tmpFile, err := os.CreateTemp(dir, "state.*.tmp")
 	if err != nil {
 		return
@@ -324,32 +332,34 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 		}
 
 		customPath := pickSound(eventType+":custom", customConfig.Paths, strategy)
-		if customPath != "" {
-			if strings.HasPrefix(customPath, "~/") {
-				home, err := os.UserHomeDir()
-				if err != nil || home == "" {
-					home = os.TempDir()
-				}
-				customPath = filepath.Join(home, customPath[2:])
+		resolvedCustomPath := customPath
+		if strings.HasPrefix(resolvedCustomPath, "~/") {
+			home, err := userHomeDir()
+			if err != nil || home == "" {
+				home = os.TempDir()
 			}
-				if info, err := os.Stat(customPath); err == nil && info.Size() > 0 && info.Mode().IsRegular() {
-				err = playMP3File(customPath, volume, blocking)
-				if err == nil {
-					return nil
-				}
-				fmt.Fprintf(os.Stderr, "Warning: failed to play custom sound %q for event %q: %v\n", customPath, eventType, err)
-			} else {
-				if err == nil {
-					if info.Mode().IsDir() {
-						err = fmt.Errorf("path is a directory")
-					} else if !info.Mode().IsRegular() {
-						err = fmt.Errorf("path is not a regular file")
-					} else {
-						err = fmt.Errorf("file is empty")
-					}
-				}
-				fmt.Fprintf(os.Stderr, "Warning: invalid custom sound path %q for event %q: %v\n", customPath, eventType, err)
+			resolvedCustomPath = filepath.Join(home, resolvedCustomPath[2:])
+		}
+
+		if resolvedCustomPath == "" {
+			fmt.Fprintf(stderrWriter, "Warning: invalid custom sound path %q for event %q: %v\n", customPath, eventType, fmt.Errorf("path is empty"))
+		} else if info, err := os.Stat(resolvedCustomPath); err == nil && info.Size() > 0 && info.Mode().IsRegular() {
+			err = customSoundPlayer(resolvedCustomPath, volume, blocking)
+			if err == nil {
+				return nil
 			}
+			fmt.Fprintf(stderrWriter, "Warning: failed to play custom sound %q for event %q: %v\n", resolvedCustomPath, eventType, err)
+		} else {
+			if err == nil {
+				if info.Mode().IsDir() {
+					err = fmt.Errorf("path is a directory")
+				} else if !info.Mode().IsRegular() {
+					err = fmt.Errorf("path is not a regular file")
+				} else {
+					err = fmt.Errorf("file is empty")
+				}
+			}
+			fmt.Fprintf(stderrWriter, "Warning: invalid custom sound path %q for event %q: %v\n", resolvedCustomPath, eventType, err)
 		}
 	}
 
@@ -371,7 +381,7 @@ func PlaySoundWithStrategy(eventType string, overrideStrategy string, blocking b
 	}
 
 	soundFile := pickSound(eventType, soundFiles, strategy)
-	err := playEmbeddedSound(soundFile, volume, blocking)
+	err := embeddedSoundPlayer(soundFile, volume, blocking)
 	return err
 }
 
@@ -384,6 +394,7 @@ func ValidEventTypes() string {
 	for k := range DefaultSoundMap {
 		keys = append(keys, k)
 	}
+	sort.Strings(keys)
 	return strings.Join(keys, ", ")
 }
 func safeEncodeWav(w io.WriteSeeker, s beep.Streamer, format beep.Format) (err error) {

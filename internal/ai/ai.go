@@ -64,6 +64,12 @@ type ClaudeResponse struct {
 	StopReason string `json:"stop_reason"`
 }
 
+var newAIHTTPClient = func() *http.Client {
+	return &http.Client{Timeout: 30 * time.Second}
+}
+
+var aiSleep = time.Sleep
+
 func messagesAPIURL(c config.ClauneConfig) string {
 	baseURL := strings.TrimRight(c.AI.APIURL, "/")
 	if baseURL == "" {
@@ -83,7 +89,7 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := newAIHTTPClient()
 	maxRetries := 2
 	var lastErr error
 	var lastStatus int
@@ -101,12 +107,12 @@ func doAIRequest(c config.ClauneConfig, reqBody ClaudeRequest) (*ClaudeResponse,
 					}
 				}
 			}
-			time.Sleep(sleepDuration)
+			aiSleep(sleepDuration)
 		}
 
 		var cr *ClaudeResponse
 		var shouldRetry bool
-		
+
 		err := func() error {
 			req, err := http.NewRequest("POST", messagesAPIURL(c), bytes.NewReader(bodyBytes))
 			if err != nil {
@@ -271,7 +277,7 @@ func AnalyzeToolIntent(baseEvent, toolName, input string, c config.ClauneConfig)
 
 	// Truncate huge inputs to avoid context limit errors and save tokens
 	input = safeTruncate(input, 2000)
-	
+
 	// Sanitize PII and API keys from input before sending to Anthropic
 	input = RedactSensitiveData(input)
 
@@ -425,8 +431,7 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 		if start != -1 && end != -1 && end >= start {
 			text = text[start : end+1]
 		}
-		
-		
+
 		if err := json.Unmarshal([]byte(text), &updates); err != nil {
 			return fmt.Errorf("config schema validation failed: %w", err)
 		}
@@ -450,7 +455,7 @@ Reply with ONLY valid JSON representing the updated configuration fields. Do not
 			c.Sounds[k] = v
 		}
 	}
-	
+
 	// Handle raw JSON string where a value can be null, but in Go it would just mean the pointer is nil or empty string.
 	// Since we mock it or unmarshal properly, we just check if it's explicitly cleared or set.
 	// Actually, if updates.MuteUntil is explicitly null in JSON, it will be nil. If it is omitted, it is also nil.
@@ -552,7 +557,7 @@ func AutoMapSounds(dir string, c *config.ClauneConfig) (map[string]config.EventS
 				mapping[event] = config.EventSoundConfig{Paths: []string{path}, Strategy: strategy}
 			}
 		}
-		
+
 		if c.Sounds == nil {
 			c.Sounds = make(map[string]config.EventSoundConfig)
 		}
@@ -613,7 +618,7 @@ Example: {"tool:success": {"paths": ["/dir/yay.mp3"], "strategy": "random"}}`, a
 
 	if len(cr.Content) > 0 {
 		text := strings.TrimSpace(removeEchoedXML(cr.Content[0].Text))
-		
+
 		// Robust JSON extraction
 		start := strings.Index(text, "{")
 		end := strings.LastIndex(text, "}")
@@ -671,7 +676,7 @@ func DiagnoseInstallFailure(err error, c config.ClauneConfig) string {
 	if key == "" {
 		return "AI diagnostics unavailable: No ANTHROPIC_API_KEY found. Please check permissions."
 	}
-	
+
 	model := c.AI.Model
 	if model == "" {
 		model = "claude-3-haiku-20240307"
@@ -735,7 +740,7 @@ func GuessEventForSound(url, filename string, c config.ClauneConfig) (string, er
 <filename>%s</filename>
 Available events: %s.
 Reply with ONE WORD ONLY representing the most appropriate event for this sound based on its name and URL context.`, url, filename, audio.ValidEventTypes())
-	
+
 	reqBody := ClaudeRequest{
 		Model: model,
 		Messages: []ClaudeMessage{
@@ -753,15 +758,14 @@ Reply with ONE WORD ONLY representing the most appropriate event for this sound 
 	if len(cr.Content) > 0 {
 		text := removeEchoedXML(cr.Content[0].Text)
 		text = strings.ToLower(strings.TrimSpace(text))
-		
+
 		for e := range audio.DefaultSoundMap {
 			if strings.Contains(text, e) {
 				return e, nil
 			}
 		}
-		
+
 		return "", fmt.Errorf("AI response did not contain a valid event: %s", text)
 	}
 	return "", fmt.Errorf("empty AI response")
 }
-
