@@ -1,0 +1,112 @@
+<html>
+<head>
+    <title>~*~ WELCOME TO CLAUNE ~*~</title>
+    <style>
+        blink {
+            animation: blinker 1s linear infinite;
+        }
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+    </style>
+
+    <style>
+        /* Classic IE Scrollbar Colors */
+        body {
+            scrollbar-face-color: #ff00ff;
+            scrollbar-shadow-color: #00ff00;
+            scrollbar-highlight-color: #00ffff;
+            scrollbar-3dlight-color: #ffff00;
+            scrollbar-darkshadow-color: #0000ff;
+            scrollbar-track-color: #000000;
+            scrollbar-arrow-color: #ff0000;
+        }
+
+        /* Modern WebKit Equivalents */
+        ::-webkit-scrollbar {
+            width: 24px;
+            height: 24px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000;
+            border: 3px inset #00ff00;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff00ff;
+            border: 3px outset #00ffff;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ffff00;
+        }
+        ::-webkit-scrollbar-button:vertical:start:decrement,
+        ::-webkit-scrollbar-button:vertical:end:increment,
+        ::-webkit-scrollbar-button:horizontal:start:decrement,
+        ::-webkit-scrollbar-button:horizontal:end:increment {
+            display: block;
+            background: #0000ff;
+            border: 3px outset #ff0000;
+        }
+    </style>
+    <script>
+        function annoyingAlerts() {
+            alert("CONGRATULATIONS!!!");
+            alert("YOU ARE THE 1,000,000th VISITOR!!!");
+            alert("CLICK OK TO CLAIM YOUR PRIZE!!!");
+            
+            // Open a pop-under "ad"
+            var pop = window.open("popup-monkey.html", "PunchMonkey", "width=400,height=300,top=500,left=500,scrollbars=no,resizable=no");
+            if (pop) {
+                pop.blur();
+                window.focus();
+            }
+        }
+
+        document.addEventListener("contextmenu", function(e) {
+            e.preventDefault();
+            alert("NO RIGHT CLICKING ALLOWED! COPYRIGHT xX_Everlier_Xx 2004");
+            return false;
+        });
+    </script>
+  <script src="assets/js/annoy.js"></script>
+<style>::selection { background: lime; color: magenta; } ::-moz-selection { background: lime; color: magenta; }</style><style>hr { border: 5px dashed lime; background-color: yellow; height: 10px; }</style>
+</head>
+
+<body bgcolor="#000000" text="#00FF00" link="#FF00FF" vlink="#FF00FF" alink="#FF0000">
+<center>
+    <br><br><br><br><br>
+    <table width="80%" border="0" cellpadding="10" cellspacing="0">
+        <tr>
+            <td align="center">
+                <h1><font face="Comic Sans MS, Chalkboard SE, sans-serif"><blink>!!! WARNING !!!</blink></font></h1>
+                <h2><font face="Comic Sans MS, Chalkboard SE, sans-serif">YOU ARE ABOUT TO ENTER THE MOST EXTREME SOUND EXPERIENCE ON THE WORLD WIDE WEB</font></h2>
+                
+                <p>
+                    <img src="assets/images/netscape.gif" alt="Best viewed in Netscape Navigator" width="88" height="31" border="0">
+                    <img src="assets/images/ie.gif" alt="No Internet Explorer" width="88" height="31" border="0">
+                </p>
+
+                <p><font size="4" color="#FFFF00" face="Comic Sans MS, Chalkboard SE, sans-serif">Best viewed in Netscape Navigator 4.0+ at 800x600 resolution with 16-bit color!</font></p>
+
+                <table border="5" bordercolor="#FF00FF" bgcolor="#000080" cellpadding="20" cellspacing="0">
+                    <tr>
+                        <td align="center">
+                            <a href="main.html" target="mainFrame" onclick="annoyingAlerts()" style="text-decoration:none;">
+                                <font size="6" color="#FF00FF" face="Comic Sans MS, Chalkboard SE, sans-serif"><blink>~*~ ENTER SITE ~*~</blink></font>
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+
+                <br><br>
+                <img src="assets/images/construction.gif" alt="Under Construction">
+                <p><font size="2" color="#AAAAAA" face="Comic Sans MS, Chalkboard SE, sans-serif">Counter: <span id="splashCounter">0000124</span></font></p>
+            </td>
+        </tr>
+    </table>
+</center>
+<script src="assets/js/cursor-trail.js"></script>
+<script src="assets/js/status-scroller.js"></script>
+<script src="assets/js/blink.js"></script>
+<script src="assets/js/snow.js"></script>
+</body>
+</html>

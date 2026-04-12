@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>~*~*~ CLAUNE GUESTBOOK !! ~*~*~</title>
+    <meta http-equiv="refresh" content="30">
+    <style>
+        body {
+            background-color: #000000;
+            color: #00ff00;
+            font-family: "Comic Sans MS", "Chalkboard SE", "Comic Neue", cursive;
+            background-image: url('assets/images/stars.gif');
+            cursor: url('assets/images/cursor.png'), auto;
+        }
+        h1 {
+            color: #ff00ff;
+            text-align: center;
+            text-shadow: 2px 2px #ffff00;
+            font-size: 3em;
+            text-decoration: blink;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            border: 5px dashed #00ffff;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        .marquee {
+            color: #ff0000;
+            font-size: 2em;
+            font-weight: bold;
+            background-color: #ffff00;
+            border: 3px solid #ff00ff;
+            padding: 5px;
+        }
+        @keyframes seizureFlash {
+            0% { background-color: #ff0000; color: #ffff00; }
+            14% { background-color: #ff7f00; color: #00ffff; }
+            28% { background-color: #ffff00; color: #0000ff; }
+            42% { background-color: #00ff00; color: #ff00ff; }
+            57% { background-color: #0000ff; color: #ffff00; }
+            71% { background-color: #4b0082; color: #00ff00; }
+            85% { background-color: #9400d3; color: #ffffff; }
+            100% { background-color: #ff0000; color: #ffff00; }
+        }
+        .spam-flash {
+            animation: seizureFlash 0.1s infinite;
+            font-weight: bold;
+            display: block;
+            margin: -5px -15px !important;
+            padding: 5px 15px !important;
+        }
+    </style>
+
+    <style>
+        /* Classic IE Scrollbar Colors */
+        body {
+            scrollbar-face-color: #ff00ff;
+            scrollbar-shadow-color: #00ff00;
+            scrollbar-highlight-color: #00ffff;
+            scrollbar-3dlight-color: #ffff00;
+            scrollbar-darkshadow-color: #0000ff;
+            scrollbar-track-color: #000000;
+            scrollbar-arrow-color: #ff0000;
+        }
+
+        /* Modern WebKit Equivalents */
+        ::-webkit-scrollbar {
+            width: 24px;
+            height: 24px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000;
+            border: 3px inset #00ff00;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff00ff;
+            border: 3px outset #00ffff;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ffff00;
+        }
+        ::-webkit-scrollbar-button:vertical:start:decrement,
+        ::-webkit-scrollbar-button:vertical:end:increment,
+        ::-webkit-scrollbar-button:horizontal:start:decrement,
+        ::-webkit-scrollbar-button:horizontal:end:increment {
+            display: block;
+            background: #0000ff;
+            border: 3px outset #ff0000;
+        }
+    </style>
+    <script>
+        document.addEventListener("contextmenu", function(e) {
+            e.preventDefault();
+            alert("NO RIGHT CLICKING ALLOWED! COPYRIGHT xX_Everlier_Xx 2004");
+            return false;
+        });
+    </script>
+  <script src="assets/js/annoy.js"></script>
+<style>::selection { background: lime; color: magenta; } ::-moz-selection { background: lime; color: magenta; }</style><style>hr { border: 5px dashed lime; background-color: yellow; height: 10px; }</style>
+</head>
+
+<body>
+<center><table width="100%" border="5" bordercolor="yellow" background="assets/images/under-construction.gif"><tr><td>&nbsp;</td></tr></table></center>
+
+<audio autoplay loop src="assets/sounds/bg.mid" style="display:none;"></audio>
+<bgsound src="assets/sounds/bg.mid" loop="infinite">
+
+<marquee class="marquee" scrollamount="15">~*~ LEAVE YOUR MARK ON THE WEB! ~*~ PLEASE SIGN! ~*~ NO FLAMING PLZ! ~*~</marquee>
+
+<center class="container">
+    <center id="guestbook" style="margin-top: 20px;">
+        <img src="assets/images/dancing-baby.gif" alt="Dancing baby" width="100" style="border: 2px dotted red;">
+        <h1 style="color: #ff00ff; text-decoration: underline;"><blink>~*~ THE GUESTBOOK ~*~</blink></h1>
+        <center style="background-color: #000033; border: 4px ridge #00ffff; padding: 15px; width: 80%;">
+            <form id="guestbook-form" onsubmit="addGuestbookEntry(event)">
+                <b style="color: yellow; font-size: 1.2em;">Name:</b> <input type="text" id="gb-name" required style="background: black; color: lime; border: 2px solid #ff00ff; font-family: 'Comic Sans MS';"><br><br>
+                <b style="color: yellow; font-size: 1.2em;">Message:</b> <input type="text" id="gb-msg" required style="background: black; color: lime; border: 2px solid #ff00ff; font-family: 'Comic Sans MS'; width: 60%;"><br><br>
+                <input type="submit" value="Sign My Guestbook!!" style="background: yellow; color: red; font-size: 1.5em; font-weight: bold; cursor: pointer; border: 3px outset red; font-family: 'Comic Sans MS';">
+            </form>
+            <hr style="border: 1px dashed cyan; margin-top: 20px; margin-bottom: 20px;">
+            <center id="guestbook-entries" style="text-align: left; max-height: 400px; overflow-y: scroll; padding: 15px; border: 4px inset yellow; background: #000; font-size: 1.2em;">
+                <!-- Entries will load here -->
+            </center>
+        </center>
+    </center>
+</center>
+
+<script>
+    const defaultEntries = [
+        { name: "xX_DarkSasuke_Xx", msg: "this app pwns!! rawr xD" },
+        { name: "AngelGirl99", msg: "omg i luv the sounds!! <3 <3" },
+        { name: "1337h4x0r", msg: "first!!1!" },
+        { name: "FreeRingtones", msg: "Get FREE polyphonic ringtones for your Nokia at www.totally-not-a-virus.com!!! CLICK HERE!" },
+        { name: "DialUpSucks", msg: "My dial-up keeps dropping when I try to download this, can you mail me a floppy disk? ASL?" },
+        { name: "NeoMatrixfan", msg: "Has anyone seen my cursor? It turned into stars and I cant find it. Also matrix reload is the best movie ever made." }
+    ];
+
+    function loadGuestbook() {
+        let entries = JSON.parse(localStorage.getItem('claune_guestbook'));
+        if (!entries || entries.length < defaultEntries.length) {
+            entries = defaultEntries;
+            localStorage.setItem('claune_guestbook', JSON.stringify(entries));
+        }
+        const container = document.getElementById('guestbook-entries');
+        container.innerHTML = '';
+        entries.forEach(entry => {
+            if (entry.name === "SpamBot2000" || entry.name === "FreeRingtones") {
+                container.innerHTML += `<p class="spam-flash" style="border-bottom: 2px dotted gray; padding-bottom: 5px; margin: 10px 0;"><b style="color: cyan;">${entry.name}:</b> <span style="color: white;">${entry.msg}</span></p>`;
+            } else {
+                container.innerHTML += `<p style="margin: 10px 0; border-bottom: 2px dotted gray; padding-bottom: 5px;"><b style="color: cyan;">${entry.name}:</b> <span style="color: white;">${entry.msg}</span></p>`;
+            }
+        });
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function addGuestbookEntry(e) {
+        e.preventDefault();
+        const name = document.getElementById('gb-name').value;
+        const msg = document.getElementById('gb-msg').value;
+        let entries = JSON.parse(localStorage.getItem('claune_guestbook')) || defaultEntries;
+        entries.push({ name, msg });
+        localStorage.setItem('claune_guestbook', JSON.stringify(entries));
+        document.getElementById('gb-name').value = '';
+        document.getElementById('gb-msg').value = '';
+        loadGuestbook();
+    }
+
+    setInterval(() => {
+        let entries = JSON.parse(localStorage.getItem('claune_guestbook')) || defaultEntries;
+        entries.push({ name: "SpamBot2000", msg: "VIAGRA PILLS CHEAP!!! http://virus.com" });
+        localStorage.setItem('claune_guestbook', JSON.stringify(entries));
+        loadGuestbook();
+        window.scrollTo(0, document.body.scrollHeight);
+        try {
+            var audio = new Audio('assets/sounds/fart.mp3');
+            audio.play().catch(function(e) { console.log('Autoplay blocked:', e); });
+        } catch(e) {
+            console.error('Audio error:', e);
+        }
+    }, 10000);
+
+    loadGuestbook();
+</script>
+
+<center style="margin-top: 30px;">
+    <a href="main.html" style="color: yellow; font-size: 1.5em; font-weight: bold;">[ &lt;&lt; BACK TO MAIN ]</a>
+</center>
+
+<script src="assets/js/cursor-trail.js"></script>
+<script src="assets/js/status-scroller.js"></script>
+<script src="assets/js/blink.js"></script>
+<script src="assets/js/snow.js"></script>
+<center><table width="100%" border="5" bordercolor="yellow" background="assets/images/under-construction.gif"><tr><td>&nbsp;</td></tr></table></center>
+</body>
+</html>

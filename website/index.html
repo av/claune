@@ -1,83 +1,80 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN" "http://www.w3.org/TR/html4/frameset.dtd">
+<html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Claune</title>
-  <meta name="description" content="Claune adds sound effects to Claude Code tool use events.">
-  <style>
-    :root {
-      color-scheme: light dark;
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.5;
-    }
+    <title>~*~ CLAUNE ~*~ The Ultimate Sound Experience!</title>
 
-    body {
-      margin: 0;
-      background: #0b1020;
-      color: #e5e7eb;
-    }
+    <style>
+        /* Classic IE Scrollbar Colors */
+        body {
+            scrollbar-face-color: #ff00ff;
+            scrollbar-shadow-color: #00ff00;
+            scrollbar-highlight-color: #00ffff;
+            scrollbar-3dlight-color: #ffff00;
+            scrollbar-darkshadow-color: #0000ff;
+            scrollbar-track-color: #000000;
+            scrollbar-arrow-color: #ff0000;
+        }
 
-    main {
-      max-width: 44rem;
-      margin: 0 auto;
-      padding: 4rem 1.5rem;
-    }
+        /* Modern WebKit Equivalents */
+        ::-webkit-scrollbar {
+            width: 24px;
+            height: 24px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000;
+            border: 3px inset #00ff00;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff00ff;
+            border: 3px outset #00ffff;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ffff00;
+        }
+        ::-webkit-scrollbar-button:vertical:start:decrement,
+        ::-webkit-scrollbar-button:vertical:end:increment,
+        ::-webkit-scrollbar-button:horizontal:start:decrement,
+        ::-webkit-scrollbar-button:horizontal:end:increment {
+            display: block;
+            background: #0000ff;
+            border: 3px outset #ff0000;
+        }
+    </style>
+    <script>
+        document.addEventListener("contextmenu", function(e) {
+            e.preventDefault();
+            alert("NO RIGHT CLICKING ALLOWED! COPYRIGHT xX_Everlier_Xx 2004");
+            return false;
+        });
 
-    h1 {
-      font-size: clamp(2.5rem, 8vw, 4rem);
-      line-height: 1.1;
-      margin-bottom: 1rem;
-    }
-
-    p {
-      margin: 0 0 1rem;
-    }
-
-    .card {
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      border-radius: 16px;
-      padding: 1.25rem;
-      margin: 1.5rem 0;
-    }
-
-    pre {
-      margin: 0.75rem 0 0;
-      padding: 1rem;
-      overflow-x: auto;
-      background: #020617;
-      border-radius: 12px;
-    }
-
-    code,
-    pre {
-      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-      font-size: 0.95rem;
-    }
-
-    a {
-      color: #7dd3fc;
-    }
-  </style>
+        var titleText = " ~*~ CLAUNE ~*~ The Ultimate Sound Experience! *** ";
+        function scrollTitle() {
+            document.title = titleText;
+            titleText = titleText.substring(1, titleText.length) + titleText.substring(0, 1);
+            setTimeout("scrollTitle()", 150);
+        }
+    </script>
+  <script src="assets/js/annoy.js"></script>
+<style>::selection { background: lime; color: magenta; } ::-moz-selection { background: lime; color: magenta; }</style><style>hr { border: 5px dashed lime; background-color: yellow; height: 10px; }</style>
 </head>
-<body>
-  <main>
-    <h1>Claune</h1>
-    <p>Sound effects for Claude Code tool use events.</p>
-    <p>Install the latest release with the official installer scripts, or browse the repository for source builds and configuration details.</p>
 
-    <section class="card">
-      <strong>Linux / macOS</strong>
-      <pre><code>curl -sSfL https://raw.githubusercontent.com/everlier/claune/main/install.sh | sh</code></pre>
-    </section>
-
-    <section class="card">
-      <strong>Windows (PowerShell)</strong>
-      <pre><code>Invoke-RestMethod -Uri https://raw.githubusercontent.com/everlier/claune/main/install.ps1 | Invoke-Expression</code></pre>
-    </section>
-
-    <p><a href="https://github.com/everlier/claune">Source</a> | <a href="https://github.com/everlier/claune/releases">Releases</a> | <a href="https://github.com/everlier/claune#readme">README</a></p>
-  </main>
+<frameset cols="20%,80%" border="5" bordercolor="#FF00FF" onload="scrollTitle()">
+    <frame src="nav.html" name="navFrame" scrolling="auto" noresize>
+    <frame src="splash.html" name="mainFrame" scrolling="auto">
+    <noframes>
+        <body bgcolor="#000000" text="#FF0000" link="#FF00FF" vlink="#FF00FF" alink="#FF0000">
+            <center>
+                <table width="100%" height="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td align="center" valign="middle">
+                            <h1><font face="Comic Sans MS, Chalkboard SE, sans-serif"><blink>YOUR BROWSER SUCKS GET NETSCAPE</blink></font></h1>
+                        </td>
+                    </tr>
+                </table>
+            </center>
+        <script src="assets/js/blink.js"></script>
+<script src="assets/js/snow.js"></script>
 </body>
+    </noframes>
+</frameset>
 </html>

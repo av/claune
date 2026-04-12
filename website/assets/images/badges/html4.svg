@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="88" height="31">
+  <rect width="88" height="31" fill="#000"/>
+  <rect width="86" height="29" x="1" y="1" fill="#fc0"/>
+  <path d="M1 1h86v2H1zM1 1v29h2V1z" fill="#ff0"/>
+  <path d="M85 3h2v26h-2zM3 27h84v2H3z" fill="#a80"/>
+  <text x="14" y="14" font-family="sans-serif" font-size="12" font-weight="bold" fill="#000">Valid</text>
+  <text x="8" y="26" font-family="sans-serif" font-size="10" font-weight="bold" fill="#f00">HTML 4.01</text>
+</svg>

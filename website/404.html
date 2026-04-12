@@ -1,0 +1,95 @@
+<html>
+<head>
+    <title>~*~ 404 NOT FOUND ~*~</title>
+    <meta http-equiv="refresh" content="5;url=index.html">
+    <style>
+        body {
+            background-image: url('assets/images/stars.gif');
+            background-color: #000000;
+            color: #00FF00;
+            font-family: "Comic Sans MS", "Chalkboard SE", sans-serif;
+            text-align: center;
+            margin-top: 100px;
+        }
+        h1 {
+            color: #FF0000;
+            font-size: 48px;
+            text-shadow: 2px 2px #FFFF00;
+        }
+        h2 {
+            color: #00FFFF;
+            font-size: 32px;
+        }
+        p {
+            color: #FF00FF;
+            font-size: 24px;
+        }
+        blink {
+            animation: blinker 1s linear infinite;
+        }
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+        .skull {
+            width: 100px;
+            height: 100px;
+            margin: 0 20px;
+        }
+        
+        /* Classic IE Scrollbar Colors */
+        body {
+            scrollbar-face-color: #ff00ff;
+            scrollbar-shadow-color: #00ff00;
+            scrollbar-highlight-color: #00ffff;
+            scrollbar-3dlight-color: #ffff00;
+            scrollbar-darkshadow-color: #0000ff;
+            scrollbar-track-color: #000000;
+            scrollbar-arrow-color: #ff0000;
+        }
+
+        /* Modern WebKit Equivalents */
+        ::-webkit-scrollbar { width: 24px; height: 24px; }
+        ::-webkit-scrollbar-track { background: #000000; border: 3px inset #00ff00; }
+        ::-webkit-scrollbar-thumb { background: #ff00ff; border: 3px outset #00ffff; }
+        ::-webkit-scrollbar-thumb:hover { background: #ffff00; }
+        ::-webkit-scrollbar-button:vertical:start:decrement,
+        ::-webkit-scrollbar-button:vertical:end:increment,
+        ::-webkit-scrollbar-button:horizontal:start:decrement,
+        ::-webkit-scrollbar-button:horizontal:end:increment {
+            display: block; background: #0000ff; border: 3px outset #ff0000;
+        }
+    </style>
+    <script>
+        document.addEventListener("contextmenu", function(e) {
+            e.preventDefault();
+            alert("NICE TRY HACKER! NO RIGHT CLICKING ON THE 404 PAGE EITHER!");
+            return false;
+        });
+    </script>
+  <script src="assets/js/annoy.js"></script>
+<style>::selection { background: lime; color: magenta; } ::-moz-selection { background: lime; color: magenta; }</style><style>hr { border: 5px dashed lime; background-color: yellow; height: 10px; }</style>
+</head>
+
+<body>
+    <img class="skull" src="assets/images/flaming-skull.gif" alt="Flaming Skull">
+    <img class="skull" src="assets/images/flaming-skull.gif" alt="Flaming Skull">
+    <img class="skull" src="assets/images/flaming-skull.gif" alt="Flaming Skull">
+
+    <h1><blink>ERROR 404!!!</blink></h1>
+    <h2>Oops you broke the internet...</h2>
+    
+    <p>~*~ Redirecting back to the main portal in 5 seconds... ~*~</p>
+
+    <img class="skull" src="assets/images/flaming-skull.gif" alt="Flaming Skull">
+    <img class="skull" src="assets/images/flaming-skull.gif" alt="Flaming Skull">
+    <img class="skull" src="assets/images/flaming-skull.gif" alt="Flaming Skull">
+
+    <br><br>
+    <p><font size="2" color="#FFFFFF">If you are not redirected automatically, <a href="index.html" style="color:#00FF00;">CLICK HERE</a></font></p>
+    
+    <script src="assets/js/cursor-trail.js"></script>
+<script src="assets/js/status-scroller.js"></script>
+<script src="assets/js/blink.js"></script>
+<script src="assets/js/snow.js"></script>
+</body>
+</html>

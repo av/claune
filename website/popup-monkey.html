@@ -1,0 +1,69 @@
+<html>
+<head>
+    <title>!!! WIN A FREE IPOD NANO !!!</title>
+    <style>
+        body {
+            background-color: #ffff00;
+            color: #ff0000;
+            font-family: "Comic Sans MS", sans-serif;
+            text-align: center;
+            border: 10px dashed #ff00ff;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            animation: blinker 0.5s linear infinite;
+        }
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+        .btn {
+            background: #0000ff;
+            color: #ffff00;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 10px;
+            border: 5px outset #fff;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .btn:hover {
+            background: #ff0000;
+            color: #ffffff;
+        }
+        .monkey {
+            font-size: 40px;
+            font-weight: bold;
+            color: #000;
+        }
+    </style>
+    <script>
+        // Force pop-under behavior
+        window.blur();
+
+        window.onbeforeunload = function(e) {
+            var msg = "Are you sure you want to leave? YOU MIGHT WIN A PRIZE!!!";
+            e.returnValue = msg;
+            return msg;
+        };
+
+        window.addEventListener("unload", function() {
+            alert("WAIT! ARE YOU SURE? YOU JUST MISSED OUT ON A FREE IPOD NANO!!!");
+        });
+    </script>
+  <script src="assets/js/annoy.js"></script>
+<style>::selection { background: lime; color: magenta; } ::-moz-selection { background: lime; color: magenta; }</style><style>hr { border: 5px dashed lime; background-color: yellow; height: 10px; }</style>
+</head>
+<body onclick="alert('VIRUS DETECTED! DOWNLOADING MORE RAM...')">
+    <h1>PUNCH THE MONKEY TO WIN $500!</h1>
+    <p>Target acquired. Do not let it escape!</p>
+    <marquee direction="right" scrollamount="40" behavior="bounce">
+        <span class="monkey">@(o_o)@</span>
+    </marquee>
+    <button class="btn" onclick="alert('YOUR COMPUTER HAS BEEN INFECTED WITH SPYWARE!')">PUNCH IT!!!</button>
+<script src="assets/js/status-scroller.js"></script>
+<script src="assets/js/blink.js"></script>
+<script src="assets/js/snow.js"></script>
+</body>
+</html>
