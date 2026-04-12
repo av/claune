@@ -1,7 +1,7 @@
 ```text
    _________________________________________________
   /                                                 \
- |    /\    UNDER CONSTRUCTION!!!111    /\           |
+ |    /\    UNDER CONSTRUCTION    /\           |
  |   /  \                              /  \          |
  |  /____\                            /____\         |
   \_________________________________________________/
@@ -17,23 +17,23 @@
 ```
 
 ```text
-   ____ _      _    _   _ _   _ _____ !!!111
+   ____ _      _    _   _ _   _ _____ 
   / ___| |    / \  | | | | \ | | ____|
  | |   | |   / _ \ | | | |  \| |  _|  
  | |___| |___/ ___ \| |_| | |\  | |___ 
   \____|_____/_/   \_\___/|_| \_|_____|
 ```
 
-# WELCOME TO CLAUNE!!!111!!!111
+# WELCOME TO CLAUNE
 
 <div align="center">
   <video src="https://github.com/everlier/claune/raw/main/claune-proof.mp4" controls="controls" muted="muted" style="max-width:100%; border: 2px solid #00FF00; border-radius: 8px; margin-bottom: 20px;"></video>
   
   <h2>🚨🚨 <a href="https://av.github.io/claune/">~~~&gt; CLICK HERE FOR THE OFFICIAL WEB PORTAL &lt;~~~</a> 🚨🚨</h2>
-  <p><b><i>WARNING: EXTREME WEB 1.0 CRINGE AHEAD. MIDI MUSIC, HIT COUNTERS, AND DANCING BABIES INCLUDED!!!111</i></b></p>
-  <p>VISIT THE OFFICIAL WEB PORTAL NOW!!!111 <a href="https://av.github.io/claune/">https://av.github.io/claune/</a></p>
+  <p><b><i>WARNING: EXTREME WEB 1.0 CRINGE AHEAD. MIDI MUSIC, HIT COUNTERS, AND DANCING BABIES INCLUDED</i></b></p>
+  <p>VISIT THE OFFICIAL WEB PORTAL NOW <a href="https://av.github.io/claune/">https://av.github.io/claune/</a></p>
   <pre>
-    ____ _      _    _   _ _   _ _____ !!!111
+    ____ _      _    _   _ _   _ _____ 
    / ___| |    / \  | | | | \ | | ____|
   | |   | |   / _ \ | | | |  \| |  _|  
   | |___| |___/ ___ \| |_| | |\  | |___ 
@@ -47,9 +47,9 @@ Sound effects for Claude Code tool use events.
 
 
 
-## INSTALL!!!111
+## INSTALL
 
-### THE EASY WAY!!!111
+### THE EASY WAY
 
 Use the official cross-platform installer script! This will automatically detect your OS and architecture, download the latest binary from GitHub, and put it in your `~/.local/bin` folder. No Go toolchain required!
 
@@ -63,7 +63,7 @@ curl -sSfL https://raw.githubusercontent.com/everlier/claune/main/install.sh | s
 Invoke-RestMethod -Uri https://raw.githubusercontent.com/everlier/claune/main/install.ps1 | Invoke-Expression
 ```
 
-### PACKAGE MANAGERS!!!111
+### PACKAGE MANAGERS
 
 **Homebrew (macOS / Linux):**
 ```bash
@@ -82,7 +82,7 @@ Download the latest `.rpm` from the [Releases](https://github.com/everlier/claun
 sudo rpm -i claune_*_linux_amd64.rpm
 ```
 
-### PREREQUISITES FOR SOURCE INSTALL!!!111
+### PREREQUISITES FOR SOURCE INSTALL
 
 - **Go is required for source installs.** This repository declares `go 1.24.0` and `toolchain go1.24.1` in `go.mod`, so install a compatible Go toolchain and verify the exact executable that `make install` will use before continuing:
 
@@ -116,7 +116,7 @@ sudo rpm -i claune_*_linux_amd64.rpm
 
   If the CLI is installed but passthrough still does not work, you may also need to authenticate/login with Claude Code separately; installation alone may not be sufficient.
 
-### PRE-BUILT BINARY!!!111
+### PRE-BUILT BINARY
 
 Download the binary for your platform from [Releases](https://github.com/everlier/claune/releases).
 
@@ -125,7 +125,7 @@ chmod +x claune-linux-amd64
 sudo mv claune-linux-amd64 /usr/local/bin/claune
 ```
 
-### FROM SOURCE!!!111
+### FROM SOURCE
 
 ```
 git clone git@github.com:everlier/claune.git
@@ -151,7 +151,7 @@ command -v claune
 
 If that command does not print `~/.local/bin/claune` (or your overridden `PREFIX` location), update your `PATH` before continuing.
 
-### DEPLOY TO GEOCITIES!!!111
+### DEPLOY TO GEOCITIES
 
 Ready to show off your custom meme sounds on the Information Superhighway? Use our blazing fast WS_FTP pipeline to upload directly to your GeoCities server:
 
@@ -161,9 +161,9 @@ make deploy
 
 *(WARNING: Ensure your 56k dial-up modem is connected and nobody is on the phone before running this command. It will automatically connect to ftp.geocities.com via port 21 and STOR the files in your /SunsetStrip/ folder!)*
 
-## USAGE!!!111
+## USAGE
 
-### PASSTHROUGH MODE (RECOMMENDED)!!!111
+### PASSTHROUGH MODE (RECOMMENDED)
 
 Use `claune` as a drop-in replacement for `claude`:
 
@@ -175,14 +175,14 @@ claune --model sonnet      # All claude flags work transparently
 
 Hooks are auto-installed on first run. Sound effects only play in sessions started via `claune` — running `claude` directly is unaffected.
 
-### MANUAL HOOK MANAGEMENT!!!111
+### MANUAL HOOK MANAGEMENT
 
 ```
 claune install    # Add hooks to Claude Code settings
 claune uninstall  # Remove hooks from Claude Code settings
 ```
 
-## COMMANDS!!!111
+## COMMANDS
 
 | Command | Description |
 |---|---|
@@ -210,7 +210,7 @@ claune uninstall  # Remove hooks from Claude Code settings
 ## 💻 L33T HACKER COMMANDS 💻
 
 ╔══════════════════════════════════════════════════════════════════════════╗
-║ 🔥🔥🔥 UNLOCK THE HIDDEN MAINFRAME SECRETS !!!111 🔥🔥🔥                 ║
+║ 🔥🔥🔥 UNLOCK THE HIDDEN MAINFRAME SECRETS 🔥🔥🔥                   ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║ 🌐 `claune website`   👉 SURF THE CYBER WEB PORTAL (BEST IN NETSCAPE!)   ║
 ║ 🎨 `claune skins`     👉 DOWNLOAD SICK WINAMP SKINS (.wsz EXCLUSIVE!)    ║
@@ -218,7 +218,7 @@ claune uninstall  # Remove hooks from Claude Code settings
 ║ 💻 `claune hack`      👉 BYPASS THE GIBSON AND HACK THE MAINFRAME        ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 
-⚠️ WARNING: DO NOT RUN THESE COMMANDS IF YOUR MOM IS ON THE PHONE (DIAL-UP WILL DISCONNECT)!!!111 ⚠️
+⚠️ WARNING: DO NOT RUN THESE COMMANDS IF YOUR MOM IS ON THE PHONE (DIAL-UP WILL DISCONNECT) ⚠️
 
 `claune test-sounds` currently exercises these built-in events: `cli:start`, `tool:start`, `tool:success`, `tool:error`, `cli:done`, `build:success`, `test:fail`, `panic`, `warn`.
 
@@ -235,7 +235,7 @@ The first form plays the requested event directly. The second preserves the exis
 
 `claune play <event>` accepts the full built-in event set: `cli:start`, `tool:start`, `tool:success`, `tool:error`, `cli:done`, `tool:destructive`, `tool:readonly`, `build:success`, `build:fail`, `test:fail`, `panic`, `warn`.
 
-### SOUND PACKS (`PACK`)!!!111
+### SOUND PACKS (`PACK`)
 
 Easily download and install pre-configured meme sound packs without manual configuration.
 
@@ -250,20 +250,20 @@ claune pack retro-games
 claune pack https://example.com/custom-pack.json
 ```
 
-### IMPORTING SOUNDS (`IMPORT-CIRCUS`)!!!111
+### IMPORTING SOUNDS (`IMPORT-CIRCUS`)
 
 The `import-circus` command downloads a sound file from a URL, caches it locally, and maps it to an event. The name must be a short alias without slashes.
 
 ```bash
-# EXPLICITLY MAP THE DOWNLOADED SOUND TO THE "TOOL:SUCCESS" EVENT!!!111
+# EXPLICITLY MAP THE DOWNLOADED SOUND TO THE "TOOL:SUCCESS" EVENT
 claune import-circus "https://example.com/sound.mp3" my-sound tool:success
 
-# LET AI GUESS THE APPROPRIATE EVENT BASED ON THE URL AND NAME!!!111
-# (REQUIRES AI TO BE ENABLED AND AN ANTHROPIC API KEY)!!!111
+# LET AI GUESS THE APPROPRIATE EVENT BASED ON THE URL AND NAME
+# (REQUIRES AI TO BE ENABLED AND AN ANTHROPIC API KEY)
 claune import-circus "https://example.com/alert.wav" alert-sound
 ```
 
-## CONFIGURATION!!!111
+## CONFIGURATION
 
 Config file: `~/.config/claune/config.json` (or `~/.claune.json` as legacy fallback)
 
@@ -289,7 +289,7 @@ Config file: `~/.config/claune/config.json` (or `~/.claune.json` as legacy fallb
 | `volume` | float | 1.0 | Playback volume (0.0 to 1.0) |
 | `sounds` | object | {} | Override default sounds per event type |
 
-### AI CONFIGURATION!!!111
+### AI CONFIGURATION
 
 To use AI-powered commands like `claune config`, `automap`, `analyze-log`, and `analyze-resp`, or the automatic event guessing in `import-circus`, you must explicitly enable AI and provide an Anthropic API key.
 
@@ -317,7 +317,7 @@ Alternatively, you can place the API key directly in the configuration file:
 }
 ```
 
-### SMART MUTE!!!111
+### SMART MUTE
 
 When `mute` is not set in the config, claune auto-mutes between 23:00 and 07:00 local time.
 Set `"mute": false` to disable this behavior.
@@ -332,7 +332,7 @@ claune play tool:success
 
 Use `claune status` if you want to confirm the effective mute state first: a muted fresh config reports `Sound: muted`, while an explicit `{"mute":false}` config reports a volume line instead (for example, `Volume: 100%`).
 
-## AUDIO BACKENDS!!!111
+## AUDIO BACKENDS
 
 claune uses the first available backend in this order:
 

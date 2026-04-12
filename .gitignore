@@ -1,3 +1,24 @@
 /claune
 .harness/
 .claude/
+
+# Compiled outputs
+/claune
+/claune_*
+/dist/
+/coverage.out
+/coverage.html
+
+# Generated test directories
+/fake_bin/
+/shellcheck*/
+
+# Editor and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Other generated artifacts
+*.log
+*.mp4
+*.cast
