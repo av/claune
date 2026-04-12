@@ -13,7 +13,7 @@ _claune_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ ${COMP_CWORD} -eq 1 ]]; then
-        opts="install uninstall init setup status version doctor completion update logs help play config automap import-circus pack analyze-log analyze-resp auth skins geocities hack website mute unmute notify volume"
+        opts="install uninstall init setup status version doctor completion update logs help play config automap import-circus pack analyze-log analyze-resp auth mute unmute notify volume"
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
@@ -72,10 +72,6 @@ _claune() {
         'analyze-log:Analyze log from stdin and play a sound'
         'analyze-resp:Analyze AI response from stdin'
         'auth:Save API key and enable AI features'
-        'skins:Download custom Winamp 2.95 skins'
-        'geocities:Run a fake 90s-era WS_FTP terminal log to GeoCities'
-        'hack:Hack the mainframe'
-        'website:Launch the official cyber portal'
     )
 
     if (( CURRENT == 2 )); then

@@ -39,10 +39,6 @@ var clauneSubcommands = map[string]bool{
 	"analyze-log":   true,
 	"automap":       true,
 	"analyze-resp":  true,
-	"website":       true,
-	"skins":         true,
-	"geocities":     true,
-	"hack":          true,
 	"version":       true,
 	"--version":     true,
 	"-v":            true,
@@ -125,13 +121,11 @@ func Run(args []string, version string) error {
 		}
 		PrintSuccess("Successfully updated claune!")
 		return nil
-	case "website":
 		ensureExactArgs(args, 1, "claune: website does not accept additional arguments", "Usage: claune website")
 		url := "https://av.github.io/claune/"
 		fmt.Printf("\033[36mVISIT THE OFFICIAL CYBER PORTAL:\033[0m %s\n", url)
 		openBrowser(url)
 		return nil
-	case "skins":
 		ensureExactArgs(args, 1, "claune: skins does not accept additional arguments", "Usage: claune skins")
 		for i := 0; i <= 10; i++ {
 			bars := strings.Repeat("=", i)
@@ -144,7 +138,6 @@ func Run(args []string, version string) error {
 		time.Sleep(300 * time.Millisecond)
 		fmt.Println("\033[31m[!] Winamp.exe has encountered a fatal exception 0xDEADBEEF\033[0m")
 		return nil
-	case "geocities":
 		ensureExactArgs(args, 1, "claune: geocities does not accept additional arguments", "Usage: claune geocities")
 		fmt.Println("Connecting to ftp.geocities.com on port 21...")
 		time.Sleep(800 * time.Millisecond)
@@ -180,7 +173,6 @@ func Run(args []string, version string) error {
 		time.Sleep(500 * time.Millisecond)
 		fmt.Println("\033[35m~*~ GEOCITIES UPLOAD COMPLETE ~*~\033[0m")
 		return nil
-	case "hack":
 		ensureExactArgs(args, 1, "claune: hack does not accept additional arguments", "Usage: claune hack")
 		endTime := time.Now().Add(3 * time.Second)
 		for time.Now().Before(endTime) {
@@ -444,13 +436,9 @@ func validateManagementArgs(args []string) {
 		return
 	case "analyze-resp":
 		return
-	case "website":
 		ensureExactArgs(args, 1, "claune: website does not accept additional arguments", "Usage: claune website")
-	case "skins":
 		ensureExactArgs(args, 1, "claune: skins does not accept additional arguments", "Usage: claune skins")
-	case "geocities":
 		ensureExactArgs(args, 1, "claune: geocities does not accept additional arguments", "Usage: claune geocities")
-	case "hack":
 		ensureExactArgs(args, 1, "claune: hack does not accept additional arguments", "Usage: claune hack")
 	}
 }
@@ -726,16 +714,12 @@ func printCommandUsage(cmd string) {
 		fmt.Fprintln(os.Stderr, "Usage: claune analyze-resp [response text]")
 		fmt.Fprintln(os.Stderr, "\nAnalyzes AI response text and overrides playback strategy dynamically.")
 		fmt.Fprintln(os.Stderr, "Reads from stdin if no text is provided. Truncates inputs larger than 64KB (10MB hard limit).")
-	case "website":
 		fmt.Fprintln(os.Stderr, "Usage: claune website")
 		fmt.Fprintln(os.Stderr, "\nLaunch the official cyber portal in your default web browser.")
-	case "skins":
 		fmt.Fprintln(os.Stderr, "Usage: claune skins")
 		fmt.Fprintln(os.Stderr, "\nDownload custom Winamp 2.95 skins for Claune.")
-	case "geocities":
 		fmt.Fprintln(os.Stderr, "Usage: claune geocities")
 		fmt.Fprintln(os.Stderr, "\nRun a fake 90s-era WS_FTP terminal log to GeoCities.")
-	case "hack":
 		fmt.Fprintln(os.Stderr, "Usage: claune hack")
 		fmt.Fprintln(os.Stderr, "\nHack the mainframe.")
 	case "version":
@@ -795,8 +779,4 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, "  analyze-resp  %sAnalyze AI response from stdin and optionally override sound strategy%s\n\n", ColorDim, ColorReset)
 
 	fmt.Fprintf(os.Stderr, "%sEaster Eggs / Cyber:%s\n", ColorPurple, ColorReset)
-	fmt.Fprintf(os.Stderr, "  skins         %sDownload custom Winamp 2.95 skins for Claune%s\n", ColorDim, ColorReset)
-	fmt.Fprintf(os.Stderr, "  geocities     %sRun a fake 90s-era WS_FTP terminal log to GeoCities%s\n", ColorDim, ColorReset)
-	fmt.Fprintf(os.Stderr, "  hack          %sHack the mainframe%s\n", ColorDim, ColorReset)
-	fmt.Fprintf(os.Stderr, "  website       %sLaunch the official cyber portal in your default web browser%s\n", ColorDim, ColorReset)
 }

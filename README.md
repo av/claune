@@ -1,51 +1,6 @@
-```text
-   _________________________________________________
-  /                                                 \
- |    /\    UNDER CONSTRUCTION    /\           |
- |   /  \                              /  \          |
- |  /____\                            /____\         |
-  \_________________________________________________/
-```
-
-```text
-      _   _ _   _  ____  _____ ____     ____ ___  _   _ ____ _____ ____  _   _  ____ _____ ___  ___  _   _ 
-     | | | | \ | |/  _ \| ____|  _ \   / ___/ _ \| \ | / ___|_   _|  _ \| | | |/ ___|_   _|_ _|/ _ \| \ | |
-     | | | |  \| | | | ||  _| | |_) | | |  | | | |  \| \___ \ | | | |_) | | | | |     | |  | || | | |  \| |
-     | |_| | |\  | |_| || |___|  _ <  | |__| |_| | |\  |___) || | |  _ <| |_| | |___  | |  | || |_| | |\  |
-      \___/|_| \_|\____/|_____|_| \_\  \____\___/|_| \_|____/ |_| |_| \_\___/ \____| |_| |___|\___/|_| \_|
-                                                                                                           
-```
-
-```text
-   ____ _      _    _   _ _   _ _____ 
-  / ___| |    / \  | | | | \ | | ____|
- | |   | |   / _ \ | | | |  \| |  _|  
- | |___| |___/ ___ \| |_| | |\  | |___ 
-  \____|_____/_/   \_\___/|_| \_|_____|
-```
-
-# WELCOME TO CLAUNE
-
-<div align="center">
-  <video src="https://github.com/everlier/claune/raw/main/claune-proof.mp4" controls="controls" muted="muted" style="max-width:100%; border: 2px solid #00FF00; border-radius: 8px; margin-bottom: 20px;"></video>
-  
-  <h2>🚨🚨 <a href="https://av.github.io/claune/">~~~&gt; CLICK HERE FOR THE OFFICIAL WEB PORTAL &lt;~~~</a> 🚨🚨</h2>
-  <p><b><i>WARNING: EXTREME WEB 1.0 CRINGE AHEAD. MIDI MUSIC, HIT COUNTERS, AND DANCING BABIES INCLUDED</i></b></p>
-  <p>VISIT THE OFFICIAL WEB PORTAL NOW <a href="https://av.github.io/claune/">https://av.github.io/claune/</a></p>
-  <pre>
-    ____ _      _    _   _ _   _ _____ 
-   / ___| |    / \  | | | | \ | | ____|
-  | |   | |   / _ \ | | | |  \| |  _|  
-  | |___| |___/ ___ \| |_| | |\  | |___ 
-   \____|_____/_/   \_\___/|_| \_|_____|
-  </pre>
-</div>
-
-
+# Claune
 
 Sound effects for Claude Code tool use events.
-
-
 
 ## INSTALL
 
@@ -151,16 +106,6 @@ command -v claune
 
 If that command does not print `~/.local/bin/claune` (or your overridden `PREFIX` location), update your `PATH` before continuing.
 
-### DEPLOY TO GEOCITIES
-
-Ready to show off your custom meme sounds on the Information Superhighway? Use our blazing fast WS_FTP pipeline to upload directly to your GeoCities server:
-
-```bash
-make deploy
-```
-
-*(WARNING: Ensure your 56k dial-up modem is connected and nobody is on the phone before running this command. It will automatically connect to ftp.geocities.com via port 21 and STOR the files in your /SunsetStrip/ folder!)*
-
 ## USAGE
 
 ### PASSTHROUGH MODE (RECOMMENDED)
@@ -206,19 +151,6 @@ claune uninstall  # Remove hooks from Claude Code settings
 | `analyze-log` | Analyze stdin log text and play a sound |
 | `analyze-resp` | Analyze stdin AI response text and optionally override the sound strategy |
 | `help` | Show help message |
-
-## 💻 L33T HACKER COMMANDS 💻
-
-╔══════════════════════════════════════════════════════════════════════════╗
-║ 🔥🔥🔥 UNLOCK THE HIDDEN MAINFRAME SECRETS 🔥🔥🔥                   ║
-╠══════════════════════════════════════════════════════════════════════════╣
-║ 🌐 `claune website`   👉 SURF THE CYBER WEB PORTAL (BEST IN NETSCAPE!)   ║
-║ 🎨 `claune skins`     👉 DOWNLOAD SICK WINAMP SKINS (.wsz EXCLUSIVE!)    ║
-║ 💾 `claune geocities` 👉 INITIALIZE DIAL-UP WS_FTP UPLOAD TO SUNSETSTRIP ║
-║ 💻 `claune hack`      👉 BYPASS THE GIBSON AND HACK THE MAINFRAME        ║
-╚══════════════════════════════════════════════════════════════════════════╝
-
-⚠️ WARNING: DO NOT RUN THESE COMMANDS IF YOUR MOM IS ON THE PHONE (DIAL-UP WILL DISCONNECT) ⚠️
 
 `claune test-sounds` currently exercises these built-in events: `cli:start`, `tool:start`, `tool:success`, `tool:error`, `cli:done`, `build:success`, `test:fail`, `panic`, `warn`.
 

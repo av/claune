@@ -2,7 +2,7 @@ PREFIX ?= $(HOME)/.local
 VERSION ?= $(shell git describe --tags --always --dirty || echo "dev")
 LDFLAGS = -ldflags "-X main.Version=$(VERSION)"
 
-.PHONY: build test e2e lint release install uninstall clean deploy
+.PHONY: build test e2e lint release install uninstall clean
 
 build:
 	go build $(LDFLAGS) -o claune ./cmd/claune
@@ -44,5 +44,3 @@ clean:
 	rm -f claune
 	rm -rf dist
 
-deploy:
-	./scripts/deploy-fake.sh
