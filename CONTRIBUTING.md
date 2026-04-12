@@ -1,39 +1,20 @@
-# Contributing to Claune
+# Contributing to claune
 
-Thank you for your interest in contributing to Claune! We welcome all contributions, from bug reports to feature additions.
+First off, thanks for taking the time to contribute!
 
-## Getting Started
+## Issues
 
-1. **Fork the repository** on GitHub.
-2. **Clone your fork** locally: `git clone git@github.com:your-username/claune.git`
-3. **Install Go** (1.24.0 or higher).
-4. **Make changes** and run tests.
+If you find a bug or have a feature request, please open an issue on GitHub. Make sure to include relevant details and steps to reproduce any bugs.
 
-## Building and Testing
+## Pull Requests
 
-After any code changes, rebuild and reinstall the binary to test locally:
+1. Fork the repository and create your branch from `main`.
+2. If you've added code that should be tested, add tests.
+3. If you've changed APIs, update the documentation.
+4. Ensure the test suite passes.
+5. Make sure your code is formatted correctly.
+6. Issue that pull request!
 
-```bash
-PATH="$HOME/go/bin:$PATH" go test ./... && PATH="$HOME/go/bin:$PATH" make install
-```
+## License
 
-The Go binary is installed at `~/.local/bin/claune`.
-
-## Downloading Sounds
-
-If you need to fetch meme sounds for development from boardsounds.com, there is an automated script included:
-
-```bash
-./scripts/download-boardsound.sh <sound-slug> [output-file.mp3]
-```
-
-## Pull Request Process
-
-1. Create a descriptive branch name.
-2. Commit your changes with clear messages.
-3. Push to your fork and submit a Pull Request to the `main` branch.
-4. Ensure all tests pass and that your code adheres to standard Go formatting (`go fmt`).
-
-## Code of Conduct
-
-Please be respectful and constructive in your communications. Let's keep the meme energy positive!
+By contributing to claune, you agree that your contributions will be licensed under its MIT License.
